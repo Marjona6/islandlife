@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {View, StyleSheet, Alert} from 'react-native';
 import {Tile} from './Tile';
 import {useGame} from '../contexts/GameContext';
@@ -10,7 +10,14 @@ export const GameBoard: React.FC = () => {
     row: number;
     col: number;
   } | null>(null);
+  const [isProcessingMove, setIsProcessingMove] = useState(false);
   const [matchedTiles, setMatchedTiles] = useState<Set<string>>(new Set());
+  const boardRef = useRef(gameState.board);
+
+  // Update ref when board changes
+  useEffect(() => {
+    boardRef.current = gameState.board;
+  }, [gameState.board]);
 
   // Initialize game on mount
   useEffect(() => {
@@ -20,6 +27,8 @@ export const GameBoard: React.FC = () => {
   }, [dispatchGame, gameState.board.length]);
 
   const handleTilePress = (row: number, col: number) => {
+    if (isProcessingMove) return; // Prevent moves while processing
+
     if (!selectedTile) {
       // First tile selection
       setSelectedTile({row, col});
@@ -35,24 +44,11 @@ export const GameBoard: React.FC = () => {
 
       // Check if tiles are adjacent
       if (isValidMove(gameState.board, row1, col1, row, col)) {
-        // Perform the swap
-        dispatchGame({
-          type: 'SWAP_TILES',
-          payload: {row1, col1, row2: row, col2: col},
-        });
-
-        // Process the turn after a short delay to show the swap
-        setTimeout(() => {
-          processGameTurn();
-        }, 300);
+        performSwap(row1, col1, row, col);
       } else {
-        Alert.alert(
-          'Invalid Move',
-          'Tiles must be adjacent and create a match!',
-        );
+        // Invalid move - just deselect without alert
+        setSelectedTile(null);
       }
-
-      setSelectedTile(null);
     }
   };
 
@@ -61,6 +57,8 @@ export const GameBoard: React.FC = () => {
     col: number,
     direction: 'up' | 'down' | 'left' | 'right',
   ) => {
+    if (isProcessingMove) return; // Prevent moves while processing
+
     let targetRow = row;
     let targetCol = col;
 
@@ -87,49 +85,100 @@ export const GameBoard: React.FC = () => {
 
     // Check if the move is valid
     if (isValidMove(gameState.board, row, col, targetRow, targetCol)) {
-      // Perform the swap
-      dispatchGame({
-        type: 'SWAP_TILES',
-        payload: {row1: row, col1: col, row2: targetRow, col2: targetCol},
-      });
-
-      // Process the turn after a short delay to show the swap
-      setTimeout(() => {
-        processGameTurn();
-      }, 300);
-    } else {
-      // Invalid move - provide feedback
-      Alert.alert('Invalid Move', "This swap doesn't create a match!");
+      performSwap(row, col, targetRow, targetCol);
     }
+    // If invalid, do nothing - tiles will snap back automatically
   };
 
-  const processGameTurn = () => {
-    const result = processTurn(gameState.board);
+  const performSwap = (
+    row1: number,
+    col1: number,
+    row2: number,
+    col2: number,
+  ) => {
+    setIsProcessingMove(true);
+    setSelectedTile(null);
+    setMatchedTiles(new Set()); // Clear any existing matched tiles
+
+    // Perform the swap immediately
+    dispatchGame({
+      type: 'SWAP_TILES',
+      payload: {row1, col1, row2, col2},
+    });
+
+    // Process the turn after a short delay to show the swap
+    setTimeout(() => {
+      // Use the current board state from the ref
+      processGameTurn(boardRef.current, row1, col1, row2, col2);
+    }, 500); // Increased delay to show the swap more clearly
+  };
+
+  const processGameTurn = (
+    board: any[][],
+    row1?: number,
+    col1?: number,
+    row2?: number,
+    col2?: number,
+  ) => {
+    const result = processTurn(board);
 
     if (result.totalMatches > 0) {
-      // Update board
-      dispatchGame({type: 'UPDATE_BOARD', payload: result.newBoard});
+      console.log('Matches found:', result.matches);
+      console.log('Total matches:', result.totalMatches);
 
-      // Increment combos
-      dispatchGame({type: 'INCREMENT_COMBOS'});
-
-      // Show matched tiles briefly
+      // Show matched tiles fading out - use current board indices
       const matchedPositions = new Set<string>();
       result.matches.forEach(match => {
-        match.forEach(tile => {
-          matchedPositions.add(`${tile.row}-${tile.col}`);
+        match.forEach(pos => {
+          // Use the position directly from the match result
+          matchedPositions.add(`${pos.row}-${pos.col}`);
         });
       });
+
+      console.log(
+        'Setting matched tiles to fade:',
+        Array.from(matchedPositions),
+      );
       setMatchedTiles(matchedPositions);
 
-      // Clear matched tiles display after animation
+      // Wait for fade animation, then update board
       setTimeout(() => {
-        setMatchedTiles(new Set());
-      }, 500);
+        console.log('Updating board after fade animation');
+        // Update board
+        dispatchGame({type: 'UPDATE_BOARD', payload: result.newBoard});
 
-      // Check for game win
-      if (gameState.combos + result.totalMatches >= gameState.targetCombos) {
-        handleGameWin();
+        // Increment combos
+        dispatchGame({type: 'INCREMENT_COMBOS'});
+
+        // Clear matched tiles tracking
+        setMatchedTiles(new Set());
+
+        // Check for game win
+        if (gameState.combos + result.totalMatches >= gameState.targetCombos) {
+          handleGameWin();
+        }
+
+        setIsProcessingMove(false);
+      }, 400); // Wait for fade animation to complete
+    } else {
+      console.log('No matches found, reverting swap');
+      // No matches - revert the swap by swapping back
+      if (
+        row1 !== undefined &&
+        col1 !== undefined &&
+        row2 !== undefined &&
+        col2 !== undefined
+      ) {
+        setTimeout(() => {
+          // Swap back to original positions
+          dispatchGame({
+            type: 'SWAP_TILES',
+            payload: {row1: row2, col1: col2, row2: row1, col2: col1},
+          });
+          setIsProcessingMove(false);
+        }, 500); // Increased delay to show the invalid move
+      } else {
+        setIsProcessingMove(false);
       }
     }
   };

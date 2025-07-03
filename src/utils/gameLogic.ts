@@ -16,8 +16,10 @@ export const areAdjacent = (
 };
 
 // Find all matches in the board
-export const findMatches = (board: Tile[][]): Tile[][] => {
-  const matches: Tile[][] = [];
+export const findMatches = (
+  board: Tile[][],
+): Array<Array<{row: number; col: number}>> => {
+  const matches: Array<Array<{row: number; col: number}>> = [];
 
   // Check horizontal matches
   for (let row = 0; row < BOARD_SIZE; row++) {
@@ -27,12 +29,16 @@ export const findMatches = (board: Tile[][]): Tile[][] => {
       const tile3 = board[row][col + 2];
 
       if (tile1.type === tile2.type && tile2.type === tile3.type) {
-        const match: Tile[] = [tile1, tile2, tile3];
+        const match: Array<{row: number; col: number}> = [
+          {row, col},
+          {row, col: col + 1},
+          {row, col: col + 2},
+        ];
 
         // Extend match to the right
         for (let i = col + 3; i < BOARD_SIZE; i++) {
           if (board[row][i].type === tile1.type) {
-            match.push(board[row][i]);
+            match.push({row, col: i});
           } else {
             break;
           }
@@ -51,12 +57,16 @@ export const findMatches = (board: Tile[][]): Tile[][] => {
       const tile3 = board[row + 2][col];
 
       if (tile1.type === tile2.type && tile2.type === tile3.type) {
-        const match: Tile[] = [tile1, tile2, tile3];
+        const match: Array<{row: number; col: number}> = [
+          {row, col},
+          {row: row + 1, col},
+          {row: row + 2, col},
+        ];
 
         // Extend match downward
         for (let i = row + 3; i < BOARD_SIZE; i++) {
           if (board[i][col].type === tile1.type) {
-            match.push(board[i][col]);
+            match.push({row: i, col});
           } else {
             break;
           }
@@ -71,14 +81,17 @@ export const findMatches = (board: Tile[][]): Tile[][] => {
 };
 
 // Remove matched tiles and return their positions
-export const removeMatches = (board: Tile[][], matches: Tile[][]): Tile[][] => {
+export const removeMatches = (
+  board: Tile[][],
+  matches: Array<Array<{row: number; col: number}>>,
+): Tile[][] => {
   const newBoard = board.map(row => [...row]);
   const matchedPositions = new Set<string>();
 
   // Mark all matched positions
   matches.forEach(match => {
-    match.forEach(tile => {
-      matchedPositions.add(`${tile.row}-${tile.col}`);
+    match.forEach(pos => {
+      matchedPositions.add(`${pos.row}-${pos.col}`);
     });
   });
 
@@ -188,11 +201,11 @@ export const processTurn = (
   board: Tile[][],
 ): {
   newBoard: Tile[][];
-  matches: Tile[][];
+  matches: Array<Array<{row: number; col: number}>>;
   totalMatches: number;
 } => {
   let currentBoard = board.map(row => [...row]);
-  let allMatches: Tile[][] = [];
+  let allMatches: Array<Array<{row: number; col: number}>> = [];
   let totalMatches = 0;
 
   // Keep processing until no more matches
@@ -214,4 +227,51 @@ export const processTurn = (
     matches: allMatches,
     totalMatches,
   };
+};
+
+// Create a board with no initial matches
+export const createValidBoard = (): Tile[][] => {
+  const board: Tile[][] = [];
+
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    board[row] = [];
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      let randomType: TileType;
+
+      // Avoid creating obvious matches
+      if (
+        col >= 2 &&
+        board[row][col - 1] &&
+        board[row][col - 2] &&
+        board[row][col - 1].type === board[row][col - 2].type
+      ) {
+        // Don't use the same type as the last two tiles
+        const avoidType = board[row][col - 1].type;
+        const otherTypes = TILE_TYPES.filter(type => type !== avoidType);
+        randomType = otherTypes[Math.floor(Math.random() * otherTypes.length)];
+      } else if (
+        row >= 2 &&
+        board[row - 1][col] &&
+        board[row - 2][col] &&
+        board[row - 1][col].type === board[row - 2][col].type
+      ) {
+        // Don't use the same type as the last two tiles vertically
+        const avoidType = board[row - 1][col].type;
+        const otherTypes = TILE_TYPES.filter(type => type !== avoidType);
+        randomType = otherTypes[Math.floor(Math.random() * otherTypes.length)];
+      } else {
+        // Use any random type
+        randomType = TILE_TYPES[Math.floor(Math.random() * TILE_TYPES.length)];
+      }
+
+      board[row][col] = {
+        id: `${row}-${col}-${Date.now()}-${Math.random()}`,
+        type: randomType,
+        row,
+        col,
+      };
+    }
+  }
+
+  return board;
 };

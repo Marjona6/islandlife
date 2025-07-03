@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import React, {useRef, useEffect} from 'react';
 import {Text, StyleSheet, Animated, PanResponder} from 'react-native';
 import {Tile as TileType} from '../types/game';
 
@@ -7,7 +7,7 @@ interface TileProps {
   onPress: () => void;
   onSwipe: (direction: 'up' | 'down' | 'left' | 'right') => void;
   isSelected: boolean;
-  isMatched: boolean;
+  isMatched?: boolean;
 }
 
 export const Tile: React.FC<TileProps> = ({
@@ -15,10 +15,24 @@ export const Tile: React.FC<TileProps> = ({
   onPress,
   onSwipe,
   isSelected,
-  isMatched,
+  isMatched = false,
 }) => {
   const scale = useRef(new Animated.Value(1)).current;
-  const pan = useRef(new Animated.ValueXY()).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  // Animate matched tiles fading out
+  useEffect(() => {
+    if (isMatched) {
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      // Reset opacity for new tiles
+      opacity.setValue(1);
+    }
+  }, [isMatched, opacity]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -32,24 +46,16 @@ export const Tile: React.FC<TileProps> = ({
           useNativeDriver: true,
         }).start();
       },
-      onPanResponderMove: (_, gestureState) => {
-        // Move the tile slightly with the gesture
-        pan.setValue({x: gestureState.dx * 0.3, y: gestureState.dy * 0.3});
+      onPanResponderMove: () => {
+        // No visual movement during pan - just keep the scale
       },
       onPanResponderRelease: (_, gestureState) => {
-        // Reset position and scale
-        Animated.parallel([
-          Animated.timing(scale, {
-            toValue: 1,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pan, {
-            toValue: {x: 0, y: 0},
-            duration: 150,
-            useNativeDriver: true,
-          }),
-        ]).start();
+        // Reset scale
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }).start();
 
         const {dx, dy, vx, vy} = gestureState;
         const minSwipeDistance = 30;
@@ -84,18 +90,11 @@ export const Tile: React.FC<TileProps> = ({
       },
       onPanResponderTerminate: () => {
         // Reset on cancel
-        Animated.parallel([
-          Animated.timing(scale, {
-            toValue: 1,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pan, {
-            toValue: {x: 0, y: 0},
-            duration: 150,
-            useNativeDriver: true,
-          }),
-        ]).start();
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }).start();
       },
     }),
   ).current;
@@ -123,15 +122,13 @@ export const Tile: React.FC<TileProps> = ({
       style={[
         styles.tile,
         isSelected && styles.selected,
-        isMatched && styles.matched,
         {
-          transform: [{scale}, {translateX: pan.x}, {translateY: pan.y}],
+          transform: [{scale}],
+          opacity,
         },
       ]}
       onTouchEnd={handlePress}>
-      <Text style={[styles.tileText, isMatched && styles.matchedText]}>
-        {tile.type}
-      </Text>
+      <Text style={styles.tileText}>{tile.type}</Text>
     </Animated.View>
   );
 };
@@ -153,14 +150,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     backgroundColor: '#fffacd',
   },
-  matched: {
-    backgroundColor: '#ff6b6b',
-    borderColor: '#ff4757',
-  },
   tileText: {
     fontSize: 20,
-  },
-  matchedText: {
-    opacity: 0.5,
   },
 });

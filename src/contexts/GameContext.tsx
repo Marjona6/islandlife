@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {GameState, Currency, BeachItem, Tile, TileType} from '../types/game';
+import {createValidBoard} from '../utils/gameLogic';
 
 // Game constants
 const BOARD_SIZE = 8;
@@ -85,23 +86,9 @@ type BeachAction =
 const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'INIT_BOARD':
-      const newBoard: Tile[][] = [];
-      for (let row = 0; row < BOARD_SIZE; row++) {
-        newBoard[row] = [];
-        for (let col = 0; col < BOARD_SIZE; col++) {
-          const randomType =
-            TILE_TYPES[Math.floor(Math.random() * TILE_TYPES.length)];
-          newBoard[row][col] = {
-            id: `${row}-${col}`,
-            type: randomType,
-            row,
-            col,
-          };
-        }
-      }
       return {
         ...state,
-        board: newBoard,
+        board: createValidBoard(),
         score: 0,
         combos: 0,
         isGameWon: false,
