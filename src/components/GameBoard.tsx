@@ -56,6 +56,53 @@ export const GameBoard: React.FC = () => {
     }
   };
 
+  const handleTileSwipe = (
+    row: number,
+    col: number,
+    direction: 'up' | 'down' | 'left' | 'right',
+  ) => {
+    let targetRow = row;
+    let targetCol = col;
+
+    // Calculate target position based on swipe direction
+    switch (direction) {
+      case 'up':
+        targetRow = row - 1;
+        break;
+      case 'down':
+        targetRow = row + 1;
+        break;
+      case 'left':
+        targetCol = col - 1;
+        break;
+      case 'right':
+        targetCol = col + 1;
+        break;
+    }
+
+    // Check if target position is within bounds
+    if (targetRow < 0 || targetRow >= 8 || targetCol < 0 || targetCol >= 8) {
+      return;
+    }
+
+    // Check if the move is valid
+    if (isValidMove(gameState.board, row, col, targetRow, targetCol)) {
+      // Perform the swap
+      dispatchGame({
+        type: 'SWAP_TILES',
+        payload: {row1: row, col1: col, row2: targetRow, col2: targetCol},
+      });
+
+      // Process the turn after a short delay to show the swap
+      setTimeout(() => {
+        processGameTurn();
+      }, 300);
+    } else {
+      // Invalid move - provide feedback
+      Alert.alert('Invalid Move', "This swap doesn't create a match!");
+    }
+  };
+
   const processGameTurn = () => {
     const result = processTurn(gameState.board);
 
@@ -124,6 +171,9 @@ export const GameBoard: React.FC = () => {
               key={tile.id}
               tile={tile}
               onPress={() => handleTilePress(rowIndex, colIndex)}
+              onSwipe={direction =>
+                handleTileSwipe(rowIndex, colIndex, direction)
+              }
               isSelected={isTileSelected(rowIndex, colIndex)}
               isMatched={isTileMatched(rowIndex, colIndex)}
             />

@@ -63,7 +63,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({onNavigateToBeach}) => {
       {/* Instructions */}
       <View style={styles.instructions}>
         <Text style={styles.instructionText}>
-          Tap two adjacent tiles to swap them
+          Swipe tiles to swap with adjacent tiles
+        </Text>
+        <Text style={styles.instructionText}>
+          Or tap two tiles to swap them
         </Text>
         <Text style={styles.instructionText}>
           Match 3+ in a row to clear them
