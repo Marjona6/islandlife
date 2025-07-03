@@ -62,9 +62,9 @@ export const GameBoard: React.FC = () => {
       return;
     }
 
-    // Check if the move is valid
+    // Check if the move is valid using current board state
     console.log('Checking if move is valid:', {row, col, targetRow, targetCol});
-    if (isValidMove(gameState.board, row, col, targetRow, targetCol)) {
+    if (isValidMove(boardRef.current, row, col, targetRow, targetCol)) {
       console.log('Valid move, performing swap');
       performSwap(row, col, targetRow, targetCol);
     } else {
@@ -82,28 +82,30 @@ export const GameBoard: React.FC = () => {
     setIsProcessingMove(true);
     setMatchedTiles(new Set()); // Clear any existing matched tiles
 
+    // Create the swapped board state immediately
+    const swappedBoard = boardRef.current.map(row => [...row]);
+    const temp = swappedBoard[row1][col1];
+    swappedBoard[row1][col1] = swappedBoard[row2][col2];
+    swappedBoard[row2][col2] = temp;
+
     // Perform the swap immediately
     dispatchGame({
       type: 'SWAP_TILES',
       payload: {row1, col1, row2, col2},
     });
 
-    // Wait a bit longer to show the swap visually before processing
-    setTimeout(() => {
-      // Get the current board state after the swap has been applied
-      const currentBoard = gameState.board.map(row => [...row]);
-      const temp = currentBoard[row1][col1];
-      currentBoard[row1][col1] = currentBoard[row2][col2];
-      currentBoard[row2][col2] = temp;
-
-      processGameTurn(currentBoard, row1, col1, row2, col2);
-    }, 400); // Increased delay to show the swap more clearly
+    // Process the turn immediately with the swapped board
+    console.log(
+      'Processing turn with swapped board:',
+      swappedBoard.map(row => row.map(tile => tile?.type || 'null')),
+    );
+    processGameTurn(swappedBoard, row1, col1, row2, col2);
 
     // Safety timeout to force reset isProcessingMove if it gets stuck
     setTimeout(() => {
       console.log('Safety timeout - forcing isProcessingMove to false');
       setIsProcessingMove(false);
-    }, 2000); // 2 second safety timeout
+    }, 3000); // 3 second safety timeout
   };
 
   const processGameTurn = (
@@ -122,6 +124,10 @@ export const GameBoard: React.FC = () => {
       totalMatches: result.totalMatches,
       matches: result.matches,
     });
+    console.log(
+      'New board from processTurn:',
+      result.newBoard.map(row => row.map(tile => tile?.type || 'null')),
+    );
 
     if (result.totalMatches > 0) {
       // Show matched tiles fading out
@@ -137,26 +143,31 @@ export const GameBoard: React.FC = () => {
       );
       setMatchedTiles(matchedPositions);
 
-      // Wait for fade animation, then update board
+      // Update board immediately
+      console.log('Updating board after fade animation');
+      console.log(
+        'About to update board to:',
+        result.newBoard.map(row => row.map(tile => tile?.type || 'null')),
+      );
+
+      // Update board
+      dispatchGame({type: 'UPDATE_BOARD', payload: result.newBoard});
+
+      // Increment combos
+      dispatchGame({type: 'INCREMENT_COMBOS'});
+
+      // Clear matched tiles tracking after a short delay for visual effect
       setTimeout(() => {
-        console.log('Updating board after fade animation');
-        // Update board
-        dispatchGame({type: 'UPDATE_BOARD', payload: result.newBoard});
-
-        // Increment combos
-        dispatchGame({type: 'INCREMENT_COMBOS'});
-
-        // Clear matched tiles tracking
         setMatchedTiles(new Set());
+      }, 300);
 
-        // Check for game win
-        if (gameState.combos + result.totalMatches >= gameState.targetCombos) {
-          handleGameWin();
-        }
+      // Check for game win
+      if (gameState.combos + result.totalMatches >= gameState.targetCombos) {
+        handleGameWin();
+      }
 
-        setIsProcessingMove(false);
-        console.log('Set isProcessingMove to false (match found)');
-      }, 300); // Quick response
+      setIsProcessingMove(false);
+      console.log('Set isProcessingMove to false (match found)');
     } else {
       console.log('No matches found, reverting swap');
       // No matches - revert the swap by swapping back
@@ -166,19 +177,14 @@ export const GameBoard: React.FC = () => {
         row2 !== undefined &&
         col2 !== undefined
       ) {
-        setTimeout(() => {
-          // Swap back to original positions
-          dispatchGame({
-            type: 'SWAP_TILES',
-            payload: {row1: row2, col1: col2, row2: row1, col2: col1},
-          });
-          setIsProcessingMove(false);
-          console.log('Set isProcessingMove to false (no matches)');
-        }, 300);
-      } else {
-        setIsProcessingMove(false);
-        console.log('Set isProcessingMove to false (no swap params)');
+        // Swap back to original positions immediately
+        dispatchGame({
+          type: 'SWAP_TILES',
+          payload: {row1: row2, col1: col2, row2: row1, col2: col1},
+        });
       }
+      setIsProcessingMove(false);
+      console.log('Set isProcessingMove to false (no matches)');
     }
   };
 

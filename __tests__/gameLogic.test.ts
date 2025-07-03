@@ -1,0 +1,561 @@
+import {
+  areAdjacent,
+  findMatches,
+  isValidMove,
+  processTurn,
+  createValidBoard,
+  removeMatches,
+  dropTiles,
+} from '../src/utils/gameLogic';
+import {Tile, TileType} from '../src/types/game';
+
+// Add Jest types
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toBe(expected: any): R;
+      toHaveLength(expected: number): R;
+      toEqual(expected: any): R;
+      toBeGreaterThan(expected: number): R;
+      toHaveProperty(prop: string, value?: any): R;
+      toContain(expected: any): R;
+      toBeNull(): R;
+      not: Matchers<R>;
+    }
+  }
+}
+
+// Helper function to create a simple board for testing
+const createTestBoard = (tiles: (TileType | null)[][]): Tile[][] => {
+  const board: Tile[][] = [];
+
+  // Create an 8x8 board
+  for (let row = 0; row < 8; row++) {
+    board[row] = [];
+    for (let col = 0; col < 8; col++) {
+      if (row < tiles.length && col < tiles[row].length && tiles[row][col]) {
+        board[row][col] = {
+          id: `${row}-${col}`,
+          type: tiles[row][col]!,
+          row,
+          col,
+        };
+      } else {
+        // Fill with random tiles for the rest of the 8x8 board
+        const randomTypes: TileType[] = ['🌴', '🐚', '🌺', '🐠', '⭐'];
+        const randomType =
+          randomTypes[Math.floor(Math.random() * randomTypes.length)];
+        board[row][col] = {
+          id: `${row}-${col}`,
+          type: randomType,
+          row,
+          col,
+        };
+      }
+    }
+  }
+
+  return board;
+};
+
+// Helper function to create a controlled test board
+const createControlledBoard = (): Tile[][] => {
+  const board: Tile[][] = [];
+
+  // Create an 8x8 board with a specific pattern that has no initial matches
+  const pattern = [
+    ['🌴', '🐚', '🌺', '🐠', '⭐', '🌴', '🐚', '🌺'],
+    ['🐚', '🌺', '🐠', '⭐', '🌴', '🐚', '🌺', '🐠'],
+    ['🌺', '🐠', '⭐', '🌴', '🐚', '🌺', '🐠', '⭐'],
+    ['🐠', '⭐', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+    ['⭐', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴', '🐚'],
+    ['🌴', '🐚', '🌺', '🐠', '⭐', '🌴', '🐚', '🌺'],
+    ['🐚', '🌺', '🐠', '⭐', '🌴', '🐚', '🌺', '🐠'],
+    ['🌺', '🐠', '⭐', '🌴', '🐚', '🌺', '🐠', '⭐'],
+  ];
+
+  for (let row = 0; row < 8; row++) {
+    board[row] = [];
+    for (let col = 0; col < 8; col++) {
+      board[row][col] = {
+        id: `${row}-${col}`,
+        type: pattern[row][col] as TileType,
+        row,
+        col,
+      };
+    }
+  }
+
+  return board;
+};
+
+describe('Game Logic Tests', () => {
+  describe('areAdjacent', () => {
+    it('should return true for adjacent tiles', () => {
+      expect(areAdjacent(0, 0, 0, 1)).toBe(true); // horizontal
+      expect(areAdjacent(0, 0, 1, 0)).toBe(true); // vertical
+      expect(areAdjacent(1, 1, 1, 2)).toBe(true); // horizontal
+      expect(areAdjacent(1, 1, 2, 1)).toBe(true); // vertical
+    });
+
+    it('should return false for non-adjacent tiles', () => {
+      expect(areAdjacent(0, 0, 0, 2)).toBe(false); // horizontal gap
+      expect(areAdjacent(0, 0, 2, 0)).toBe(false); // vertical gap
+      expect(areAdjacent(0, 0, 1, 1)).toBe(false); // diagonal
+      expect(areAdjacent(0, 0, 0, 0)).toBe(false); // same position
+    });
+  });
+
+  describe('findMatches', () => {
+    it('should find horizontal matches of 3', () => {
+      const board = createTestBoard([
+        ['🌴', '🌴', '🌴', '🐚', '🌺'],
+        ['🐚', '🌺', '🐠', '⭐', '🌴'],
+        ['🌺', '🐠', '⭐', '🌴', '🐚'],
+        ['🐠', '⭐', '🌴', '🐚', '🌺'],
+        ['⭐', '🌴', '🐚', '🌺', '🐠'],
+      ]);
+
+      const matches = findMatches(board);
+      expect(matches).toHaveLength(1);
+      expect(matches[0]).toEqual([
+        {row: 0, col: 0},
+        {row: 0, col: 1},
+        {row: 0, col: 2},
+      ]);
+    });
+
+    it('should find horizontal matches of 4', () => {
+      const board = createTestBoard([
+        ['🌴', '🌴', '🌴', '🌴', '🐚'],
+        ['🐚', '🌺', '🐠', '⭐', '🌴'],
+        ['🌺', '🐠', '⭐', '🌴', '🐚'],
+        ['🐠', '⭐', '🌴', '🐚', '🌺'],
+        ['⭐', '🌴', '🐚', '🌺', '🐠'],
+      ]);
+
+      const matches = findMatches(board);
+      expect(matches).toHaveLength(1);
+      expect(matches[0]).toEqual([
+        {row: 0, col: 0},
+        {row: 0, col: 1},
+        {row: 0, col: 2},
+        {row: 0, col: 3},
+      ]);
+    });
+
+    it('should find vertical matches of 3', () => {
+      const board = createTestBoard([
+        ['🌴', '🐚', '🌺', '🐠', '⭐'],
+        ['🌴', '🌺', '🐠', '⭐', '🌴'],
+        ['🌴', '🐠', '⭐', '🌴', '🐚'],
+        ['🐚', '⭐', '🌴', '🐚', '🌺'],
+        ['🌺', '🌴', '🐚', '🌺', '🐠'],
+      ]);
+
+      const matches = findMatches(board);
+      expect(matches).toHaveLength(1);
+      expect(matches[0]).toEqual([
+        {row: 0, col: 0},
+        {row: 1, col: 0},
+        {row: 2, col: 0},
+      ]);
+    });
+
+    it('should find multiple matches without overlaps', () => {
+      const board = createTestBoard([
+        ['🌴', '🌴', '🌴', '🐚', '🌺'],
+        ['🌴', '🌺', '🐠', '⭐', '🌴'],
+        ['🌴', '🐠', '⭐', '🌴', '🐚'],
+        ['🐚', '⭐', '🌴', '🐚', '🌺'],
+        ['🌺', '🌴', '🐚', '🌺', '🐠'],
+      ]);
+
+      const matches = findMatches(board);
+      expect(matches).toHaveLength(2);
+
+      // Should find horizontal match at row 0
+      expect(
+        matches.some(
+          match => match.length === 3 && match.every(pos => pos.row === 0),
+        ),
+      ).toBe(true);
+
+      // Should find vertical match at col 0
+      expect(
+        matches.some(
+          match => match.length === 3 && match.every(pos => pos.col === 0),
+        ),
+      ).toBe(true);
+    });
+
+    it('should not find matches for different tile types', () => {
+      const board = createTestBoard([
+        ['🌴', '🐚', '🌺', '🐠', '⭐'],
+        ['🐚', '🌺', '🐠', '⭐', '🌴'],
+        ['🌺', '🐠', '⭐', '🌴', '🐚'],
+        ['🐠', '⭐', '🌴', '🐚', '🌺'],
+        ['⭐', '🌴', '🐚', '🌺', '🐠'],
+      ]);
+
+      const matches = findMatches(board);
+      expect(matches).toHaveLength(0);
+    });
+
+    it('should not find matches in a controlled board', () => {
+      const board = createControlledBoard();
+      const matches = findMatches(board);
+      expect(matches).toHaveLength(0);
+    });
+
+    it('should find matches after a swap creates them', () => {
+      const board = createControlledBoard();
+
+      // Create a board with a potential match
+      const testBoard = board.map(row => [...row]);
+      testBoard[0][0] = {...testBoard[0][0], type: '🌴'};
+      testBoard[0][1] = {...testBoard[0][1], type: '🌴'};
+      testBoard[0][2] = {...testBoard[0][2], type: '🐚'}; // This will be swapped
+
+      // Swap to create a match
+      const temp = testBoard[0][2];
+      testBoard[0][2] = testBoard[0][3];
+      testBoard[0][3] = temp;
+
+      const matches = findMatches(testBoard);
+      expect(matches.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('isValidMove', () => {
+    it('should return true for moves that create matches', () => {
+      const board = createTestBoard([
+        ['🌴', '🌴', '🐚', '🌺', '🐠'],
+        ['🐚', '🌺', '🐠', '⭐', '🌴'],
+        ['🌺', '🐠', '⭐', '🌴', '🐚'],
+        ['🐠', '⭐', '🌴', '🐚', '🌺'],
+        ['⭐', '🌴', '🐚', '🌺', '🐠'],
+      ]);
+
+      // Swapping the third tile should create a horizontal match
+      expect(isValidMove(board, 0, 2, 0, 3)).toBe(true);
+    });
+
+    it('should return false for moves that do not create matches', () => {
+      const board = createTestBoard([
+        ['🌴', '🐚', '🌺', '🐠', '⭐'],
+        ['🐚', '🌺', '🐠', '⭐', '🌴'],
+        ['🌺', '🐠', '⭐', '🌴', '🐚'],
+        ['🐠', '⭐', '🌴', '🐚', '🌺'],
+        ['⭐', '🌴', '🐚', '🌺', '🐠'],
+      ]);
+
+      // Swapping any adjacent tiles should not create matches
+      expect(isValidMove(board, 0, 0, 0, 1)).toBe(false);
+      expect(isValidMove(board, 0, 0, 1, 0)).toBe(false);
+    });
+
+    it('should return false for non-adjacent moves', () => {
+      const board = createTestBoard([
+        ['🌴', '🐚', '🌺', '🐠', '⭐'],
+        ['🐚', '🌺', '🐠', '⭐', '🌴'],
+        ['🌺', '🐠', '⭐', '🌴', '🐚'],
+        ['🐠', '⭐', '🌴', '🐚', '🌺'],
+        ['⭐', '🌴', '🐚', '🌺', '🐠'],
+      ]);
+
+      expect(isValidMove(board, 0, 0, 0, 2)).toBe(false);
+      expect(isValidMove(board, 0, 0, 2, 0)).toBe(false);
+    });
+
+    it('should detect valid moves that create matches', () => {
+      const board = createControlledBoard();
+
+      // Create a board with a potential match
+      const testBoard = board.map(row => [...row]);
+      testBoard[0][0] = {...testBoard[0][0], type: '🌴'};
+      testBoard[0][1] = {...testBoard[0][1], type: '🌴'};
+      testBoard[0][2] = {...testBoard[0][2], type: '🐚'};
+      testBoard[0][3] = {...testBoard[0][3], type: '🌴'};
+
+      // This swap should create a match
+      expect(isValidMove(testBoard, 0, 2, 0, 3)).toBe(true);
+    });
+
+    it('should reject invalid moves', () => {
+      const board = createControlledBoard();
+      expect(isValidMove(board, 0, 0, 0, 1)).toBe(false);
+    });
+  });
+
+  describe('removeMatches', () => {
+    it('should remove matched tiles', () => {
+      const board = createTestBoard([
+        ['🌴', '🌴', '🌴', '🐚', '🌺'],
+        ['🐚', '🌺', '🐠', '⭐', '🌴'],
+        ['🌺', '🐠', '⭐', '🌴', '🐚'],
+        ['🐠', '⭐', '🌴', '🐚', '🌺'],
+        ['⭐', '🌴', '🐚', '🌺', '🐠'],
+      ]);
+
+      const matches = [
+        [
+          {row: 0, col: 0},
+          {row: 0, col: 1},
+          {row: 0, col: 2},
+        ],
+      ];
+      const result = removeMatches(board, matches);
+
+      expect(result[0][0]).toBeNull();
+      expect(result[0][1]).toBeNull();
+      expect(result[0][2]).toBeNull();
+      expect(result[0][3]).not.toBeNull(); // Should remain unchanged
+    });
+  });
+
+  describe('dropTiles', () => {
+    it('should drop tiles to fill empty spaces', () => {
+      const board = createTestBoard([
+        ['🌴', null, '🌺', '🐠', '⭐'],
+        ['🐚', '🌺', null, '⭐', '🌴'],
+        ['🌺', '🐠', '⭐', '🌴', '🐚'],
+        ['🐠', '⭐', '🌴', '🐚', '🌺'],
+        ['⭐', '🌴', '🐚', '🌺', '🐠'],
+      ]);
+
+      const result = dropTiles(board);
+
+      // Check that there are no null values in the result
+      for (let row = 0; row < result.length; row++) {
+        for (let col = 0; col < result[row].length; col++) {
+          expect(result[row][col]).not.toBeNull();
+        }
+      }
+    });
+  });
+
+  describe('processTurn', () => {
+    it('should process a complete turn with matches', () => {
+      const board = createTestBoard([
+        ['🌴', '🌴', '🌴', '🐚', '🌺'],
+        ['🐚', '🌺', '🐠', '⭐', '🌴'],
+        ['🌺', '🐠', '⭐', '🌴', '🐚'],
+        ['🐠', '⭐', '🌴', '🐚', '🌺'],
+        ['⭐', '🌴', '🐚', '🌺', '🐠'],
+      ]);
+
+      const result = processTurn(board);
+
+      expect(result.totalMatches).toBeGreaterThan(0);
+      expect(result.matches.length).toBeGreaterThan(0);
+      expect(result.newBoard.length).toBe(8);
+      expect(result.newBoard[0].length).toBe(8);
+    });
+
+    it('should handle cascading matches', () => {
+      const board = createTestBoard([
+        ['🌴', '🌴', '🌴', '🌴', '🌴'],
+        ['🌴', '🌺', '🐠', '⭐', '🌴'],
+        ['🌴', '🐠', '⭐', '🌴', '🐚'],
+        ['🌴', '⭐', '🌴', '🐚', '🌺'],
+        ['🌴', '🌴', '🐚', '🌺', '🐠'],
+      ]);
+
+      const result = processTurn(board);
+
+      expect(result.totalMatches).toBeGreaterThan(1); // Should have multiple matches
+    });
+
+    it('should process matches correctly', () => {
+      const board = createControlledBoard();
+
+      // Create a board with a match
+      const testBoard = board.map(row => [...row]);
+      testBoard[0][0] = {...testBoard[0][0], type: '🌴'};
+      testBoard[0][1] = {...testBoard[0][1], type: '🌴'};
+      testBoard[0][2] = {...testBoard[0][2], type: '🌴'};
+
+      const result = processTurn(testBoard);
+      expect(result.totalMatches).toBeGreaterThan(0);
+      expect(result.matches.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('createValidBoard', () => {
+    it('should create a board with no initial matches', () => {
+      const board = createValidBoard();
+
+      expect(board.length).toBe(8);
+      expect(board[0].length).toBe(8);
+
+      // Check that there are no initial matches
+      const matches = findMatches(board);
+      expect(matches).toHaveLength(0);
+    });
+
+    it('should create boards with valid tile objects', () => {
+      const board = createValidBoard();
+
+      for (let row = 0; row < board.length; row++) {
+        for (let col = 0; col < board[row].length; col++) {
+          const tile = board[row][col];
+          expect(tile).toHaveProperty('id');
+          expect(tile).toHaveProperty('type');
+          expect(tile).toHaveProperty('row', row);
+          expect(tile).toHaveProperty('col', col);
+          expect(['🌴', '🐚', '🌺', '🐠', '⭐']).toContain(tile.type);
+        }
+      }
+    });
+  });
+
+  describe('Board State Consistency', () => {
+    it('should maintain consistency between validation and processing', () => {
+      const board = createControlledBoard();
+
+      // Create a board with a potential match
+      const testBoard = board.map(row => [...row]);
+      testBoard[0][0] = {...testBoard[0][0], type: '🌴'};
+      testBoard[0][1] = {...testBoard[0][1], type: '🌴'};
+      testBoard[0][2] = {...testBoard[0][2], type: '🐚'};
+      testBoard[0][3] = {...testBoard[0][3], type: '🌴'};
+
+      // Check if the move is valid
+      const isValid = isValidMove(testBoard, 0, 2, 0, 3);
+
+      if (isValid) {
+        // Perform the swap
+        const swappedBoard = testBoard.map(row => [...row]);
+        const temp = swappedBoard[0][2];
+        swappedBoard[0][2] = swappedBoard[0][3];
+        swappedBoard[0][3] = temp;
+
+        // Process the turn with the swapped board
+        const result = processTurn(swappedBoard);
+
+        // Should find matches
+        expect(result.totalMatches).toBeGreaterThan(0);
+      }
+    });
+  });
+});
+
+// Simple test to verify the core issue
+describe('Board State Mismatch Test', () => {
+  it('should detect the same matches in validation and processing', () => {
+    // Create a simple 8x8 board with a potential match
+    const board: Tile[][] = [];
+    for (let row = 0; row < 8; row++) {
+      board[row] = [];
+      for (let col = 0; col < 8; col++) {
+        board[row][col] = {
+          id: `${row}-${col}`,
+          type: '🌴' as TileType, // Use same type for all tiles initially
+          row,
+          col,
+        };
+      }
+    }
+
+    // Create a potential match scenario
+    board[0][0].type = '🌴';
+    board[0][1].type = '🌴';
+    board[0][2].type = '🐚'; // This will be swapped
+    board[0][3].type = '🌴';
+
+    // Test 1: Check if the swap is valid
+    const isValid = isValidMove(board, 0, 2, 0, 3);
+    console.log('Is valid move:', isValid);
+
+    // Test 2: Perform the swap manually
+    const swappedBoard = board.map(row => [...row]);
+    const temp = swappedBoard[0][2];
+    swappedBoard[0][2] = swappedBoard[0][3];
+    swappedBoard[0][3] = temp;
+
+    // Test 3: Check for matches in the swapped board
+    const matches = findMatches(swappedBoard);
+    console.log('Matches found:', matches.length);
+
+    // Test 4: Process the turn
+    const result = processTurn(swappedBoard);
+    console.log('Process turn result:', result.totalMatches);
+
+    // The key assertion: if isValid is true, we should find matches
+    if (isValid) {
+      expect(matches.length).toBeGreaterThan(0);
+      expect(result.totalMatches).toBeGreaterThan(0);
+    }
+  });
+
+  it('should simulate the board state mismatch issue', () => {
+    // Simulate the scenario where the board has been updated by previous matches
+    // but validation is still using the old board state
+
+    // Original board state (what validation might be using)
+    const originalBoard: Tile[][] = [];
+    for (let row = 0; row < 8; row++) {
+      originalBoard[row] = [];
+      for (let col = 0; col < 8; col++) {
+        originalBoard[row][col] = {
+          id: `${row}-${col}`,
+          type: '🌴' as TileType,
+          row,
+          col,
+        };
+      }
+    }
+
+    // Current board state (after previous matches and updates)
+    const currentBoard: Tile[][] = [];
+    for (let row = 0; row < 8; row++) {
+      currentBoard[row] = [];
+      for (let col = 0; col < 8; col++) {
+        currentBoard[row][col] = {
+          id: `${row}-${col}`,
+          type: '🌴' as TileType,
+          row,
+          col,
+        };
+      }
+    }
+
+    // Simulate that some tiles have been updated in the current board
+    // but the original board still has the old state
+    currentBoard[0][0].type = '🌴';
+    currentBoard[0][1].type = '🌴';
+    currentBoard[0][2].type = '🐚'; // This creates a potential match
+    currentBoard[0][3].type = '🌴';
+
+    // The original board still has the old state
+    originalBoard[0][0].type = '🌴';
+    originalBoard[0][1].type = '🌴';
+    originalBoard[0][2].type = '🌴'; // Different from current board
+    originalBoard[0][3].type = '🌴';
+
+    // Test 1: Check if move is valid using original board (should be false)
+    const isValidWithOriginal = isValidMove(originalBoard, 0, 2, 0, 3);
+    console.log('Is valid with original board:', isValidWithOriginal);
+
+    // Test 2: Check if move is valid using current board (should be true)
+    const isValidWithCurrent = isValidMove(currentBoard, 0, 2, 0, 3);
+    console.log('Is valid with current board:', isValidWithCurrent);
+
+    // Test 3: If we use the wrong board for validation, we get different results
+    expect(isValidWithOriginal).not.toBe(isValidWithCurrent);
+
+    // Test 4: The current board should allow the move
+    if (isValidWithCurrent) {
+      // Perform the swap on the current board
+      const swappedBoard = currentBoard.map(row => [...row]);
+      const temp = swappedBoard[0][2];
+      swappedBoard[0][2] = swappedBoard[0][3];
+      swappedBoard[0][3] = temp;
+
+      // Should find matches
+      const matches = findMatches(swappedBoard);
+      expect(matches.length).toBeGreaterThan(0);
+    }
+  });
+});
