@@ -6,10 +6,6 @@ import {processTurn, isValidMove} from '../utils/gameLogic';
 
 export const GameBoard: React.FC = () => {
   const {gameState, dispatchGame, dispatchCurrency} = useGame();
-  const [selectedTile, setSelectedTile] = useState<{
-    row: number;
-    col: number;
-  } | null>(null);
   const [isProcessingMove, setIsProcessingMove] = useState(false);
   const [matchedTiles, setMatchedTiles] = useState<Set<string>>(new Set());
   const boardRef = useRef(gameState.board);
@@ -26,30 +22,8 @@ export const GameBoard: React.FC = () => {
     }
   }, [dispatchGame, gameState.board.length]);
 
-  const handleTilePress = (row: number, col: number) => {
-    if (isProcessingMove) return; // Prevent moves while processing
-
-    if (!selectedTile) {
-      // First tile selection
-      setSelectedTile({row, col});
-    } else {
-      // Second tile selection - attempt swap
-      const {row: row1, col: col1} = selectedTile;
-
-      if (row === row1 && col === col1) {
-        // Same tile clicked - deselect
-        setSelectedTile(null);
-        return;
-      }
-
-      // Check if tiles are adjacent
-      if (isValidMove(gameState.board, row1, col1, row, col)) {
-        performSwap(row1, col1, row, col);
-      } else {
-        // Invalid move - just deselect without alert
-        setSelectedTile(null);
-      }
-    }
+  const handleTilePress = (_row: number, _col: number) => {
+    // Do nothing on tap - only swipe works
   };
 
   const handleTileSwipe = (
@@ -57,7 +31,11 @@ export const GameBoard: React.FC = () => {
     col: number,
     direction: 'up' | 'down' | 'left' | 'right',
   ) => {
-    if (isProcessingMove) return; // Prevent moves while processing
+    console.log('Swipe attempted:', {row, col, direction, isProcessingMove});
+    if (isProcessingMove) {
+      console.log('Move in progress, ignoring swipe');
+      return; // Prevent moves while processing
+    }
 
     let targetRow = row;
     let targetCol = col;
@@ -80,14 +58,18 @@ export const GameBoard: React.FC = () => {
 
     // Check if target position is within bounds
     if (targetRow < 0 || targetRow >= 8 || targetCol < 0 || targetCol >= 8) {
+      console.log('Target position out of bounds');
       return;
     }
 
     // Check if the move is valid
+    console.log('Checking if move is valid:', {row, col, targetRow, targetCol});
     if (isValidMove(gameState.board, row, col, targetRow, targetCol)) {
+      console.log('Valid move, performing swap');
       performSwap(row, col, targetRow, targetCol);
+    } else {
+      console.log('Invalid move');
     }
-    // If invalid, do nothing - tiles will snap back automatically
   };
 
   const performSwap = (
@@ -96,8 +78,8 @@ export const GameBoard: React.FC = () => {
     row2: number,
     col2: number,
   ) => {
+    console.log('Setting isProcessingMove to true');
     setIsProcessingMove(true);
-    setSelectedTile(null);
     setMatchedTiles(new Set()); // Clear any existing matched tiles
 
     // Perform the swap immediately
@@ -106,11 +88,22 @@ export const GameBoard: React.FC = () => {
       payload: {row1, col1, row2, col2},
     });
 
-    // Process the turn after a short delay to show the swap
+    // Wait a bit longer to show the swap visually before processing
     setTimeout(() => {
-      // Use the current board state from the ref
-      processGameTurn(boardRef.current, row1, col1, row2, col2);
-    }, 500); // Increased delay to show the swap more clearly
+      // Get the current board state after the swap has been applied
+      const currentBoard = gameState.board.map(row => [...row]);
+      const temp = currentBoard[row1][col1];
+      currentBoard[row1][col1] = currentBoard[row2][col2];
+      currentBoard[row2][col2] = temp;
+
+      processGameTurn(currentBoard, row1, col1, row2, col2);
+    }, 400); // Increased delay to show the swap more clearly
+
+    // Safety timeout to force reset isProcessingMove if it gets stuck
+    setTimeout(() => {
+      console.log('Safety timeout - forcing isProcessingMove to false');
+      setIsProcessingMove(false);
+    }, 2000); // 2 second safety timeout
   };
 
   const processGameTurn = (
@@ -120,21 +113,24 @@ export const GameBoard: React.FC = () => {
     row2?: number,
     col2?: number,
   ) => {
+    console.log(
+      'Processing turn with board:',
+      board.map(row => row.map(tile => tile?.type || 'null')),
+    );
     const result = processTurn(board);
+    console.log('Turn result:', {
+      totalMatches: result.totalMatches,
+      matches: result.matches,
+    });
 
     if (result.totalMatches > 0) {
-      console.log('Matches found:', result.matches);
-      console.log('Total matches:', result.totalMatches);
-
-      // Show matched tiles fading out - use current board indices
+      // Show matched tiles fading out
       const matchedPositions = new Set<string>();
       result.matches.forEach(match => {
         match.forEach(pos => {
-          // Use the position directly from the match result
           matchedPositions.add(`${pos.row}-${pos.col}`);
         });
       });
-
       console.log(
         'Setting matched tiles to fade:',
         Array.from(matchedPositions),
@@ -159,7 +155,8 @@ export const GameBoard: React.FC = () => {
         }
 
         setIsProcessingMove(false);
-      }, 400); // Wait for fade animation to complete
+        console.log('Set isProcessingMove to false (match found)');
+      }, 300); // Quick response
     } else {
       console.log('No matches found, reverting swap');
       // No matches - revert the swap by swapping back
@@ -176,9 +173,11 @@ export const GameBoard: React.FC = () => {
             payload: {row1: row2, col1: col2, row2: row1, col2: col1},
           });
           setIsProcessingMove(false);
-        }, 500); // Increased delay to show the invalid move
+          console.log('Set isProcessingMove to false (no matches)');
+        }, 300);
       } else {
         setIsProcessingMove(false);
+        console.log('Set isProcessingMove to false (no swap params)');
       }
     }
   };
@@ -197,10 +196,6 @@ export const GameBoard: React.FC = () => {
         onPress: () => dispatchGame({type: 'RESET_GAME'}),
       },
     ]);
-  };
-
-  const isTileSelected = (row: number, col: number) => {
-    return selectedTile?.row === row && selectedTile?.col === col;
   };
 
   const isTileMatched = (row: number, col: number) => {
@@ -223,7 +218,6 @@ export const GameBoard: React.FC = () => {
               onSwipe={direction =>
                 handleTileSwipe(rowIndex, colIndex, direction)
               }
-              isSelected={isTileSelected(rowIndex, colIndex)}
               isMatched={isTileMatched(rowIndex, colIndex)}
             />
           ))}

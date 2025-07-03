@@ -6,7 +6,6 @@ interface TileProps {
   tile: TileType;
   onPress: () => void;
   onSwipe: (direction: 'up' | 'down' | 'left' | 'right') => void;
-  isSelected: boolean;
   isMatched?: boolean;
 }
 
@@ -14,7 +13,6 @@ export const Tile: React.FC<TileProps> = ({
   tile,
   onPress,
   onSwipe,
-  isSelected,
   isMatched = false,
 }) => {
   const scale = useRef(new Animated.Value(1)).current;
@@ -121,7 +119,6 @@ export const Tile: React.FC<TileProps> = ({
       {...panResponder.panHandlers}
       style={[
         styles.tile,
-        isSelected && styles.selected,
         {
           transform: [{scale}],
           opacity,
@@ -144,11 +141,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     margin: 1,
-  },
-  selected: {
-    borderColor: '#ffd700',
-    borderWidth: 3,
-    backgroundColor: '#fffacd',
   },
   tileText: {
     fontSize: 20,

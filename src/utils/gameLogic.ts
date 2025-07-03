@@ -20,6 +20,12 @@ export const findMatches = (
   board: Tile[][],
 ): Array<Array<{row: number; col: number}>> => {
   const matches: Array<Array<{row: number; col: number}>> = [];
+  const matchedPositions = new Set<string>();
+
+  console.log(
+    'Finding matches in board:',
+    board.map(row => row.map(tile => tile?.type || 'null')),
+  );
 
   // Check horizontal matches
   for (let row = 0; row < BOARD_SIZE; row++) {
@@ -29,6 +35,7 @@ export const findMatches = (
       const tile3 = board[row][col + 2];
 
       if (tile1.type === tile2.type && tile2.type === tile3.type) {
+        // Build the complete match first
         const match: Array<{row: number; col: number}> = [
           {row, col},
           {row, col: col + 1},
@@ -44,6 +51,21 @@ export const findMatches = (
           }
         }
 
+        // Check if ANY position in this match is already matched
+        const hasOverlap = match.some(pos =>
+          matchedPositions.has(`${pos.row}-${pos.col}`),
+        );
+        if (hasOverlap) {
+          console.log('Skipping horizontal match - has overlap:', match);
+          continue;
+        }
+
+        // Mark all positions in this match as matched
+        match.forEach(pos => {
+          matchedPositions.add(`${pos.row}-${pos.col}`);
+        });
+
+        console.log('Found horizontal match:', match);
         matches.push(match);
       }
     }
@@ -57,6 +79,7 @@ export const findMatches = (
       const tile3 = board[row + 2][col];
 
       if (tile1.type === tile2.type && tile2.type === tile3.type) {
+        // Build the complete match first
         const match: Array<{row: number; col: number}> = [
           {row, col},
           {row: row + 1, col},
@@ -72,11 +95,27 @@ export const findMatches = (
           }
         }
 
+        // Check if ANY position in this match is already matched
+        const hasOverlap = match.some(pos =>
+          matchedPositions.has(`${pos.row}-${pos.col}`),
+        );
+        if (hasOverlap) {
+          console.log('Skipping vertical match - has overlap:', match);
+          continue;
+        }
+
+        // Mark all positions in this match as matched
+        match.forEach(pos => {
+          matchedPositions.add(`${pos.row}-${pos.col}`);
+        });
+
+        console.log('Found vertical match:', match);
         matches.push(match);
       }
     }
   }
 
+  console.log('All matches found:', matches);
   return matches;
 };
 
