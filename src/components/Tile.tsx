@@ -1,5 +1,6 @@
 import React, {useRef, useEffect} from 'react';
-import {Text, StyleSheet, Animated, PanResponder} from 'react-native';
+import {Text, StyleSheet, PanResponder} from 'react-native';
+import * as Animatable from 'react-native-animatable';
 import {Tile as TileType} from '../types/game';
 
 interface TileProps {
@@ -19,67 +20,58 @@ export const Tile: React.FC<TileProps> = ({
   isFalling = false,
   fallDistance = 0,
 }) => {
-  const scale = useRef(new Animated.Value(1)).current;
-  const opacity = useRef(new Animated.Value(1)).current;
-  const translateY = useRef(new Animated.Value(0)).current;
+  const tileRef = useRef<Animatable.View>(null);
 
-  // Animate matched tiles fading out
+  // Professional explosion animation for matched tiles
   useEffect(() => {
-    if (isMatched) {
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      // Reset opacity for new tiles
-      opacity.setValue(1);
-    }
-  }, [isMatched, opacity]);
+    if (isMatched && tileRef.current) {
+      // Multi-stage explosion effect using built-in animations
+      const currentRef = tileRef.current;
 
-  // Animate falling tiles
+      // Stage 1: Pulse (explosion effect)
+      if (currentRef && currentRef.pulse) {
+        currentRef.pulse(300).then(() => {
+          // Stage 2: Fade out with scale down
+          if (currentRef && currentRef.fadeOut) {
+            currentRef.fadeOut(200);
+          }
+        });
+      }
+    }
+  }, [isMatched]);
+
+  // Animate falling tiles using react-native-animatable
   useEffect(() => {
-    if (isFalling && fallDistance > 0) {
-      // Start from above the current position (simulating the original position)
-      // Each tile position is 42 pixels (40 height + 2 margin)
-      translateY.setValue(-(fallDistance * 42));
+    if (isFalling && fallDistance > 0 && tileRef.current) {
+      const currentRef = tileRef.current;
 
-      // Fall animation to final position (current position in the board)
-      // Use consistent duration for cohesive column movement
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 800, // Slightly faster and consistent duration
-        useNativeDriver: true,
-      }).start();
-    } else {
-      // Reset position when not falling
-      translateY.setValue(0);
+      // Calculate the start position based on fall distance
+      const startY = -(fallDistance * 42); // Each tile position is 42 pixels
+
+      // Use custom animation for precise falling
+      if (currentRef && currentRef.animate) {
+        currentRef.animate(
+          {
+            0: {translateY: startY},
+            1: {translateY: 0},
+          },
+          800,
+        );
+      }
     }
-  }, [isFalling, fallDistance, translateY]);
+  }, [isFalling, fallDistance]);
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        // Scale up when touch starts
-        Animated.timing(scale, {
-          toValue: 1.1,
-          duration: 150,
-          useNativeDriver: true,
-        }).start();
+        // No animation on touch start to avoid conflicts
       },
       onPanResponderMove: () => {
-        // No visual movement during pan - just keep the scale
+        // No visual movement during pan
       },
       onPanResponderRelease: (_, gestureState) => {
-        // Reset scale
-        Animated.timing(scale, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }).start();
-
         const {dx, dy, vx, vy} = gestureState;
         const minSwipeDistance = 30;
         const minSwipeVelocity = 0.5;
@@ -112,46 +104,24 @@ export const Tile: React.FC<TileProps> = ({
         }
       },
       onPanResponderTerminate: () => {
-        // Reset on cancel
-        Animated.timing(scale, {
-          toValue: 1,
-          duration: 150,
-          useNativeDriver: true,
-        }).start();
+        // No animation on cancel
       },
     }),
   ).current;
 
   const handlePress = () => {
-    // Scale animation for tap
-    Animated.sequence([
-      Animated.timing(scale, {
-        toValue: 0.9,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scale, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    // Simple tap feedback without animation to avoid conflicts
     onPress();
   };
 
   return (
-    <Animated.View
+    <Animatable.View
+      ref={tileRef}
       {...panResponder.panHandlers}
-      style={[
-        styles.tile,
-        {
-          transform: [{scale}, {translateY}],
-          opacity,
-        },
-      ]}
+      style={styles.tile}
       onTouchEnd={handlePress}>
       <Text style={styles.tileText}>{tile.type}</Text>
-    </Animated.View>
+    </Animatable.View>
   );
 };
 

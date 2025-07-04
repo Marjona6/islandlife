@@ -9,10 +9,12 @@ import {
   dropTiles,
 } from '../utils/gameLogic';
 
-// Component to show the "holes" at the top where new tiles drop from
+// Enhanced Hole component with CSS gradients
 const ColumnHole: React.FC<{_colIndex: number}> = () => (
   <View style={styles.hole}>
-    <View style={styles.holeInner} />
+    <View style={styles.holeOuter}>
+      <View style={styles.holeInner} />
+    </View>
   </View>
 );
 
@@ -218,11 +220,6 @@ export const GameBoard: React.FC = () => {
       // Calculate which tiles need to fall for animation
       const falling = calculateFallingTiles(boardAfterRemoval, boardAfterDrop);
 
-      // Update to the final, valid board state immediately
-      dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterDrop});
-      currentBoardRef.current = boardAfterDrop;
-      dispatchGame({type: 'INCREMENT_COMBOS'});
-
       // Set falling state for all tiles at once to ensure synchronized animation
       setFallingTiles(falling);
 
@@ -231,10 +228,15 @@ export const GameBoard: React.FC = () => {
         boardAfterDrop.map(row => row.map(tile => tile?.type || 'null')),
       );
 
-      // Clear matched tiles after fade animation
+      // Update board state immediately but keep matched tiles visible for animation
+      dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterDrop});
+      currentBoardRef.current = boardAfterDrop;
+      dispatchGame({type: 'INCREMENT_COMBOS'});
+
+      // Clear matched tiles after explosion animation
       setTimeout(() => {
         setMatchedTiles(new Set());
-      }, 300);
+      }, 500); // Wait for explosion animation to complete
 
       // Clear falling animation after it completes
       setTimeout(() => {
@@ -315,10 +317,6 @@ export const GameBoard: React.FC = () => {
     ]);
   };
 
-  const isTileMatched = (row: number, col: number) => {
-    return matchedTiles.has(`${row}-${col}`);
-  };
-
   const getTileFallDistance = (row: number, col: number) => {
     return fallingTiles.get(`${row}-${col}`) || 0;
   };
@@ -340,7 +338,7 @@ export const GameBoard: React.FC = () => {
       }
 
       if (gaps.length > 0) {
-        // Calculate how many tiles were removed (this is the fall distance for the entire column)
+        // Calculate how many tiles were removed
         const tilesRemoved = gaps.length;
 
         // Mark all tiles in this column that need to fall
@@ -361,7 +359,7 @@ export const GameBoard: React.FC = () => {
 
             // If this tile moved down (fell), mark it for falling animation
             if (originalRow >= 0 && finalRow > originalRow) {
-              falling.set(`${finalRow}-${col}`, tilesRemoved);
+              falling.set(`${finalRow}-${col}`, finalRow - originalRow);
             }
 
             // If this is a new tile (not found in original board), it should fall from the top
@@ -389,31 +387,66 @@ export const GameBoard: React.FC = () => {
         ))}
       </View>
 
-      {/* Game board */}
-      {gameState.board.map((row, rowIndex) => (
-        <View key={rowIndex} style={styles.row}>
-          {row.map((tile, colIndex) =>
-            tile ? (
-              <Tile
-                key={tile.id}
-                tile={tile}
-                onPress={() => handleTilePress(rowIndex, colIndex)}
-                onSwipe={direction =>
-                  handleTileSwipe(rowIndex, colIndex, direction)
-                }
-                isMatched={isTileMatched(rowIndex, colIndex)}
-                isFalling={fallingTiles.has(`${rowIndex}-${colIndex}`)}
-                fallDistance={getTileFallDistance(rowIndex, colIndex)}
-              />
-            ) : (
+      {/* Clipping container to hide tiles above hole midpoints */}
+      <View style={styles.clippingContainer}>
+        {/* Game board */}
+        {gameState.board.map((row, rowIndex) => (
+          <View key={rowIndex} style={styles.row}>
+            {row.map((tile, colIndex) =>
+              tile ? (
+                <Tile
+                  key={tile.id}
+                  tile={tile}
+                  onPress={() => handleTilePress(rowIndex, colIndex)}
+                  onSwipe={direction =>
+                    handleTileSwipe(rowIndex, colIndex, direction)
+                  }
+                  isMatched={false} // Don't mark tiles as matched from board state
+                  isFalling={fallingTiles.has(`${rowIndex}-${colIndex}`)}
+                  fallDistance={getTileFallDistance(rowIndex, colIndex)}
+                />
+              ) : (
+                <View
+                  key={`empty-${rowIndex}-${colIndex}`}
+                  style={styles.emptyTile}
+                />
+              ),
+            )}
+          </View>
+        ))}
+
+        {/* Separate layer for matched tiles (exploding) */}
+        {Array.from(matchedTiles).map(matchKey => {
+          const [rowStr, colStr] = matchKey.split('-');
+          const row = parseInt(rowStr);
+          const col = parseInt(colStr);
+          const originalTile = gameState.board[row]?.[col];
+
+          if (originalTile) {
+            return (
               <View
-                key={`empty-${rowIndex}-${colIndex}`}
-                style={styles.emptyTile}
-              />
-            ),
-          )}
-        </View>
-      ))}
+                key={`matched-${originalTile.id}`}
+                style={[
+                  styles.matchedTileContainer,
+                  {
+                    top: row * 46, // 44 (tile height + margin) + 2 (border)
+                    left: col * 46,
+                  },
+                ]}>
+                <Tile
+                  tile={originalTile}
+                  onPress={() => {}} // No interaction for matched tiles
+                  onSwipe={() => {}} // No interaction for matched tiles
+                  isMatched={true}
+                  isFalling={false}
+                  fallDistance={0}
+                />
+              </View>
+            );
+          }
+          return null;
+        })}
+      </View>
     </View>
   );
 };
@@ -432,22 +465,50 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   hole: {
-    width: 44, // Match tile width (40 + 2*2 border)
+    width: 42, // Match tile width (40) + margin (2)
     height: 20,
     marginHorizontal: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  holeOuter: {
+    width: 42,
+    height: 20,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
   holeInner: {
-    width: 30,
-    height: 8,
-    backgroundColor: '#333',
-    borderRadius: 4,
+    width: 32,
+    height: 12,
+    backgroundColor: '#000',
+    borderRadius: 6,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.5,
+    shadowRadius: 2,
+    elevation: 3,
   },
   emptyTile: {
     width: 44,
     height: 44,
     margin: 1,
     backgroundColor: 'transparent',
+  },
+  clippingContainer: {
+    // Clip tiles so they only become visible when emerging from holes
+    // The top edge should align with the middle of the hole row (10px from top of holes)
+    marginTop: -10, // Move up to overlap with holes
+    overflow: 'hidden', // Hide tiles above the clipping boundary
+  },
+  matchedTileContainer: {
+    position: 'absolute',
+    zIndex: 10, // Ensure matched tiles appear above other tiles
   },
 });
