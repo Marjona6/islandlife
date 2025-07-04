@@ -33,7 +33,7 @@ const ColumnHole: React.FC<{_colIndex: number; isActive: boolean}> = ({
 
         {/* Inner hole with SVG for perfect shape */}
         <View style={styles.holeInnerContainer}>
-          <Svg width={36} height={16} style={styles.holeSvg}>
+          <Svg width={34} height={14} style={styles.holeSvg}>
             <Defs>
               <RadialGradient
                 id={`holeGradient${_colIndex}`}
@@ -47,10 +47,10 @@ const ColumnHole: React.FC<{_colIndex: number; isActive: boolean}> = ({
               </RadialGradient>
             </Defs>
             <Ellipse
-              cx={18}
-              cy={8}
-              rx={18}
-              ry={8}
+              cx={17}
+              cy={7}
+              rx={17}
+              ry={7}
               fill={`url(#holeGradient${_colIndex})`}
             />
           </Svg>
@@ -77,14 +77,19 @@ const FallingParticles: React.FC<{_colIndex: number; isActive: boolean}> = ({
 
   return (
     <View style={styles.particleContainer}>
-      {Array.from({length: 5}, (_, i) => (
+      {/* Dust particles that look more realistic */}
+      {Array.from({length: 6}, (_, i) => (
         <View
           key={i}
           style={[
             styles.particle,
             {
-              left: 8 + i * 6,
-              backgroundColor: ['#666', '#888', '#aaa', '#ccc', '#eee'][i],
+              left: 6 + i * 5,
+              top: 1 + (i % 3) * 1,
+              backgroundColor: ['#8B4513', '#A0522D', '#CD853F', '#D2691E'][
+                i % 4
+              ],
+              opacity: 0.4 + i * 0.1,
             },
           ]}
         />
@@ -513,8 +518,8 @@ export const GameBoard: React.FC = () => {
                 style={[
                   styles.matchedTileContainer,
                   {
-                    top: row * 46, // 44 (tile height + margin) + 2 (border)
-                    left: col * 46,
+                    top: row * 42, // 40 (tile height) + 2 (margin)
+                    left: col * 42,
                   },
                 ]}>
                 <Tile
@@ -550,21 +555,21 @@ const styles = StyleSheet.create({
   },
   holeContainer: {
     position: 'relative',
-    width: 42,
+    width: 42, // Match tile spacing exactly
     height: 20,
-    marginHorizontal: 1,
+    marginHorizontal: 0, // Remove margin to align perfectly
   },
   hole: {
     width: 42, // Match tile width (40) + margin (2)
     height: 20,
-    marginHorizontal: 1,
+    marginHorizontal: 0, // Remove margin to align perfectly
     justifyContent: 'center',
     alignItems: 'center',
   },
   holeOuter: {
-    width: 42,
-    height: 20,
-    borderRadius: 20,
+    width: 40, // Match tile width exactly
+    height: 18,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -575,8 +580,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   holeInnerContainer: {
-    width: 36,
-    height: 16,
+    width: 34,
+    height: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -592,28 +597,28 @@ const styles = StyleSheet.create({
   holeHighlight1: {
     position: 'absolute',
     top: 2,
-    left: 8,
-    width: 12,
-    height: 6,
+    left: 7,
+    width: 10,
+    height: 5,
     backgroundColor: '#444',
-    borderRadius: 6,
+    borderRadius: 5,
     opacity: 0.3,
   },
   holeHighlight2: {
     position: 'absolute',
-    top: 4,
-    left: 10,
-    width: 8,
-    height: 4,
+    top: 3,
+    left: 9,
+    width: 6,
+    height: 3,
     backgroundColor: '#666',
-    borderRadius: 4,
+    borderRadius: 3,
     opacity: 0.5,
   },
   holeHighlight3: {
     position: 'absolute',
-    top: 6,
-    left: 12,
-    width: 4,
+    top: 4,
+    left: 11,
+    width: 3,
     height: 2,
     backgroundColor: '#888',
     borderRadius: 2,
@@ -621,16 +626,16 @@ const styles = StyleSheet.create({
   },
   holeInnerShadow: {
     position: 'absolute',
-    top: 18,
+    top: 16,
     left: 0,
-    width: 36,
+    width: 34,
     height: 2,
     backgroundColor: '#000',
     borderRadius: 1,
   },
   emptyTile: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     margin: 1,
     backgroundColor: 'transparent',
   },
@@ -647,10 +652,10 @@ const styles = StyleSheet.create({
   holeGlow: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    width: 42,
-    height: 20,
-    borderRadius: 20,
+    left: 1, // Center the glow within the container (42-40)/2 = 1
+    width: 40,
+    height: 18,
+    borderRadius: 18,
     backgroundColor: 'transparent',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 3},
@@ -677,8 +682,8 @@ const styles = StyleSheet.create({
   },
   particle: {
     position: 'absolute',
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: 2,
+    height: 2,
+    borderRadius: 1,
   },
 });
