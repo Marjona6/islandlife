@@ -138,15 +138,18 @@ export const GameBoard: React.FC = () => {
     col1?: number,
     row2?: number,
     col2?: number,
+    cascadeCount: number = 0,
   ) => {
     console.log(
       'Processing turn with board:',
       board.map(row => row.map(tile => tile?.type || 'null')),
     );
 
-    // Reset isProcessingMove since swap animation is complete
-    setIsProcessingMove(false);
-    console.log('Set isProcessingMove to false (swap complete)');
+    // Reset isProcessingMove since swap animation is complete (only on first call)
+    if (cascadeCount === 0) {
+      setIsProcessingMove(false);
+      console.log('Set isProcessingMove to false (swap complete)');
+    }
 
     // First, find matches
     const matches = findMatches(board);
@@ -163,81 +166,63 @@ export const GameBoard: React.FC = () => {
           matchedPositions.add(`${pos.row}-${pos.col}`);
         });
       });
-      console.log(
-        'Setting matched tiles to fade:',
-        Array.from(matchedPositions),
-      );
       setMatchedTiles(matchedPositions);
 
       // Remove matched tiles first
       const boardAfterRemoval = removeMatches(board, matches);
-      console.log(
-        'Board after removal:',
-        boardAfterRemoval.map(row => row.map(tile => tile?.type || 'null')),
-      );
-
       // Calculate falling tiles by comparing current board to board after removal
       const oldBoard = boardRef.current;
       const falling = calculateFallingTiles(oldBoard, boardAfterRemoval);
-      console.log('Falling tiles detected:', Array.from(falling.entries()));
       setFallingTiles(falling);
-
       // Update board to show removed tiles
       dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterRemoval});
 
       // Wait for fade animation, then drop tiles
       setTimeout(() => {
         const boardAfterDrop = dropTiles(boardAfterRemoval);
-        console.log(
-          'Board after drop:',
-          boardAfterDrop.map(row => row.map(tile => tile?.type || 'null')),
-        );
-
-        // Update board with dropped tiles
         dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterDrop});
-
-        // Increment combos
         dispatchGame({type: 'INCREMENT_COMBOS'});
-
-        // Clear matched tiles tracking
         setMatchedTiles(new Set());
-
-        // Clear falling tiles after animation completes - give more time for the longer animation
         setTimeout(() => {
           setFallingTiles(new Map());
-        }, 2500); // Increased to match the 2-second fall + bounce animation
+        }, 2500);
 
         // Check for game win
         if (gameState.combos + matches.length >= gameState.targetCombos) {
           handleGameWin();
         }
 
-        // Reset match processing state - processing is complete
-        setIsProcessingMatches(false);
-        console.log(
-          'Set isProcessingMatches to false (match processing complete)',
-        );
+        // Recursively process next round of matches after drop
+        setTimeout(() => {
+          processGameTurn(
+            boardAfterDrop,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            cascadeCount + 1,
+          );
+        }, 350); // Wait for drop animation before next round
       }, 300);
     } else {
-      console.log('No matches found, reverting swap');
-      // No matches - revert the swap by swapping back
+      // No matches found, finish processing
       if (
+        cascadeCount === 0 &&
         row1 !== undefined &&
         col1 !== undefined &&
         row2 !== undefined &&
         col2 !== undefined
       ) {
-        // Swap back to original positions immediately
+        // No matches on first swap - revert the swap
         dispatchGame({
           type: 'SWAP_TILES',
           payload: {row1: row2, col1: col2, row2: row1, col2: col1},
         });
       }
-      // Reset both states since no matches were found
       setIsProcessingMove(false);
       setIsProcessingMatches(false);
       console.log(
-        'Set isProcessingMove and isProcessingMatches to false (no matches)',
+        'Set isProcessingMove and isProcessingMatches to false (no matches or cascades left)',
       );
     }
   };

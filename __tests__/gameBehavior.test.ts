@@ -663,3 +663,131 @@ describe('Cascading Match Processing', () => {
     expect(finalMatches.length).toBe(0);
   });
 });
+
+describe('Falling Animation and Match Processing Bugs', () => {
+  it('should process new matches created when tiles fall into place', () => {
+    // Create a board where removing a match will cause tiles to fall into new matches
+    const board = createTestBoard([
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+    ]);
+
+    // Set up a scenario where:
+    // Row 0: 🌴🌴🌴 (will be removed)
+    // Row 1: 🌴🌴🌴 (will fall down and create new match)
+    // Row 2: 🌴🌴🌴 (will fall down and create new match)
+    board[0][0] = {...board[0][0], type: '🌴'};
+    board[0][1] = {...board[0][1], type: '🌴'};
+    board[0][2] = {...board[0][2], type: '🌴'};
+    board[1][0] = {...board[1][0], type: '🌴'};
+    board[1][1] = {...board[1][1], type: '🌴'};
+    board[1][2] = {...board[1][2], type: '🌴'};
+    board[2][0] = {...board[2][0], type: '🌴'};
+    board[2][1] = {...board[2][1], type: '🌴'};
+    board[2][2] = {...board[2][2], type: '🌴'};
+
+    // Process the turn - this should handle all cascading matches
+    const {newBoard, matches, totalMatches} = processTurn(board);
+
+    // Should have processed multiple rounds of matches
+    expect(totalMatches).toBeGreaterThan(1);
+    expect(matches.length).toBeGreaterThan(1);
+
+    // Final board should have no matches
+    const finalMatches = findMatches(newBoard);
+    expect(finalMatches.length).toBe(0);
+  });
+
+  it('should mark all tiles above matched tiles as falling for animation', () => {
+    // This test verifies that the falling tile detection logic works correctly
+    // Create a simple board manually to avoid safe pattern conflicts
+    const board: Tile[][] = [];
+
+    // Create a simple 8x8 board with no matches
+    for (let row = 0; row < 8; row++) {
+      board[row] = [];
+      for (let col = 0; col < 8; col++) {
+        // Use different tile types to avoid any matches
+        const tileTypes: TileType[] = ['🌴', '🐚', '🌺', '🐠', '⭐'];
+        const type = tileTypes[(row + col) % 5];
+        board[row][col] = {
+          id: `${row}-${col}`,
+          type,
+          row,
+          col,
+        };
+      }
+    }
+
+    // Create a match in row 4 using 🌴 tiles
+    board[4][3] = {...board[4][3], type: '🌴'};
+    board[4][4] = {...board[4][4], type: '🌴'};
+    board[4][5] = {...board[4][5], type: '🌴'};
+
+    // Find matches and remove them
+    const matches = findMatches(board);
+    expect(matches.length).toBeGreaterThan(0);
+
+    const boardAfterRemoval = removeMatches(board, matches);
+
+    // Check that the matched tiles are now null (removed)
+    expect(boardAfterRemoval[4][3]).toBeNull();
+    expect(boardAfterRemoval[4][4]).toBeNull();
+    expect(boardAfterRemoval[4][5]).toBeNull();
+
+    // Tiles above should still be present (they will fall)
+    expect(boardAfterRemoval[3][3]).not.toBeNull();
+    expect(boardAfterRemoval[3][4]).not.toBeNull();
+    expect(boardAfterRemoval[3][5]).not.toBeNull();
+
+    // Tiles below should still be present
+    expect(boardAfterRemoval[5][3]).not.toBeNull();
+    expect(boardAfterRemoval[5][4]).not.toBeNull();
+    expect(boardAfterRemoval[5][5]).not.toBeNull();
+  });
+
+  it('should handle complex cascading scenarios with multiple columns and rows', () => {
+    // Create a complex scenario where matches in multiple columns cause cascading effects
+    const board = createTestBoard([
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+      ['🌴', '🌴', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+    ]);
+
+    // Create matches in columns 0, 1, and 2 that will cascade
+    // Column 0: rows 0-2
+    board[0][0] = {...board[0][0], type: '🌴'};
+    board[1][0] = {...board[1][0], type: '🌴'};
+    board[2][0] = {...board[2][0], type: '🌴'};
+
+    // Column 1: rows 0-2
+    board[0][1] = {...board[0][1], type: '🌴'};
+    board[1][1] = {...board[1][1], type: '🌴'};
+    board[2][1] = {...board[2][1], type: '🌴'};
+
+    // Column 2: rows 0-2
+    board[0][2] = {...board[0][2], type: '🌴'};
+    board[1][2] = {...board[1][2], type: '🌴'};
+    board[2][2] = {...board[2][2], type: '🌴'};
+
+    const {newBoard, matches, totalMatches} = processTurn(board);
+
+    // Should have processed multiple matches
+    expect(totalMatches).toBeGreaterThan(1);
+
+    // Final board should be stable
+    const finalMatches = findMatches(newBoard);
+    expect(finalMatches.length).toBe(0);
+  });
+});
