@@ -14,7 +14,7 @@ interface TileProps {
 
 export const Tile: React.FC<TileProps> = ({
   tile,
-  onPress,
+  onPress: _onPress,
   onSwipe,
   isMatched = false,
   isFalling = false,
@@ -89,6 +89,14 @@ export const Tile: React.FC<TileProps> = ({
         const minSwipeDistance = 30;
         const minSwipeVelocity = 0.5;
 
+        console.log('Tile swipe detected:', {
+          dx,
+          dy,
+          vx,
+          vy,
+          tileType: tile.type,
+        });
+
         // Determine swipe direction
         if (Math.abs(dx) > Math.abs(dy)) {
           // Horizontal swipe
@@ -97,10 +105,14 @@ export const Tile: React.FC<TileProps> = ({
             Math.abs(vx) > minSwipeVelocity
           ) {
             if (dx > 0) {
+              console.log('Swiping right');
               onSwipe('right');
             } else {
+              console.log('Swiping left');
               onSwipe('left');
             }
+          } else {
+            console.log('Horizontal swipe too small');
           }
         } else {
           // Vertical swipe
@@ -109,10 +121,14 @@ export const Tile: React.FC<TileProps> = ({
             Math.abs(vy) > minSwipeVelocity
           ) {
             if (dy > 0) {
+              console.log('Swiping down');
               onSwipe('down');
             } else {
+              console.log('Swiping up');
               onSwipe('up');
             }
+          } else {
+            console.log('Vertical swipe too small');
           }
         }
       },
@@ -122,17 +138,12 @@ export const Tile: React.FC<TileProps> = ({
     }),
   ).current;
 
-  const handlePress = () => {
-    // Simple tap feedback without animation to avoid conflicts
-    onPress();
-  };
-
   return (
     <Animatable.View
       ref={tileRef}
       {...panResponder.panHandlers}
       style={styles.tile}
-      onTouchEnd={handlePress}>
+      onTouchStart={() => console.log('Tile touched:', tile.type)}>
       <Text style={styles.tileText}>{tile.type}</Text>
     </Animatable.View>
   );

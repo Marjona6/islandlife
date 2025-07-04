@@ -16,7 +16,7 @@ interface GameScreenProps {
 
 export const GameScreen: React.FC<GameScreenProps> = ({onNavigateToBeach}) => {
   const {gameState, currency, initGame} = useGame();
-  const [variant] = useState<'sand' | 'sea'>('sea');
+  const [variant] = useState<'sand' | 'sea'>('sand');
 
   const handleNewGame = () => {
     Alert.alert('New Game', 'Start a new level?', [

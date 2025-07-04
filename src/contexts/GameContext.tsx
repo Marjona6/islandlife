@@ -224,57 +224,59 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({
     }
   };
 
-  const saveCurrency = useCallback(async () => {
-    try {
-      await AsyncStorage.setItem(
-        'islandlife_currency',
-        JSON.stringify(currency),
-      );
-    } catch (error) {
-      console.error('Error saving currency:', error);
-    }
-  }, [currency]);
-
-  const saveBeachItems = useCallback(async () => {
-    try {
-      await AsyncStorage.setItem(
-        'islandlife_beach_items',
-        JSON.stringify(beachItems),
-      );
-    } catch (error) {
-      console.error('Error saving beach items:', error);
-    }
-  }, [beachItems]);
-
   // Save data when it changes
   useEffect(() => {
+    const saveCurrency = async () => {
+      try {
+        await AsyncStorage.setItem(
+          'islandlife_currency',
+          JSON.stringify(currency),
+        );
+      } catch (error) {
+        console.error('Error saving currency:', error);
+      }
+    };
     saveCurrency();
-  }, [saveCurrency]);
+  }, [currency]);
 
   useEffect(() => {
+    const saveBeachItems = async () => {
+      try {
+        await AsyncStorage.setItem(
+          'islandlife_beach_items',
+          JSON.stringify(beachItems),
+        );
+      } catch (error) {
+        console.error('Error saving beach items:', error);
+      }
+    };
     saveBeachItems();
-  }, [saveBeachItems]);
+  }, [beachItems]);
 
-  const initGame = (variant: 'sand' | 'sea' = 'sand') => {
-    dispatchGame({type: 'INIT_BOARD', payload: {variant}});
-  };
+  const initGame = useCallback(
+    (variant: 'sand' | 'sea' = 'sand') => {
+      dispatchGame({type: 'INIT_BOARD', payload: {variant}});
+    },
+    [dispatchGame],
+  );
 
-  const swapTiles = (
-    row1: number,
-    col1: number,
-    row2: number,
-    col2: number,
-  ) => {
-    dispatchGame({type: 'SWAP_TILES', payload: {row1, col1, row2, col2}});
-  };
+  const swapTiles = useCallback(
+    (row1: number, col1: number, row2: number, col2: number) => {
+      dispatchGame({type: 'SWAP_TILES', payload: {row1, col1, row2, col2}});
+    },
+    [dispatchGame],
+  );
 
-  const purchaseBeachItem = (itemId: string) => {
-    const item = beachItems.find(i => i.id === itemId);
-    if (item && !item.isPurchased && currency.keys >= item.cost) {
-      dispatchCurrency({type: 'SPEND_KEYS', payload: item.cost});
-      dispatchBeach({type: 'PURCHASE_ITEM', payload: itemId});
-    }
-  };
+  const purchaseBeachItem = useCallback(
+    (itemId: string) => {
+      const item = beachItems.find(i => i.id === itemId);
+      if (item && !item.isPurchased && currency.keys >= item.cost) {
+        dispatchCurrency({type: 'SPEND_KEYS', payload: item.cost});
+        dispatchBeach({type: 'PURCHASE_ITEM', payload: itemId});
+      }
+    },
+    [beachItems, currency.keys, dispatchCurrency, dispatchBeach],
+  );
 
   const value: GameContextType = {
     gameState,

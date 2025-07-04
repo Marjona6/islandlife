@@ -140,17 +140,22 @@ export const GameBoard: React.FC<{variant?: 'sand' | 'sea'}> = ({
   const isProcessingMatchesRef = useRef(isProcessingMatches);
   isProcessingMatchesRef.current = isProcessingMatches;
 
+  // Track if board has been initialized
+  const hasInitializedRef = useRef(false);
+
   // Debug isProcessingMove state changes
   useEffect(() => {
     // console.log('isProcessingMove changed to:', isProcessingMove);
   }, [isProcessingMove]);
 
-  // Initialize game on mount
+  // Initialize game on mount if not already initialized
   useEffect(() => {
-    if (gameState.board.length === 0) {
+    if (!hasInitializedRef.current && gameState.board.length === 0) {
+      console.log('GameBoard: Initializing board');
+      hasInitializedRef.current = true;
       dispatchGame({type: 'INIT_BOARD', payload: {variant}});
     }
-  }, [dispatchGame, gameState.board.length, variant]);
+  }, [dispatchGame, variant]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTilePress = (_row: number, _col: number) => {
     // Do nothing on tap - only swipe works
