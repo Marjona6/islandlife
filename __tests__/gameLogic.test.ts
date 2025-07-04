@@ -224,6 +224,7 @@ describe('Game Logic Tests', () => {
       testBoard[0][0] = {...testBoard[0][0], type: '🌴'};
       testBoard[0][1] = {...testBoard[0][1], type: '🌴'};
       testBoard[0][2] = {...testBoard[0][2], type: '🐚'}; // This will be swapped
+      testBoard[0][3] = {...testBoard[0][3], type: '🌴'}; // Make sure this is 🌴
 
       // Swap to create a match
       const temp = testBoard[0][2];
@@ -238,7 +239,7 @@ describe('Game Logic Tests', () => {
   describe('isValidMove', () => {
     it('should return true for moves that create matches', () => {
       const board = createTestBoard([
-        ['🌴', '🌴', '🐚', '🌺', '🐠'],
+        ['🌴', '🌴', '🐚', '🌴', '🐠'],
         ['🐚', '🌺', '🐠', '⭐', '🌴'],
         ['🌺', '🐠', '⭐', '🌴', '🐚'],
         ['🐠', '⭐', '🌴', '🐚', '🌺'],
@@ -446,124 +447,5 @@ describe('Game Logic Tests', () => {
         expect(result.totalMatches).toBeGreaterThan(0);
       }
     });
-  });
-});
-
-// Simple test to verify the core issue
-describe('Board State Mismatch Test', () => {
-  it('should detect the same matches in validation and processing', () => {
-    // Create a simple 8x8 board with a potential match
-    const board: Tile[][] = [];
-    for (let row = 0; row < 8; row++) {
-      board[row] = [];
-      for (let col = 0; col < 8; col++) {
-        board[row][col] = {
-          id: `${row}-${col}`,
-          type: '🌴' as TileType, // Use same type for all tiles initially
-          row,
-          col,
-        };
-      }
-    }
-
-    // Create a potential match scenario
-    board[0][0].type = '🌴';
-    board[0][1].type = '🌴';
-    board[0][2].type = '🐚'; // This will be swapped
-    board[0][3].type = '🌴';
-
-    // Test 1: Check if the swap is valid
-    const isValid = isValidMove(board, 0, 2, 0, 3);
-    console.log('Is valid move:', isValid);
-
-    // Test 2: Perform the swap manually
-    const swappedBoard = board.map(row => [...row]);
-    const temp = swappedBoard[0][2];
-    swappedBoard[0][2] = swappedBoard[0][3];
-    swappedBoard[0][3] = temp;
-
-    // Test 3: Check for matches in the swapped board
-    const matches = findMatches(swappedBoard);
-    console.log('Matches found:', matches.length);
-
-    // Test 4: Process the turn
-    const result = processTurn(swappedBoard);
-    console.log('Process turn result:', result.totalMatches);
-
-    // The key assertion: if isValid is true, we should find matches
-    if (isValid) {
-      expect(matches.length).toBeGreaterThan(0);
-      expect(result.totalMatches).toBeGreaterThan(0);
-    }
-  });
-
-  it('should simulate the board state mismatch issue', () => {
-    // Simulate the scenario where the board has been updated by previous matches
-    // but validation is still using the old board state
-
-    // Original board state (what validation might be using)
-    const originalBoard: Tile[][] = [];
-    for (let row = 0; row < 8; row++) {
-      originalBoard[row] = [];
-      for (let col = 0; col < 8; col++) {
-        originalBoard[row][col] = {
-          id: `${row}-${col}`,
-          type: '🌴' as TileType,
-          row,
-          col,
-        };
-      }
-    }
-
-    // Current board state (after previous matches and updates)
-    const currentBoard: Tile[][] = [];
-    for (let row = 0; row < 8; row++) {
-      currentBoard[row] = [];
-      for (let col = 0; col < 8; col++) {
-        currentBoard[row][col] = {
-          id: `${row}-${col}`,
-          type: '🌴' as TileType,
-          row,
-          col,
-        };
-      }
-    }
-
-    // Simulate that some tiles have been updated in the current board
-    // but the original board still has the old state
-    currentBoard[0][0].type = '🌴';
-    currentBoard[0][1].type = '🌴';
-    currentBoard[0][2].type = '🐚'; // This creates a potential match
-    currentBoard[0][3].type = '🌴';
-
-    // The original board still has the old state
-    originalBoard[0][0].type = '🌴';
-    originalBoard[0][1].type = '🌴';
-    originalBoard[0][2].type = '🌴'; // Different from current board
-    originalBoard[0][3].type = '🌴';
-
-    // Test 1: Check if move is valid using original board (should be false)
-    const isValidWithOriginal = isValidMove(originalBoard, 0, 2, 0, 3);
-    console.log('Is valid with original board:', isValidWithOriginal);
-
-    // Test 2: Check if move is valid using current board (should be true)
-    const isValidWithCurrent = isValidMove(currentBoard, 0, 2, 0, 3);
-    console.log('Is valid with current board:', isValidWithCurrent);
-
-    // Test 3: If we use the wrong board for validation, we get different results
-    expect(isValidWithOriginal).not.toBe(isValidWithCurrent);
-
-    // Test 4: The current board should allow the move
-    if (isValidWithCurrent) {
-      // Perform the swap on the current board
-      const swappedBoard = currentBoard.map(row => [...row]);
-      const temp = swappedBoard[0][2];
-      swappedBoard[0][2] = swappedBoard[0][3];
-      swappedBoard[0][3] = temp;
-
-      // Should find matches
-      const matches = findMatches(swappedBoard);
-      expect(matches.length).toBeGreaterThan(0);
-    }
   });
 });

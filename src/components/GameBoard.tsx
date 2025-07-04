@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect} from 'react';
 import {View, StyleSheet, Alert} from 'react-native';
 import {Tile} from './Tile';
 import {useGame} from '../contexts/GameContext';
@@ -24,13 +24,6 @@ export const GameBoard: React.FC = () => {
   const [fallingTiles, setFallingTiles] = useState<Map<string, number>>(
     new Map(),
   );
-  const boardRef = useRef(gameState.board);
-
-  // Update ref when board changes
-  useEffect(() => {
-    boardRef.current = gameState.board;
-  }, [gameState.board]);
-
   // Debug isProcessingMove state changes
   useEffect(() => {
     // console.log('isProcessingMove changed to:', isProcessingMove);
@@ -91,7 +84,7 @@ export const GameBoard: React.FC = () => {
 
     // Check if the move is valid using current board state
     console.log('Checking if move is valid:', {row, col, targetRow, targetCol});
-    if (isValidMove(boardRef.current, row, col, targetRow, targetCol)) {
+    if (isValidMove(gameState.board, row, col, targetRow, targetCol)) {
       console.log('Valid move, initiating swap');
       // Set processing to true immediately when user initiates a valid swap
       setIsProcessingMove(true);
@@ -111,7 +104,7 @@ export const GameBoard: React.FC = () => {
     setMatchedTiles(new Set()); // Clear any existing matched tiles
 
     // Create the swapped board state immediately
-    const swappedBoard = boardRef.current.map(row => [...row]);
+    const swappedBoard = gameState.board.map(row => [...row]);
     const temp = swappedBoard[row1][col1];
     swappedBoard[row1][col1] = swappedBoard[row2][col2];
     swappedBoard[row2][col2] = temp;
@@ -170,39 +163,43 @@ export const GameBoard: React.FC = () => {
 
       // Remove matched tiles first
       const boardAfterRemoval = removeMatches(board, matches);
-      // Calculate falling tiles by comparing current board to board after removal
-      const oldBoard = boardRef.current;
-      const falling = calculateFallingTiles(oldBoard, boardAfterRemoval);
-      setFallingTiles(falling);
       // Update board to show removed tiles
       dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterRemoval});
 
-      // Wait for fade animation, then drop tiles
+      // Wait for fade animation, then handle falling tiles
       setTimeout(() => {
-        const boardAfterDrop = dropTiles(boardAfterRemoval);
-        dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterDrop});
+        // Calculate which tiles need to fall before actually dropping them
+        const falling = calculateFallingTiles(boardAfterRemoval);
+        setFallingTiles(falling);
+
+        // Keep the board with gaps for now, let animation show tiles falling
+        dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterRemoval});
         dispatchGame({type: 'INCREMENT_COMBOS'});
         setMatchedTiles(new Set());
+
+        // After falling animation completes, update to final positions
         setTimeout(() => {
+          const boardAfterDrop = dropTiles(boardAfterRemoval);
+          dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterDrop});
           setFallingTiles(new Map());
-        }, 2500);
 
-        // Check for game win
-        if (gameState.combos + matches.length >= gameState.targetCombos) {
-          handleGameWin();
-        }
+          // Check for game win
+          if (gameState.combos + matches.length >= gameState.targetCombos) {
+            handleGameWin();
+          }
 
-        // Recursively process next round of matches after drop
-        setTimeout(() => {
-          processGameTurn(
-            boardAfterDrop,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            cascadeCount + 1,
-          );
-        }, 350); // Wait for drop animation before next round
+          // Recursively process next round of matches after drop
+          setTimeout(() => {
+            processGameTurn(
+              boardAfterDrop,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              cascadeCount + 1,
+            );
+          }, 200); // Short delay before next round
+        }, 1000); // Wait for falling animation to complete
       }, 300);
     } else {
       // No matches found, finish processing
@@ -251,40 +248,28 @@ export const GameBoard: React.FC = () => {
     return fallingTiles.get(`${row}-${col}`) || 0;
   };
 
-  const calculateFallingTiles = (oldBoard: any[][], newBoard: any[][]) => {
+  const calculateFallingTiles = (boardAfterRemoval: any[][]) => {
     const falling = new Map<string, number>();
 
     // For each column, calculate falling tiles
     for (let col = 0; col < 8; col++) {
-      // Find the positions of tiles in the old board (before removal)
-      const oldTilePositions = [];
+      // Find gaps (null positions) in the column
+      const gaps: number[] = [];
       for (let row = 0; row < 8; row++) {
-        if (oldBoard[row][col] !== null) {
-          oldTilePositions.push(row);
+        if (boardAfterRemoval[row][col] === null) {
+          gaps.push(row);
         }
       }
 
-      // Find the positions of tiles in the new board (after drop)
-      const newTilePositions = [];
-      for (let row = 0; row < 8; row++) {
-        if (newBoard[row][col] !== null) {
-          newTilePositions.push(row);
-        }
-      }
-
-      // Calculate how many tiles were removed
-      const tilesRemoved = oldTilePositions.length - newTilePositions.length;
-
-      if (tilesRemoved > 0) {
-        // Only mark tiles that are in the top portion of the column as falling
-        // These are the tiles that moved down to fill the gaps
-        for (let row = 0; row < tilesRemoved; row++) {
-          if (newBoard[row][col] !== null) {
-            // This tile fell from above to fill a gap
-            falling.set(`${row}-${col}`, tilesRemoved);
-            console.log(
-              `Tile at row ${row}, col ${col} fell ${tilesRemoved} positions from above`,
-            );
+      if (gaps.length > 0) {
+        // For each tile that exists, calculate how far it needs to fall
+        for (let row = 0; row < 8; row++) {
+          if (boardAfterRemoval[row][col] !== null) {
+            // Count how many gaps are above this tile's current position
+            const gapsAbove = gaps.filter(gap => gap < row).length;
+            if (gapsAbove > 0) {
+              falling.set(`${row}-${col}`, gapsAbove);
+            }
           }
         }
       }

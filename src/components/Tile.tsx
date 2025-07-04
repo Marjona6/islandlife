@@ -39,41 +39,22 @@ export const Tile: React.FC<TileProps> = ({
 
   // Animate falling tiles
   useEffect(() => {
-    // console.log(`Tile ${tile.id} falling props:`, {isFalling, fallDistance});
     if (isFalling && fallDistance > 0) {
-      // console.log(
-      //   `Starting fall animation for tile ${tile.id} with distance ${fallDistance}`,
-      // );
-      // Start from much higher up to make the fall very visible
-      translateY.setValue(-(fallDistance * 46 + 20)); // 46 = tile height + margin, 20 extra for visibility
+      // Start from current position (tiles are already in their final positions in the board)
+      // but we want to show them falling from above
+      translateY.setValue(-(fallDistance * 46));
 
-      // Animate falling down with bounce effect - much slower and more dramatic
-      Animated.sequence([
-        // Initial fall - much slower
-        Animated.timing(translateY, {
-          toValue: 0,
-          duration: 2000, // 2 seconds for very visible falling
-          useNativeDriver: true,
-        }),
-        // Bounce effect - more pronounced
-        Animated.sequence([
-          Animated.timing(translateY, {
-            toValue: -8, // Bigger bounce up
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(translateY, {
-            toValue: 0, // Settle back down
-            duration: 200,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]).start();
+      // Fall animation to final position
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 1000,
+        useNativeDriver: true,
+      }).start();
     } else {
-      // Reset position for non-falling tiles
+      // Reset position when not falling
       translateY.setValue(0);
     }
-  }, [isFalling, fallDistance, translateY, tile.id]);
+  }, [isFalling, fallDistance, translateY]);
 
   const panResponder = useRef(
     PanResponder.create({
