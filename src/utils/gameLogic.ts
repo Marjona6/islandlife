@@ -20,7 +20,6 @@ export const findMatches = (
   board: Tile[][],
 ): Array<Array<{row: number; col: number}>> => {
   const matches: Array<Array<{row: number; col: number}>> = [];
-  const matchedPositions = new Set<string>();
 
   // console.log(
   //   'Finding matches in board:',
@@ -56,14 +55,7 @@ export const findMatches = (
           match.push({row, col: i});
           i++;
         }
-        // Only add if none of these positions are already matched
-        const hasOverlap = match.some(pos =>
-          matchedPositions.has(`${pos.row}-${pos.col}`),
-        );
-        if (!hasOverlap) {
-          match.forEach(pos => matchedPositions.add(`${pos.row}-${pos.col}`));
-          matches.push(match);
-        }
+        matches.push(match);
         col += match.length; // skip over the matched section
       } else {
         col++;
@@ -100,14 +92,7 @@ export const findMatches = (
           match.push({row: i, col});
           i++;
         }
-        // Only add if none of these positions are already matched
-        const hasOverlap = match.some(pos =>
-          matchedPositions.has(`${pos.row}-${pos.col}`),
-        );
-        if (!hasOverlap) {
-          match.forEach(pos => matchedPositions.add(`${pos.row}-${pos.col}`));
-          matches.push(match);
-        }
+        matches.push(match);
         row += match.length; // skip over the matched section
       } else {
         row++;
@@ -125,19 +110,15 @@ export const removeMatches = (
   matches: Array<Array<{row: number; col: number}>>,
 ): Tile[][] => {
   const newBoard = board.map(row => [...row]);
-  const matchedPositions = new Set<string>();
-
-  // Mark all matched positions
-  matches.forEach(match => {
-    match.forEach(pos => {
-      matchedPositions.add(`${pos.row}-${pos.col}`);
-    });
-  });
 
   // Remove matched tiles
   for (let row = 0; row < BOARD_SIZE; row++) {
     for (let col = 0; col < BOARD_SIZE; col++) {
-      if (matchedPositions.has(`${row}-${col}`)) {
+      if (
+        matches.some(match =>
+          match.some(pos => pos.row === row && pos.col === col),
+        )
+      ) {
         newBoard[row][col] = null as any;
       }
     }

@@ -19,6 +19,7 @@ const ColumnHole: React.FC<{_colIndex: number}> = () => (
 export const GameBoard: React.FC = () => {
   const {gameState, dispatchGame, dispatchCurrency} = useGame();
   const [isProcessingMove, setIsProcessingMove] = useState(false);
+  const [isProcessingMatches, setIsProcessingMatches] = useState(false);
   const [matchedTiles, setMatchedTiles] = useState<Set<string>>(new Set());
   const [fallingTiles, setFallingTiles] = useState<Map<string, number>>(
     new Map(),
@@ -51,9 +52,15 @@ export const GameBoard: React.FC = () => {
     col: number,
     direction: 'up' | 'down' | 'left' | 'right',
   ) => {
-    console.log('Swipe attempted:', {row, col, direction, isProcessingMove});
-    if (isProcessingMove) {
-      console.log('Move in progress, ignoring swipe');
+    console.log('Swipe attempted:', {
+      row,
+      col,
+      direction,
+      isProcessingMove,
+      isProcessingMatches,
+    });
+    if (isProcessingMove || isProcessingMatches) {
+      console.log('Move or match processing in progress, ignoring swipe');
       return; // Prevent moves while processing
     }
 
@@ -85,7 +92,9 @@ export const GameBoard: React.FC = () => {
     // Check if the move is valid using current board state
     console.log('Checking if move is valid:', {row, col, targetRow, targetCol});
     if (isValidMove(boardRef.current, row, col, targetRow, targetCol)) {
-      console.log('Valid move, performing swap');
+      console.log('Valid move, initiating swap');
+      // Set processing to true immediately when user initiates a valid swap
+      setIsProcessingMove(true);
       performSwap(row, col, targetRow, targetCol);
     } else {
       console.log('Invalid move');
@@ -98,8 +107,7 @@ export const GameBoard: React.FC = () => {
     row2: number,
     col2: number,
   ) => {
-    console.log('Setting isProcessingMove to true');
-    setIsProcessingMove(true);
+    console.log('Performing swap');
     setMatchedTiles(new Set()); // Clear any existing matched tiles
 
     // Create the swapped board state immediately
@@ -114,12 +122,14 @@ export const GameBoard: React.FC = () => {
       payload: {row1, col1, row2, col2},
     });
 
-    // Process the turn immediately with the swapped board
-    console.log(
-      'Processing turn with swapped board:',
-      swappedBoard.map(row => row.map(tile => tile?.type || 'null')),
-    );
-    processGameTurn(swappedBoard, row1, col1, row2, col2);
+    // Wait a short time for the swap animation to complete, then process the turn
+    setTimeout(() => {
+      console.log(
+        'Processing turn with swapped board:',
+        swappedBoard.map(row => row.map(tile => tile?.type || 'null')),
+      );
+      processGameTurn(swappedBoard, row1, col1, row2, col2);
+    }, 150); // Short delay for swap animation
   };
 
   const processGameTurn = (
@@ -134,11 +144,18 @@ export const GameBoard: React.FC = () => {
       board.map(row => row.map(tile => tile?.type || 'null')),
     );
 
+    // Reset isProcessingMove since swap animation is complete
+    setIsProcessingMove(false);
+    console.log('Set isProcessingMove to false (swap complete)');
+
     // First, find matches
     const matches = findMatches(board);
     console.log('Matches found:', matches);
 
     if (matches.length > 0) {
+      // Set match processing to true
+      setIsProcessingMatches(true);
+      console.log('Set isProcessingMatches to true');
       // Show matched tiles fading out
       const matchedPositions = new Set<string>();
       matches.forEach(match => {
@@ -195,9 +212,11 @@ export const GameBoard: React.FC = () => {
           handleGameWin();
         }
 
-        // Reset processing state - processing is complete
-        setIsProcessingMove(false);
-        console.log('Set isProcessingMove to false (match found)');
+        // Reset match processing state - processing is complete
+        setIsProcessingMatches(false);
+        console.log(
+          'Set isProcessingMatches to false (match processing complete)',
+        );
       }, 300);
     } else {
       console.log('No matches found, reverting swap');
@@ -214,8 +233,12 @@ export const GameBoard: React.FC = () => {
           payload: {row1: row2, col1: col2, row2: row1, col2: col1},
         });
       }
+      // Reset both states since no matches were found
       setIsProcessingMove(false);
-      console.log('Set isProcessingMove to false (no matches)');
+      setIsProcessingMatches(false);
+      console.log(
+        'Set isProcessingMove and isProcessingMatches to false (no matches)',
+      );
     }
   };
 
@@ -268,13 +291,14 @@ export const GameBoard: React.FC = () => {
       const tilesRemoved = oldTilePositions.length - newTilePositions.length;
 
       if (tilesRemoved > 0) {
-        // All tiles in this column should have a falling animation
-        // The fall distance is the number of tiles that were removed
-        for (let row = 0; row < 8; row++) {
+        // Only mark tiles that are in the top portion of the column as falling
+        // These are the tiles that moved down to fill the gaps
+        for (let row = 0; row < tilesRemoved; row++) {
           if (newBoard[row][col] !== null) {
+            // This tile fell from above to fill a gap
             falling.set(`${row}-${col}`, tilesRemoved);
             console.log(
-              `Tile at row ${row}, col ${col} fell ${tilesRemoved} positions`,
+              `Tile at row ${row}, col ${col} fell ${tilesRemoved} positions from above`,
             );
           }
         }
