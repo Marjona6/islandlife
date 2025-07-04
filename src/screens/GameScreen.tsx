@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -16,11 +16,12 @@ interface GameScreenProps {
 
 export const GameScreen: React.FC<GameScreenProps> = ({onNavigateToBeach}) => {
   const {gameState, currency, initGame} = useGame();
+  const [variant] = useState<'sand' | 'sea'>('sea');
 
   const handleNewGame = () => {
     Alert.alert('New Game', 'Start a new level?', [
       {text: 'Cancel', style: 'cancel'},
-      {text: 'Start', onPress: initGame},
+      {text: 'Start', onPress: () => initGame(variant)},
     ]);
   };
 
@@ -50,7 +51,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({onNavigateToBeach}) => {
 
       {/* Game Board */}
       <View style={styles.boardContainer}>
-        <GameBoard />
+        <GameBoard variant={variant} />
       </View>
 
       {/* Controls */}
@@ -137,6 +138,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
+    overflow: 'hidden',
   },
   controls: {
     padding: 20,

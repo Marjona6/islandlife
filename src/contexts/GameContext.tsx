@@ -173,7 +173,7 @@ interface GameContextType {
   dispatchGame: React.Dispatch<GameAction>;
   dispatchCurrency: React.Dispatch<CurrencyAction>;
   dispatchBeach: React.Dispatch<BeachAction>;
-  initGame: () => void;
+  initGame: (variant?: 'sand' | 'sea') => void;
   swapTiles: (row1: number, col1: number, row2: number, col2: number) => void;
   purchaseBeachItem: (itemId: string) => void;
 }
@@ -255,8 +255,8 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({
     saveBeachItems();
   }, [saveBeachItems]);
 
-  const initGame = () => {
-    dispatchGame({type: 'INIT_BOARD'});
+  const initGame = (variant: 'sand' | 'sea' = 'sand') => {
+    dispatchGame({type: 'INIT_BOARD', payload: {variant}});
   };
 
   const swapTiles = (

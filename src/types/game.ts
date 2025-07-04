@@ -1,14 +1,17 @@
-export type SandTileType = '🦀' | '🌴' | '⭐' | '🌺' | '🐚';
-export type SeaTileType = '🐙' | '🦐' | '🐠' | '🎣';
-export type TileType = SandTileType | SeaTileType;
-
 // Single source of truth for tile emojis
-export const SAND_TILE_EMOJIS: SandTileType[] = ['🦀', '🌴', '⭐', '🌺', '🐚'];
-export const SEA_TILE_EMOJIS: SeaTileType[] = ['🐙', '🦐', '🐠', '🎣'];
+export const SAND_TILE_EMOJIS = ['🦀', '🌴', '⭐', '🌺', '🐚'] as const;
+export const SEA_TILE_EMOJIS = ['🦑', '🦐', '🐡', '🪝'] as const; // 🦈🐟🐠🐡🎣
+
+// Type definitions derived from the constants
+export type SandTileType = (typeof SAND_TILE_EMOJIS)[number];
+export type SeaTileType = (typeof SEA_TILE_EMOJIS)[number];
+export type TileType = SandTileType | SeaTileType;
 
 // Helper function to get tile emojis by variant
 export const getTileEmojis = (variant: 'sand' | 'sea'): TileType[] => {
-  return variant === 'sand' ? SAND_TILE_EMOJIS : SEA_TILE_EMOJIS;
+  return (
+    variant === 'sand' ? [...SAND_TILE_EMOJIS] : [...SEA_TILE_EMOJIS]
+  ) as TileType[];
 };
 
 export interface Tile {
