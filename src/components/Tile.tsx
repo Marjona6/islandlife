@@ -40,11 +40,10 @@ export const Tile: React.FC<TileProps> = ({
   // Animate falling tiles
   useEffect(() => {
     if (isFalling && fallDistance > 0) {
-      // Start from current position (tiles are already in their final positions in the board)
-      // but we want to show them falling from above
+      // Start from above the current position (simulating the original position)
       translateY.setValue(-(fallDistance * 46));
 
-      // Fall animation to final position
+      // Fall animation to final position (current position in the board)
       Animated.timing(translateY, {
         toValue: 0,
         duration: 1000,

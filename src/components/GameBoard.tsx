@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {View, StyleSheet, Alert} from 'react-native';
 import {Tile} from './Tile';
 import {useGame} from '../contexts/GameContext';
@@ -24,6 +24,17 @@ export const GameBoard: React.FC = () => {
   const [fallingTiles, setFallingTiles] = useState<Map<string, number>>(
     new Map(),
   );
+
+  // Keep track of the most current board state
+  const currentBoardRef = useRef(gameState.board);
+  currentBoardRef.current = gameState.board;
+
+  // Keep track of processing state immediately
+  const isProcessingMoveRef = useRef(isProcessingMove);
+  isProcessingMoveRef.current = isProcessingMove;
+  const isProcessingMatchesRef = useRef(isProcessingMatches);
+  isProcessingMatchesRef.current = isProcessingMatches;
+
   // Debug isProcessingMove state changes
   useEffect(() => {
     // console.log('isProcessingMove changed to:', isProcessingMove);
@@ -45,15 +56,24 @@ export const GameBoard: React.FC = () => {
     col: number,
     direction: 'up' | 'down' | 'left' | 'right',
   ) => {
+    console.log('=== SWIPE ATTEMPT ===');
     console.log('Swipe attempted:', {
       row,
       col,
       direction,
-      isProcessingMove,
-      isProcessingMatches,
+      isProcessingMove: isProcessingMoveRef.current,
+      isProcessingMatches: isProcessingMatchesRef.current,
     });
-    if (isProcessingMove || isProcessingMatches) {
-      console.log('Move or match processing in progress, ignoring swipe');
+    console.log(
+      'Current board state:',
+      currentBoardRef.current.map(row => row.map(tile => tile?.type || 'null')),
+    );
+
+    if (isProcessingMoveRef.current || isProcessingMatchesRef.current) {
+      console.log('Move or match processing in progress, ignoring swipe', {
+        isProcessingMove: isProcessingMoveRef.current,
+        isProcessingMatches: isProcessingMatchesRef.current,
+      });
       return; // Prevent moves while processing
     }
 
@@ -82,16 +102,43 @@ export const GameBoard: React.FC = () => {
       return;
     }
 
+    // Log the board and tile types at the swipe location
+    console.log(
+      'handleTileSwipe: board at swipe:',
+      currentBoardRef.current.map(row => row.map(tile => tile?.type || 'null')),
+    );
+    console.log(
+      'handleTileSwipe: tile at swipe:',
+      currentBoardRef.current[row]?.[col]?.type,
+      'target:',
+      currentBoardRef.current[targetRow]?.[targetCol]?.type,
+    );
+
     // Check if the move is valid using current board state
     console.log('Checking if move is valid:', {row, col, targetRow, targetCol});
-    if (isValidMove(gameState.board, row, col, targetRow, targetCol)) {
+    console.log(
+      'Current board state:',
+      currentBoardRef.current.map(row => row.map(tile => tile?.type || 'null')),
+    );
+
+    // Use the most current board state for validation
+    const currentBoard = currentBoardRef.current;
+    console.log(
+      'About to call isValidMove with board:',
+      currentBoard.map(row => row.map(tile => tile?.type || 'null')),
+    );
+    const isValid = isValidMove(currentBoard, row, col, targetRow, targetCol);
+    console.log('isValidMove result:', isValid);
+    if (isValid) {
       console.log('Valid move, initiating swap');
       // Set processing to true immediately when user initiates a valid swap
       setIsProcessingMove(true);
+      isProcessingMoveRef.current = true;
       performSwap(row, col, targetRow, targetCol);
     } else {
       console.log('Invalid move');
     }
+    console.log('=== END SWIPE ATTEMPT ===');
   };
 
   const performSwap = (
@@ -104,7 +151,7 @@ export const GameBoard: React.FC = () => {
     setMatchedTiles(new Set()); // Clear any existing matched tiles
 
     // Create the swapped board state immediately
-    const swappedBoard = gameState.board.map(row => [...row]);
+    const swappedBoard = currentBoardRef.current.map(row => [...row]);
     const temp = swappedBoard[row1][col1];
     swappedBoard[row1][col1] = swappedBoard[row2][col2];
     swappedBoard[row2][col2] = temp;
@@ -141,6 +188,7 @@ export const GameBoard: React.FC = () => {
     // Reset isProcessingMove since swap animation is complete (only on first call)
     if (cascadeCount === 0) {
       setIsProcessingMove(false);
+      isProcessingMoveRef.current = false;
       console.log('Set isProcessingMove to false (swap complete)');
     }
 
@@ -151,7 +199,9 @@ export const GameBoard: React.FC = () => {
     if (matches.length > 0) {
       // Set match processing to true
       setIsProcessingMatches(true);
+      isProcessingMatchesRef.current = true;
       console.log('Set isProcessingMatches to true');
+
       // Show matched tiles fading out
       const matchedPositions = new Set<string>();
       matches.forEach(match => {
@@ -161,46 +211,54 @@ export const GameBoard: React.FC = () => {
       });
       setMatchedTiles(matchedPositions);
 
-      // Remove matched tiles first
+      // Calculate the final board state immediately (no intermediate gappy state)
       const boardAfterRemoval = removeMatches(board, matches);
-      // Update board to show removed tiles
-      dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterRemoval});
+      const boardAfterDrop = dropTiles(boardAfterRemoval);
 
-      // Wait for fade animation, then handle falling tiles
+      // Calculate which tiles need to fall for animation
+      const falling = calculateFallingTiles(boardAfterRemoval, boardAfterDrop);
+      setFallingTiles(falling);
+
+      // Update to the final, valid board state immediately
+      dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterDrop});
+      currentBoardRef.current = boardAfterDrop;
+      dispatchGame({type: 'INCREMENT_COMBOS'});
+
+      console.log(
+        'Updated to final board state:',
+        boardAfterDrop.map(row => row.map(tile => tile?.type || 'null')),
+      );
+
+      // Clear matched tiles after fade animation
       setTimeout(() => {
-        // Calculate which tiles need to fall before actually dropping them
-        const falling = calculateFallingTiles(boardAfterRemoval);
-        setFallingTiles(falling);
-
-        // Keep the board with gaps for now, let animation show tiles falling
-        dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterRemoval});
-        dispatchGame({type: 'INCREMENT_COMBOS'});
         setMatchedTiles(new Set());
-
-        // After falling animation completes, update to final positions
-        setTimeout(() => {
-          const boardAfterDrop = dropTiles(boardAfterRemoval);
-          dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterDrop});
-          setFallingTiles(new Map());
-
-          // Check for game win
-          if (gameState.combos + matches.length >= gameState.targetCombos) {
-            handleGameWin();
-          }
-
-          // Recursively process next round of matches after drop
-          setTimeout(() => {
-            processGameTurn(
-              boardAfterDrop,
-              undefined,
-              undefined,
-              undefined,
-              undefined,
-              cascadeCount + 1,
-            );
-          }, 200); // Short delay before next round
-        }, 1000); // Wait for falling animation to complete
       }, 300);
+
+      // Clear falling animation after it completes
+      setTimeout(() => {
+        setFallingTiles(new Map());
+      }, 1000);
+
+      // Check for game win
+      if (gameState.combos + matches.length >= gameState.targetCombos) {
+        handleGameWin();
+      }
+
+      // Recursively process next round of matches after animations
+      setTimeout(() => {
+        console.log(
+          'Starting next round of matches, cascade count:',
+          cascadeCount + 1,
+        );
+        processGameTurn(
+          boardAfterDrop,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          cascadeCount + 1,
+        );
+      }, 1200); // Wait for animations to complete before next round
     } else {
       // No matches found, finish processing
       if (
@@ -218,9 +276,24 @@ export const GameBoard: React.FC = () => {
       }
       setIsProcessingMove(false);
       setIsProcessingMatches(false);
+      isProcessingMoveRef.current = false;
+      isProcessingMatchesRef.current = false;
+      console.log('=== PROCESSING COMPLETE ===');
       console.log(
         'Set isProcessingMove and isProcessingMatches to false (no matches or cascades left)',
       );
+      console.log(
+        'Final board state:',
+        currentBoardRef.current.map(row =>
+          row.map(tile => tile?.type || 'null'),
+        ),
+      );
+      console.log('=== END PROCESSING ===');
+
+      // Add a small delay to ensure state updates have propagated
+      setTimeout(() => {
+        console.log('State reset complete - ready for new moves');
+      }, 50);
     }
   };
 
@@ -248,28 +321,34 @@ export const GameBoard: React.FC = () => {
     return fallingTiles.get(`${row}-${col}`) || 0;
   };
 
-  const calculateFallingTiles = (boardAfterRemoval: any[][]) => {
+  const calculateFallingTiles = (
+    boardAfterRemoval: any[][],
+    boardAfterDrop: any[][],
+  ) => {
     const falling = new Map<string, number>();
 
-    // For each column, calculate falling tiles
+    // For each column, find tiles that moved down
     for (let col = 0; col < 8; col++) {
-      // Find gaps (null positions) in the column
-      const gaps: number[] = [];
-      for (let row = 0; row < 8; row++) {
-        if (boardAfterRemoval[row][col] === null) {
-          gaps.push(row);
-        }
-      }
-
-      if (gaps.length > 0) {
-        // For each tile that exists, calculate how far it needs to fall
-        for (let row = 0; row < 8; row++) {
-          if (boardAfterRemoval[row][col] !== null) {
-            // Count how many gaps are above this tile's current position
-            const gapsAbove = gaps.filter(gap => gap < row).length;
-            if (gapsAbove > 0) {
-              falling.set(`${row}-${col}`, gapsAbove);
+      // Find tiles in the final board and trace their movement
+      for (let finalRow = 0; finalRow < 8; finalRow++) {
+        const finalTile = boardAfterDrop[finalRow][col];
+        if (finalTile) {
+          // Find where this tile was in the board after removal
+          let originalRow = -1;
+          for (let row = 0; row < 8; row++) {
+            if (
+              boardAfterRemoval[row][col] &&
+              boardAfterRemoval[row][col].id === finalTile.id
+            ) {
+              originalRow = row;
+              break;
             }
+          }
+
+          // If the tile moved down, calculate the fall distance
+          if (originalRow >= 0 && finalRow > originalRow) {
+            const fallDistance = finalRow - originalRow;
+            falling.set(`${finalRow}-${col}`, fallDistance);
           }
         }
       }
