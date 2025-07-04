@@ -686,9 +686,10 @@ const styles = StyleSheet.create({
   },
   clippingContainer: {
     // Clip tiles so they only become visible when emerging from holes
-    // The top edge should align with the middle of the hole row (10px from top of holes)
-    marginTop: -10, // Move up to overlap with holes
+    // The top edge should align with the bottom edge of the holes (20px from top of holes)
+    marginTop: -20, // Move up to overlap with holes completely
     overflow: 'hidden', // Hide tiles above the clipping boundary
+    paddingTop: 20, // Add padding to push content down so it starts at hole edge
   },
   matchedTileContainer: {
     position: 'absolute',
