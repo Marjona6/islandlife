@@ -185,10 +185,10 @@ export const GameBoard: React.FC = () => {
         // Clear matched tiles tracking
         setMatchedTiles(new Set());
 
-        // Clear falling tiles after animation completes
+        // Clear falling tiles after animation completes - give more time for the longer animation
         setTimeout(() => {
           setFallingTiles(new Map());
-        }, 1500);
+        }, 2500); // Increased to match the 2-second fall + bounce animation
 
         // Check for game win
         if (gameState.combos + matches.length >= gameState.targetCombos) {
@@ -246,36 +246,37 @@ export const GameBoard: React.FC = () => {
   const calculateFallingTiles = (oldBoard: any[][], newBoard: any[][]) => {
     const falling = new Map<string, number>();
 
-    // For each column, track how tiles moved down
+    // For each column, calculate falling tiles
     for (let col = 0; col < 8; col++) {
-      // Find all non-null tiles in the old board for this column
-      const oldTiles = [];
+      // Find the positions of tiles in the old board (before removal)
+      const oldTilePositions = [];
       for (let row = 0; row < 8; row++) {
         if (oldBoard[row][col] !== null) {
-          oldTiles.push({row, tile: oldBoard[row][col]});
+          oldTilePositions.push(row);
         }
       }
 
-      // Find all non-null tiles in the new board for this column
-      const newTiles = [];
+      // Find the positions of tiles in the new board (after drop)
+      const newTilePositions = [];
       for (let row = 0; row < 8; row++) {
         if (newBoard[row][col] !== null) {
-          newTiles.push({row, tile: newBoard[row][col]});
+          newTilePositions.push(row);
         }
       }
 
-      // Compare tiles to see which ones moved down
-      for (let i = 0; i < Math.min(oldTiles.length, newTiles.length); i++) {
-        const oldTile = oldTiles[i];
-        const newTile = newTiles[i];
+      // Calculate how many tiles were removed
+      const tilesRemoved = oldTilePositions.length - newTilePositions.length;
 
-        // If the tile moved down (new row > old row), it's falling
-        if (newTile.row > oldTile.row) {
-          const fallDistance = newTile.row - oldTile.row;
-          falling.set(`${newTile.row}-${col}`, fallDistance);
-          console.log(
-            `Tile fell from row ${oldTile.row} to row ${newTile.row} (distance: ${fallDistance})`,
-          );
+      if (tilesRemoved > 0) {
+        // All tiles in this column should have a falling animation
+        // The fall distance is the number of tiles that were removed
+        for (let row = 0; row < 8; row++) {
+          if (newBoard[row][col] !== null) {
+            falling.set(`${row}-${col}`, tilesRemoved);
+            console.log(
+              `Tile at row ${row}, col ${col} fell ${tilesRemoved} positions`,
+            );
+          }
         }
       }
     }

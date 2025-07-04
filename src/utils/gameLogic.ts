@@ -22,100 +22,100 @@ export const findMatches = (
   const matches: Array<Array<{row: number; col: number}>> = [];
   const matchedPositions = new Set<string>();
 
-  console.log(
-    'Finding matches in board:',
-    board.map(row => row.map(tile => tile?.type || 'null')),
-  );
+  // console.log(
+  //   'Finding matches in board:',
+  //   board.map(row => row.map(tile => tile?.type || 'null')),
+  // );
 
   // Check horizontal matches
   for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE - 2; col++) {
+    let col = 0;
+    while (col < BOARD_SIZE - 2) {
       const tile1 = board[row][col];
       const tile2 = board[row][col + 1];
       const tile3 = board[row][col + 2];
-
-      if (tile1.type === tile2.type && tile2.type === tile3.type) {
-        // Build the complete match first
+      if (
+        tile1 &&
+        tile2 &&
+        tile3 &&
+        tile1.type === tile2.type &&
+        tile2.type === tile3.type
+      ) {
+        // Start a new match
         const match: Array<{row: number; col: number}> = [
           {row, col},
           {row, col: col + 1},
           {row, col: col + 2},
         ];
-
-        // Extend match to the right
-        for (let i = col + 3; i < BOARD_SIZE; i++) {
-          if (board[row][i].type === tile1.type) {
-            match.push({row, col: i});
-          } else {
-            break;
-          }
+        let i = col + 3;
+        while (
+          i < BOARD_SIZE &&
+          board[row][i] &&
+          board[row][i].type === tile1.type
+        ) {
+          match.push({row, col: i});
+          i++;
         }
-
-        // Check if ANY position in this match is already matched
+        // Only add if none of these positions are already matched
         const hasOverlap = match.some(pos =>
           matchedPositions.has(`${pos.row}-${pos.col}`),
         );
-        if (hasOverlap) {
-          console.log('Skipping horizontal match - has overlap:', match);
-          continue;
+        if (!hasOverlap) {
+          match.forEach(pos => matchedPositions.add(`${pos.row}-${pos.col}`));
+          matches.push(match);
         }
-
-        // Mark all positions in this match as matched
-        match.forEach(pos => {
-          matchedPositions.add(`${pos.row}-${pos.col}`);
-        });
-
-        console.log('Found horizontal match:', match);
-        matches.push(match);
+        col += match.length; // skip over the matched section
+      } else {
+        col++;
       }
     }
   }
 
   // Check vertical matches
-  for (let row = 0; row < BOARD_SIZE - 2; row++) {
-    for (let col = 0; col < BOARD_SIZE; col++) {
+  for (let col = 0; col < BOARD_SIZE; col++) {
+    let row = 0;
+    while (row < BOARD_SIZE - 2) {
       const tile1 = board[row][col];
       const tile2 = board[row + 1][col];
       const tile3 = board[row + 2][col];
-
-      if (tile1.type === tile2.type && tile2.type === tile3.type) {
-        // Build the complete match first
+      if (
+        tile1 &&
+        tile2 &&
+        tile3 &&
+        tile1.type === tile2.type &&
+        tile2.type === tile3.type
+      ) {
+        // Start a new match
         const match: Array<{row: number; col: number}> = [
           {row, col},
           {row: row + 1, col},
           {row: row + 2, col},
         ];
-
-        // Extend match downward
-        for (let i = row + 3; i < BOARD_SIZE; i++) {
-          if (board[i][col].type === tile1.type) {
-            match.push({row: i, col});
-          } else {
-            break;
-          }
+        let i = row + 3;
+        while (
+          i < BOARD_SIZE &&
+          board[i][col] &&
+          board[i][col].type === tile1.type
+        ) {
+          match.push({row: i, col});
+          i++;
         }
-
-        // Check if ANY position in this match is already matched
+        // Only add if none of these positions are already matched
         const hasOverlap = match.some(pos =>
           matchedPositions.has(`${pos.row}-${pos.col}`),
         );
-        if (hasOverlap) {
-          console.log('Skipping vertical match - has overlap:', match);
-          continue;
+        if (!hasOverlap) {
+          match.forEach(pos => matchedPositions.add(`${pos.row}-${pos.col}`));
+          matches.push(match);
         }
-
-        // Mark all positions in this match as matched
-        match.forEach(pos => {
-          matchedPositions.add(`${pos.row}-${pos.col}`);
-        });
-
-        console.log('Found vertical match:', match);
-        matches.push(match);
+        row += match.length; // skip over the matched section
+      } else {
+        row++;
       }
     }
   }
 
-  console.log('All matches found:', matches);
+  // console.log('All matches found:', matches);
   return matches;
 };
 
@@ -276,32 +276,67 @@ export const createValidBoard = (): Tile[][] => {
     board[row] = [];
     for (let col = 0; col < BOARD_SIZE; col++) {
       let randomType: TileType;
+      let attempts = 0;
+      const maxAttempts = 10;
 
-      // Avoid creating obvious matches
-      if (
-        col >= 2 &&
-        board[row][col - 1] &&
-        board[row][col - 2] &&
-        board[row][col - 1].type === board[row][col - 2].type
-      ) {
-        // Don't use the same type as the last two tiles
-        const avoidType = board[row][col - 1].type;
-        const otherTypes = TILE_TYPES.filter(type => type !== avoidType);
-        randomType = otherTypes[Math.floor(Math.random() * otherTypes.length)];
-      } else if (
-        row >= 2 &&
-        board[row - 1][col] &&
-        board[row - 2][col] &&
-        board[row - 1][col].type === board[row - 2][col].type
-      ) {
-        // Don't use the same type as the last two tiles vertically
-        const avoidType = board[row - 1][col].type;
-        const otherTypes = TILE_TYPES.filter(type => type !== avoidType);
-        randomType = otherTypes[Math.floor(Math.random() * otherTypes.length)];
-      } else {
-        // Use any random type
-        randomType = TILE_TYPES[Math.floor(Math.random() * TILE_TYPES.length)];
-      }
+      do {
+        // Check for horizontal matches (last 2 tiles in same row)
+        let hasHorizontalMatch = false;
+        if (col >= 2) {
+          const tile1 = board[row][col - 1];
+          const tile2 = board[row][col - 2];
+          if (tile1 && tile2 && tile1.type === tile2.type) {
+            hasHorizontalMatch = true;
+          }
+        }
+
+        // Check for vertical matches (last 2 tiles in same column)
+        let hasVerticalMatch = false;
+        if (row >= 2) {
+          const tile1 = board[row - 1][col];
+          const tile2 = board[row - 2][col];
+          if (tile1 && tile2 && tile1.type === tile2.type) {
+            hasVerticalMatch = true;
+          }
+        }
+
+        // If we have a potential match, avoid that tile type
+        if (hasHorizontalMatch || hasVerticalMatch) {
+          const avoidTypes: TileType[] = [];
+
+          if (hasHorizontalMatch && col >= 2) {
+            avoidTypes.push(board[row][col - 1].type);
+          }
+          if (hasVerticalMatch && row >= 2) {
+            avoidTypes.push(board[row - 1][col].type);
+          }
+
+          const availableTypes = TILE_TYPES.filter(
+            type => !avoidTypes.includes(type),
+          );
+          randomType =
+            availableTypes[Math.floor(Math.random() * availableTypes.length)];
+        } else {
+          // No potential matches, use any random type
+          randomType =
+            TILE_TYPES[Math.floor(Math.random() * TILE_TYPES.length)];
+        }
+
+        attempts++;
+      } while (
+        attempts < maxAttempts &&
+        // Double-check that this tile won't create a match
+        ((col >= 2 &&
+          board[row][col - 1] &&
+          board[row][col - 2] &&
+          board[row][col - 1].type === board[row][col - 2].type &&
+          board[row][col - 1].type === randomType) ||
+          (row >= 2 &&
+            board[row - 1][col] &&
+            board[row - 2][col] &&
+            board[row - 1][col].type === board[row - 2][col].type &&
+            board[row - 1][col].type === randomType))
+      );
 
       board[row][col] = {
         id: `${row}-${col}-${Date.now()}-${Math.random()}`,
@@ -310,6 +345,13 @@ export const createValidBoard = (): Tile[][] => {
         col,
       };
     }
+  }
+
+  // Final verification - check if the board has any matches
+  const matches = findMatches(board);
+  if (matches.length > 0) {
+    console.warn('Board created with matches, regenerating...');
+    return createValidBoard(); // Recursively try again
   }
 
   return board;

@@ -29,7 +29,18 @@ declare global {
 const createTestBoard = (tiles: (TileType | null)[][]): Tile[][] => {
   const board: Tile[][] = [];
 
-  // Create an 8x8 board
+  // Create an 8x8 board with a controlled pattern to avoid additional matches
+  const safePattern = [
+    ['🌴', '🐚', '🌺', '🐠', '⭐', '🌴', '🐚', '🌺'],
+    ['🐚', '🌺', '🐠', '⭐', '🌴', '🐚', '🌺', '🐠'],
+    ['🌺', '🐠', '⭐', '🌴', '🐚', '🌺', '🐠', '⭐'],
+    ['🐠', '⭐', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴'],
+    ['⭐', '🌴', '🐚', '🌺', '🐠', '⭐', '🌴', '🐚'],
+    ['🌴', '🐚', '🌺', '🐠', '⭐', '🌴', '🐚', '🌺'],
+    ['🐚', '🌺', '🐠', '⭐', '🌴', '🐚', '🌺', '🐠'],
+    ['🌺', '🐠', '⭐', '🌴', '🐚', '🌺', '🐠', '⭐'],
+  ];
+
   for (let row = 0; row < 8; row++) {
     board[row] = [];
     for (let col = 0; col < 8; col++) {
@@ -41,13 +52,10 @@ const createTestBoard = (tiles: (TileType | null)[][]): Tile[][] => {
           col,
         };
       } else {
-        // Fill with random tiles for the rest of the 8x8 board
-        const randomTypes: TileType[] = ['🌴', '🐚', '🌺', '🐠', '⭐'];
-        const randomType =
-          randomTypes[Math.floor(Math.random() * randomTypes.length)];
+        // Fill with safe pattern tiles to avoid additional matches
         board[row][col] = {
           id: `${row}-${col}`,
-          type: randomType,
+          type: safePattern[row][col] as TileType,
           row,
           col,
         };

@@ -44,27 +44,27 @@ export const Tile: React.FC<TileProps> = ({
       // console.log(
       //   `Starting fall animation for tile ${tile.id} with distance ${fallDistance}`,
       // );
-      // Start from above the target position (further up to show the "hole" effect)
-      translateY.setValue(-(fallDistance + 2));
+      // Start from much higher up to make the fall very visible
+      translateY.setValue(-(fallDistance * 46 + 20)); // 46 = tile height + margin, 20 extra for visibility
 
-      // Animate falling down with bounce effect
+      // Animate falling down with bounce effect - much slower and more dramatic
       Animated.sequence([
-        // Initial fall
+        // Initial fall - much slower
         Animated.timing(translateY, {
           toValue: 0,
-          duration: 1200, // Much slower for better visibility
+          duration: 2000, // 2 seconds for very visible falling
           useNativeDriver: true,
         }),
-        // Bounce effect
+        // Bounce effect - more pronounced
         Animated.sequence([
           Animated.timing(translateY, {
-            toValue: -0.3, // Small bounce up
-            duration: 150,
+            toValue: -8, // Bigger bounce up
+            duration: 200,
             useNativeDriver: true,
           }),
           Animated.timing(translateY, {
             toValue: 0, // Settle back down
-            duration: 150,
+            duration: 200,
             useNativeDriver: true,
           }),
         ]),
