@@ -23,7 +23,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
   onNavigateToTester,
   initialLevelId = 'level-1',
 }) => {
-  const {gameState, currency, initGame} = useGame();
+  const {gameState, currency, initGame, dispatchGame} = useGame();
   const [currentLevelId, setCurrentLevelId] = useState(initialLevelId);
   const [movesMade, setMovesMade] = useState(0);
 
@@ -40,8 +40,23 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         ['🦑', '🦐', '🐡', '🪝'].includes(tile),
       );
       initGame(isSeaLevel ? 'sea' : 'sand');
+
+      // Initialize sand blockers from level config
+      const sandBlockers =
+        currentLevel.blockers
+          ?.filter(b => b.type === 'sand')
+          .map(b => ({row: b.row, col: b.col})) || [];
+
+      if (sandBlockers.length > 0) {
+        console.log(
+          'LevelGameScreen: Initializing sand blockers from level config:',
+          sandBlockers,
+        );
+        // Use dispatchGame to set sand blockers in game state
+        dispatchGame({type: 'SET_SAND_BLOCKERS', payload: sandBlockers});
+      }
     }
-  }, [currentLevelId, currentLevel, initGame]);
+  }, [currentLevelId, currentLevel, initGame, dispatchGame]);
 
   // Simple progress tracking - just use game state directly
   const currentProgress = {
@@ -232,11 +247,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
               ? 'sea'
               : 'sand'
           }
-          sandBlockers={
-            currentLevel.blockers
-              ?.filter(b => b.type === 'sand')
-              .map(b => ({row: b.row, col: b.col})) || []
-          }
+          sandBlockers={gameState.sandBlockers}
         />
       </View>
 

@@ -123,13 +123,7 @@ export const GameBoard: React.FC<{
   variant?: 'sand' | 'sea';
   sandBlockers?: Array<{row: number; col: number}>;
 }> = ({variant = 'sand', sandBlockers = []}) => {
-  const {
-    gameState,
-    dispatchGame,
-    dispatchCurrency,
-    setSandBlockers,
-    clearSandBlocker,
-  } = useGame();
+  const {gameState, dispatchGame, dispatchCurrency} = useGame();
   const [isProcessingMove, setIsProcessingMove] = useState(false);
   const [isProcessingMatches, setIsProcessingMatches] = useState(false);
   const [matchedTiles, setMatchedTiles] = useState<Set<string>>(new Set());
@@ -163,25 +157,6 @@ export const GameBoard: React.FC<{
       dispatchGame({type: 'INIT_BOARD', payload: {variant, sandBlockers}});
     }
   }, [dispatchGame, variant, sandBlockers]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Set sand blockers when they change (only if different from current state)
-  useEffect(() => {
-    const currentBlockers = gameState.sandBlockers;
-
-    // Deep comparison to avoid unnecessary updates
-    const blockersChanged =
-      sandBlockers.length !== currentBlockers.length ||
-      sandBlockers.some((blocker, index) => {
-        const current = currentBlockers[index];
-        return (
-          !current || blocker.row !== current.row || blocker.col !== current.col
-        );
-      });
-
-    if (sandBlockers.length > 0 && blockersChanged) {
-      setSandBlockers(sandBlockers);
-    }
-  }, [sandBlockers, gameState.sandBlockers, setSandBlockers]);
 
   const handleTilePress = (_row: number, _col: number) => {
     // Do nothing on tap - only swipe works
@@ -356,38 +331,11 @@ export const GameBoard: React.FC<{
       });
       setMatchedTiles(matchedPositions);
 
-      // Calculate the final board state immediately (no intermediate gappy state)
-      const boardAfterRemoval = removeMatches(board, matches);
-      const boardAfterDrop = dropTiles(
-        boardAfterRemoval,
-        variant,
-        gameState.sandBlockers,
-      );
-
-      // Calculate which tiles need to fall for animation
-      const falling = calculateFallingTiles(boardAfterRemoval, boardAfterDrop);
-
-      // Set falling state for all tiles at once to ensure synchronized animation
-      setFallingTiles(falling);
-
-      console.log(
-        'Updated to final board state:',
-        boardAfterDrop.map(row => row.map(tile => tile?.type || 'null')),
-      );
-
-      // Count collected tiles for collect objectives
-      let collectedTiles = 0;
-      matches.forEach(match => {
-        match.forEach(pos => {
-          const tileType = board[pos.row][pos.col]?.type;
-          if (tileType === '🐚') {
-            collectedTiles++;
-          }
-        });
-      });
-
       // Check for sand blockers that should be cleared
       const sandBlockersToClear: Array<{row: number; col: number}> = [];
+
+      console.log('Current sand blockers:', gameState.sandBlockers);
+      console.log('Matches found:', matches);
 
       gameState.sandBlockers.forEach(blocker => {
         // Check if any matched tile is adjacent to this sand blocker
@@ -401,19 +349,97 @@ export const GameBoard: React.FC<{
           ),
         );
 
+        console.log(
+          `Sand blocker at ${blocker.row},${blocker.col} - adjacent to match: ${isAdjacent}`,
+        );
+
         if (isAdjacent) {
+          console.log(
+            `Clearing sand blocker at ${blocker.row},${blocker.col} due to adjacent match`,
+          );
           sandBlockersToClear.push(blocker);
         }
       });
 
-      // Clear adjacent sand blockers
+      // Clear adjacent sand blockers from state immediately
+      const updatedSandBlockers = gameState.sandBlockers.filter(
+        blocker =>
+          !sandBlockersToClear.some(
+            toClear =>
+              toClear.row === blocker.row && toClear.col === blocker.col,
+          ),
+      );
+
+      // Update sand blockers state immediately
+      dispatchGame({type: 'SET_SAND_BLOCKERS', payload: updatedSandBlockers});
+
+      console.log('Sand blockers to clear:', sandBlockersToClear);
+      console.log('Updated sand blockers:', updatedSandBlockers);
+
+      // Calculate the final board state immediately (no intermediate gappy state)
+      const boardAfterRemoval = removeMatches(board, matches);
+      const boardAfterDrop = dropTiles(
+        boardAfterRemoval,
+        variant,
+        updatedSandBlockers, // Use updated sand blockers
+      );
+
+      // Calculate which tiles need to fall for animation
+      const falling = calculateFallingTiles(boardAfterRemoval, boardAfterDrop);
+
+      // Set falling state for all tiles at once to ensure synchronized animation
+      setFallingTiles(falling);
+
+      console.log(
+        'Updated to final board state:',
+        boardAfterDrop.map(row => row.map(tile => tile?.type || 'null')),
+      );
+
+      // Calculate score and count collected tiles
+      let collectedTiles = 0;
+      let matchScore = 0;
+
+      matches.forEach(match => {
+        // Score calculation: base points per tile + bonus for longer matches
+        const basePoints = 10;
+        const lengthBonus = Math.max(0, match.length - 3) * 5; // Bonus for matches longer than 3
+        const matchPoints = match.length * basePoints + lengthBonus;
+        matchScore += matchPoints;
+
+        // Count collected tiles for collect objectives
+        match.forEach(pos => {
+          const tileType = board[pos.row][pos.col]?.type;
+          if (tileType === '🐚') {
+            collectedTiles++;
+          }
+        });
+      });
+
+      // Add score to game state
+      dispatchGame({type: 'ADD_SCORE', payload: matchScore});
+
+      // Create updated board with cleared sand blocker positions filled
+      let updatedBoard = boardAfterDrop.map(row => [...row]);
+
+      // Fill cleared sand blocker positions with new tiles
       sandBlockersToClear.forEach(blocker => {
-        clearSandBlocker(blocker.row, blocker.col);
+        const tileTypes =
+          variant === 'sand'
+            ? (['🦀', '🌴', '⭐', '🌺', '🐚'] as const)
+            : (['🦑', '🦐', '🐡', '🪝'] as const);
+        const randomType =
+          tileTypes[Math.floor(Math.random() * tileTypes.length)];
+        updatedBoard[blocker.row][blocker.col] = {
+          id: `${blocker.row}-${blocker.col}-${Date.now()}-${Math.random()}`,
+          type: randomType,
+          row: blocker.row,
+          col: blocker.col,
+        };
       });
 
       // Update board state immediately but keep matched tiles visible for animation
-      dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterDrop});
-      currentBoardRef.current = boardAfterDrop;
+      dispatchGame({type: 'UPDATE_BOARD', payload: updatedBoard});
+      currentBoardRef.current = updatedBoard;
       dispatchGame({type: 'INCREMENT_COMBOS'});
 
       // Add collected tiles to currency if any were collected
@@ -443,7 +469,7 @@ export const GameBoard: React.FC<{
           cascadeCount + 1,
         );
         processGameTurn(
-          boardAfterDrop,
+          updatedBoard, // Use the updated board with filled sand blocker positions
           undefined,
           undefined,
           undefined,
@@ -809,7 +835,7 @@ export const GameBoard: React.FC<{
         {gameState.board.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
             {row.map((tile, colIndex) => {
-              const hasSandBlocker = gameState.sandBlockers.some(
+              const hasSandBlocker = sandBlockers.some(
                 blocker => blocker.row === rowIndex && blocker.col === colIndex,
               );
 

@@ -75,6 +75,7 @@ type GameAction =
     }
   | {type: 'UPDATE_BOARD'; payload: Tile[][]}
   | {type: 'INCREMENT_COMBOS'}
+  | {type: 'ADD_SCORE'; payload: number}
   | {type: 'RESET_GAME'}
   | {type: 'SET_GAME_WON'}
   | {type: 'SET_SAND_BLOCKERS'; payload: Array<{row: number; col: number}>}
@@ -130,6 +131,12 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         combos: newCombos,
         isGameWon: newCombos >= TARGET_COMBOS,
+      };
+
+    case 'ADD_SCORE':
+      return {
+        ...state,
+        score: state.score + action.payload,
       };
 
     case 'RESET_GAME':
