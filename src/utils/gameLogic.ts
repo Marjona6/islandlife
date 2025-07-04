@@ -1,7 +1,11 @@
-import {Tile, TileType} from '../types/game';
+import {Tile, TileType, getTileEmojis} from '../types/game';
 
 const BOARD_SIZE = 8;
-const TILE_TYPES: TileType[] = ['🌴', '🐚', '🌺', '🐠', '⭐'];
+
+// Function to get tile types based on variant
+export const getTileTypes = (variant: 'sand' | 'sea' = 'sand'): TileType[] => {
+  return getTileEmojis(variant);
+};
 
 // Check if two tiles are adjacent
 export const areAdjacent = (
@@ -128,8 +132,12 @@ export const removeMatches = (
 };
 
 // Make tiles fall down to fill empty spaces
-export const dropTiles = (board: Tile[][]): Tile[][] => {
+export const dropTiles = (
+  board: Tile[][],
+  variant: 'sand' | 'sea' = 'sand',
+): Tile[][] => {
   const newBoard = board.map(row => [...row]);
+  const tileTypes = getTileTypes(variant);
 
   for (let col = 0; col < BOARD_SIZE; col++) {
     let writeRow = BOARD_SIZE - 1;
@@ -148,7 +156,7 @@ export const dropTiles = (board: Tile[][]): Tile[][] => {
     // Fill remaining spaces with new tiles
     for (let row = writeRow; row >= 0; row--) {
       const randomType =
-        TILE_TYPES[Math.floor(Math.random() * TILE_TYPES.length)];
+        tileTypes[Math.floor(Math.random() * tileTypes.length)];
       newBoard[row][col] = {
         id: `${row}-${col}-${Date.now()}-${Math.random()}`,
         type: randomType,
@@ -250,8 +258,11 @@ export const processTurn = (
 };
 
 // Create a board with no initial matches
-export const createValidBoard = (): Tile[][] => {
+export const createValidBoard = (
+  variant: 'sand' | 'sea' = 'sand',
+): Tile[][] => {
   const board: Tile[][] = [];
+  const tileTypes = getTileTypes(variant);
 
   for (let row = 0; row < BOARD_SIZE; row++) {
     board[row] = [];
@@ -292,15 +303,14 @@ export const createValidBoard = (): Tile[][] => {
             avoidTypes.push(board[row - 1][col].type);
           }
 
-          const availableTypes = TILE_TYPES.filter(
+          const availableTypes = tileTypes.filter(
             type => !avoidTypes.includes(type),
           );
           randomType =
             availableTypes[Math.floor(Math.random() * availableTypes.length)];
         } else {
           // No potential matches, use any random type
-          randomType =
-            TILE_TYPES[Math.floor(Math.random() * TILE_TYPES.length)];
+          randomType = tileTypes[Math.floor(Math.random() * tileTypes.length)];
         }
 
         attempts++;
@@ -332,7 +342,7 @@ export const createValidBoard = (): Tile[][] => {
   const matches = findMatches(board);
   if (matches.length > 0) {
     console.warn('Board created with matches, regenerating...');
-    return createValidBoard(); // Recursively try again
+    return createValidBoard(variant); // Recursively try again
   }
 
   return board;

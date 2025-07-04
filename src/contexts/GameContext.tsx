@@ -12,7 +12,6 @@ import {createValidBoard} from '../utils/gameLogic';
 // Game constants
 const BOARD_SIZE = 8;
 const TARGET_COMBOS = 10;
-const TILE_TYPES: TileType[] = ['🌴', '🐚', '🌺', '🐠', '⭐'];
 
 // Initial state
 const initialGameState: GameState = {
@@ -62,7 +61,7 @@ const initialBeachItems: BeachItem[] = [
 
 // Action types
 type GameAction =
-  | {type: 'INIT_BOARD'}
+  | {type: 'INIT_BOARD'; payload?: {variant: 'sand' | 'sea'}}
   | {
       type: 'SWAP_TILES';
       payload: {row1: number; col1: number; row2: number; col2: number};
@@ -88,7 +87,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     case 'INIT_BOARD':
       return {
         ...state,
-        board: createValidBoard(),
+        board: createValidBoard(action.payload?.variant || 'sand'),
         score: 0,
         combos: 0,
         isGameWon: false,

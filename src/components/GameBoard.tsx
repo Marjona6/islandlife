@@ -7,6 +7,7 @@ import Svg, {
   Stop,
   LinearGradient,
   Path,
+  Rect,
 } from 'react-native-svg';
 import {Tile} from './Tile';
 import {useGame} from '../contexts/GameContext';
@@ -119,7 +120,9 @@ const FallingParticles: React.FC<{_colIndex: number; isActive: boolean}> = ({
   );
 };
 
-export const GameBoard: React.FC = () => {
+export const GameBoard: React.FC<{variant?: 'sand' | 'sea'}> = ({
+  variant = 'sand',
+}) => {
   const {gameState, dispatchGame, dispatchCurrency} = useGame();
   const [isProcessingMove, setIsProcessingMove] = useState(false);
   const [isProcessingMatches, setIsProcessingMatches] = useState(false);
@@ -146,9 +149,9 @@ export const GameBoard: React.FC = () => {
   // Initialize game on mount
   useEffect(() => {
     if (gameState.board.length === 0) {
-      dispatchGame({type: 'INIT_BOARD'});
+      dispatchGame({type: 'INIT_BOARD', payload: {variant}});
     }
-  }, [dispatchGame, gameState.board.length]);
+  }, [dispatchGame, gameState.board.length, variant]);
 
   const handleTilePress = (_row: number, _col: number) => {
     // Do nothing on tap - only swipe works
@@ -316,7 +319,7 @@ export const GameBoard: React.FC = () => {
 
       // Calculate the final board state immediately (no intermediate gappy state)
       const boardAfterRemoval = removeMatches(board, matches);
-      const boardAfterDrop = dropTiles(boardAfterRemoval);
+      const boardAfterDrop = dropTiles(boardAfterRemoval, variant);
 
       // Calculate which tiles need to fall for animation
       const falling = calculateFallingTiles(boardAfterRemoval, boardAfterDrop);
@@ -475,31 +478,10 @@ export const GameBoard: React.FC = () => {
     return falling;
   };
 
-  if (gameState.board.length === 0) {
-    return <View style={styles.container} />;
-  }
-
-  return (
-    <View style={styles.container}>
-      {/* Holes at the top where new tiles drop from */}
-      <View style={styles.holesRow}>
-        {Array.from({length: 8}, (_, colIndex) => (
-          <View key={`hole-container-${colIndex}`} style={styles.holeContainer}>
-            <ColumnHole
-              _colIndex={colIndex}
-              _isActive={fallingTiles.has(`0-${colIndex}`)}
-            />
-            <FallingParticles
-              _colIndex={colIndex}
-              isActive={fallingTiles.has(`0-${colIndex}`)}
-            />
-          </View>
-        ))}
-      </View>
-
-      {/* Clipping container to hide tiles above hole midpoints */}
-      <View style={styles.clippingContainer}>
-        {/* Scalloped sand background with horizontal wave stripes */}
+  // Variant-specific background component
+  const renderBackground = () => {
+    if (variant === 'sand') {
+      return (
         <Svg
           width={360}
           height="100%"
@@ -607,6 +589,127 @@ export const GameBoard: React.FC = () => {
             opacity="0.4"
           />
         </Svg>
+      );
+    } else if (variant === 'sea') {
+      return (
+        <Svg
+          width={360}
+          height="100%"
+          style={styles.seaSvg}
+          viewBox="0 0 360 300">
+          <Defs>
+            <LinearGradient id="seaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor="#87CEEB" />
+              <Stop offset="50%" stopColor="#4682B4" />
+              <Stop offset="100%" stopColor="#1E3A8A" />
+            </LinearGradient>
+            <LinearGradient
+              id="seafloorGradient"
+              x1="0%"
+              y1="0%"
+              x2="0%"
+              y2="100%">
+              <Stop offset="0%" stopColor="#d2b48c" />
+              <Stop offset="100%" stopColor="#c19a6b" />
+            </LinearGradient>
+          </Defs>
+
+          {/* Sea background */}
+          <Rect x="0" y="0" width="360" height="300" fill="url(#seaGradient)" />
+
+          {/* Seafloor sand layer with wavy top edge */}
+          <Path
+            d="M 0,280 
+               Q 30,270 60,280 
+               Q 90,290 120,280 
+               Q 150,270 180,280 
+               Q 210,290 240,280 
+               Q 270,270 300,280 
+               Q 330,290 360,280 
+               L 360,300 
+               L 0,300 
+               Z"
+            fill="url(#seafloorGradient)"
+          />
+
+          {/* Seaweed plants */}
+          {Array.from({length: 8}, (_, i) => (
+            <Path
+              key={i}
+              d={`M ${45 + i * 40},300 
+                 Q ${45 + i * 40},280 ${45 + i * 40},260 
+                 Q ${35 + i * 40},250 ${45 + i * 40},240 
+                 Q ${55 + i * 40},230 ${45 + i * 40},220 
+                 Q ${35 + i * 40},210 ${45 + i * 40},200 
+                 Q ${55 + i * 40},190 ${45 + i * 40},180`}
+              stroke="#228B22"
+              strokeWidth="2"
+              fill="none"
+              opacity="0.8"
+            />
+          ))}
+        </Svg>
+      );
+    }
+    return null;
+  };
+
+  // Variant-specific container styling
+  const getContainerStyle = () => {
+    const baseStyle = {
+      marginTop: -20,
+      overflow: 'hidden' as const,
+      paddingTop: 20,
+      borderRadius: 20,
+      padding: 12,
+      width: 360,
+      alignSelf: 'center' as const,
+      shadowColor: '#000',
+      shadowOffset: {width: 0, height: 4},
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 5,
+    };
+
+    if (variant === 'sand') {
+      return {
+        ...baseStyle,
+        backgroundColor: '#d2b48c',
+      };
+    } else if (variant === 'sea') {
+      return {
+        ...baseStyle,
+        backgroundColor: 'transparent',
+      };
+    }
+    return baseStyle;
+  };
+
+  if (gameState.board.length === 0) {
+    return <View style={styles.container} />;
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* Holes at the top where new tiles drop from */}
+      <View style={styles.holesRow}>
+        {Array.from({length: 8}, (_, colIndex) => (
+          <View key={`hole-container-${colIndex}`} style={styles.holeContainer}>
+            <ColumnHole
+              _colIndex={colIndex}
+              _isActive={fallingTiles.has(`0-${colIndex}`)}
+            />
+            <FallingParticles
+              _colIndex={colIndex}
+              isActive={fallingTiles.has(`0-${colIndex}`)}
+            />
+          </View>
+        ))}
+      </View>
+
+      {/* Clipping container to hide tiles above hole midpoints */}
+      <View style={getContainerStyle()}>
+        {renderBackground()}
 
         {/* Game board */}
         {gameState.board.map((row, rowIndex) => (
@@ -800,23 +903,6 @@ const styles = StyleSheet.create({
     margin: 1,
     backgroundColor: 'transparent',
   },
-  clippingContainer: {
-    // Clip tiles so they only become visible when emerging from holes
-    // The top edge should align with the bottom edge of the holes (20px from top of holes)
-    marginTop: -20, // Move up to overlap with holes completely
-    overflow: 'hidden', // Hide tiles above the clipping boundary
-    paddingTop: 20, // Add padding to push content down so it starts at hole edge
-    backgroundColor: '#d2b48c', // More beige, less yellow
-    borderRadius: 20, // More rounded for wavy effect
-    padding: 12, // Back to original padding
-    width: 360, // Width to accommodate 8 tiles (8 * 42 = 336) plus some padding
-    alignSelf: 'center', // Center the beige area
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
   matchedTileContainer: {
     position: 'absolute',
     zIndex: 10, // Ensure matched tiles appear above other tiles
@@ -865,6 +951,15 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     width: 360, // Match the beige area width exactly
+    height: '100%',
+  },
+  seaSvg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: 360,
     height: '100%',
   },
 });
