@@ -1,5 +1,7 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {View, StyleSheet, Alert} from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
+import Svg, {Ellipse, Defs, RadialGradient, Stop} from 'react-native-svg';
 import {Tile} from './Tile';
 import {useGame} from '../contexts/GameContext';
 import {
@@ -9,15 +11,87 @@ import {
   dropTiles,
 } from '../utils/gameLogic';
 
-// Enhanced Hole component with proper oval design
-const ColumnHole: React.FC<{_colIndex: number}> = () => (
-  <View style={styles.hole}>
-    <View style={styles.holeOuter}>
-      <View style={styles.holeInner} />
-      <View style={styles.holeHighlight} />
+// Enhanced Hole component with professional design (simplified version)
+const ColumnHole: React.FC<{_colIndex: number; isActive: boolean}> = ({
+  _colIndex,
+  isActive,
+}) => {
+  return (
+    <View style={styles.hole}>
+      {/* Outer shadow/glow effect */}
+      <View style={[styles.holeGlow, isActive && styles.holeGlowActive]} />
+
+      {/* Main hole structure */}
+      <View style={[styles.holeOuter, isActive && styles.holeOuterActive]}>
+        {/* Gradient background for depth */}
+        <LinearGradient
+          colors={['#1a1a1a', '#2a2a2a', '#1a1a1a']}
+          style={styles.holeGradient}
+          start={{x: 0, y: 0}}
+          end={{x: 0, y: 1}}
+        />
+
+        {/* Inner hole with SVG for perfect shape */}
+        <View style={styles.holeInnerContainer}>
+          <Svg width={36} height={16} style={styles.holeSvg}>
+            <Defs>
+              <RadialGradient
+                id={`holeGradient${_colIndex}`}
+                cx="50%"
+                cy="30%"
+                rx="70%"
+                ry="70%">
+                <Stop offset="0%" stopColor="#000000" />
+                <Stop offset="70%" stopColor="#1a1a1a" />
+                <Stop offset="100%" stopColor="#000000" />
+              </RadialGradient>
+            </Defs>
+            <Ellipse
+              cx={18}
+              cy={8}
+              rx={18}
+              ry={8}
+              fill={`url(#holeGradient${_colIndex})`}
+            />
+          </Svg>
+        </View>
+
+        {/* Multiple highlight layers for depth */}
+        <View style={styles.holeHighlight1} />
+        <View style={styles.holeHighlight2} />
+        <View style={styles.holeHighlight3} />
+
+        {/* Inner shadow for depth */}
+        <View style={styles.holeInnerShadow} />
+      </View>
     </View>
-  </View>
-);
+  );
+};
+
+// Simple particle effect component
+const FallingParticles: React.FC<{_colIndex: number; isActive: boolean}> = ({
+  _colIndex,
+  isActive,
+}) => {
+  if (!isActive) return null;
+
+  return (
+    <View style={styles.particleContainer}>
+      {Array.from({length: 5}, (_, i) => (
+        <View
+          key={i}
+          style={[
+            styles.particle,
+            {
+              left: 8 + i * 6,
+              backgroundColor: ['#666', '#888', '#aaa', '#ccc', '#eee'][i],
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+};
 
 export const GameBoard: React.FC = () => {
   const {gameState, dispatchGame, dispatchCurrency} = useGame();
@@ -384,7 +458,16 @@ export const GameBoard: React.FC = () => {
       {/* Holes at the top where new tiles drop from */}
       <View style={styles.holesRow}>
         {Array.from({length: 8}, (_, colIndex) => (
-          <ColumnHole key={`hole-${colIndex}`} _colIndex={colIndex} />
+          <View key={`hole-container-${colIndex}`} style={styles.holeContainer}>
+            <ColumnHole
+              _colIndex={colIndex}
+              isActive={fallingTiles.has(`0-${colIndex}`)}
+            />
+            <FallingParticles
+              _colIndex={colIndex}
+              isActive={fallingTiles.has(`0-${colIndex}`)}
+            />
+          </View>
         ))}
       </View>
 
@@ -465,6 +548,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 10,
   },
+  holeContainer: {
+    position: 'relative',
+    width: 42,
+    height: 20,
+    marginHorizontal: 1,
+  },
   hole: {
     width: 42, // Match tile width (40) + margin (2)
     height: 20,
@@ -475,28 +564,32 @@ const styles = StyleSheet.create({
   holeOuter: {
     width: 42,
     height: 20,
-    backgroundColor: '#2a2a2a',
-    borderRadius: 20, // Make it more oval
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 8,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 10,
+    overflow: 'hidden',
   },
-  holeInner: {
+  holeInnerContainer: {
     width: 36,
     height: 16,
-    backgroundColor: '#000',
-    borderRadius: 18, // More oval inner hole
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.6,
-    shadowRadius: 4,
-    elevation: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  holeHighlight: {
+  holeSvg: {
+    width: '100%',
+    height: '100%',
+  },
+  holeGradient: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  holeHighlight1: {
     position: 'absolute',
     top: 2,
     left: 8,
@@ -505,6 +598,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#444',
     borderRadius: 6,
     opacity: 0.3,
+  },
+  holeHighlight2: {
+    position: 'absolute',
+    top: 4,
+    left: 10,
+    width: 8,
+    height: 4,
+    backgroundColor: '#666',
+    borderRadius: 4,
+    opacity: 0.5,
+  },
+  holeHighlight3: {
+    position: 'absolute',
+    top: 6,
+    left: 12,
+    width: 4,
+    height: 2,
+    backgroundColor: '#888',
+    borderRadius: 2,
+    opacity: 0.7,
+  },
+  holeInnerShadow: {
+    position: 'absolute',
+    top: 18,
+    left: 0,
+    width: 36,
+    height: 2,
+    backgroundColor: '#000',
+    borderRadius: 1,
   },
   emptyTile: {
     width: 44,
@@ -521,5 +643,42 @@ const styles = StyleSheet.create({
   matchedTileContainer: {
     position: 'absolute',
     zIndex: 10, // Ensure matched tiles appear above other tiles
+  },
+  holeGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 42,
+    height: 20,
+    borderRadius: 20,
+    backgroundColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  holeGlowActive: {
+    shadowOpacity: 0.7,
+    shadowRadius: 8,
+    elevation: 12,
+  },
+  holeOuterActive: {
+    transform: [{scale: 1.1}],
+    shadowOpacity: 0.9,
+  },
+  particleContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+  },
+  particle: {
+    position: 'absolute',
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
 });
