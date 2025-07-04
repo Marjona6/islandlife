@@ -140,17 +140,21 @@ export const Tile: React.FC<TileProps> = ({
 
 const styles = StyleSheet.create({
   tile: {
-    width: 40,
-    height: 40,
-    backgroundColor: '#f0f8ff',
-    borderWidth: 2,
-    borderColor: '#87ceeb',
-    borderRadius: 8,
+    width: 32,
+    height: 32,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    borderRadius: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    margin: 1,
+    margin: 5,
+    padding: 0,
   },
   tileText: {
-    fontSize: 20,
+    fontSize: 24,
+    color: '#000000',
+    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowOffset: {width: 0, height: 0},
+    textShadowRadius: 1,
   },
 });
