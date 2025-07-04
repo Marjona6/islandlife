@@ -1,6 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {View, StyleSheet, Alert} from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import Svg, {Ellipse, Defs, RadialGradient, Stop} from 'react-native-svg';
 import {Tile} from './Tile';
 import {useGame} from '../contexts/GameContext';
@@ -11,59 +10,74 @@ import {
   dropTiles,
 } from '../utils/gameLogic';
 
-// Enhanced Hole component with professional design (simplified version)
-const ColumnHole: React.FC<{_colIndex: number; isActive: boolean}> = ({
+// Enhanced Hole component with realistic hole effect
+const ColumnHole: React.FC<{_colIndex: number; _isActive: boolean}> = ({
   _colIndex,
-  isActive,
+  _isActive,
 }) => {
   return (
     <View style={styles.hole}>
-      {/* Outer shadow/glow effect */}
-      <View style={[styles.holeGlow, isActive && styles.holeGlowActive]} />
+      {/* Realistic oval hole */}
+      <Svg width={42} height={20} style={styles.holeSvg}>
+        <Defs>
+          {/* Radial gradient for hole depth */}
+          <RadialGradient
+            id={`holeDepth${_colIndex}`}
+            cx="50%"
+            cy="30%"
+            rx="70%"
+            ry="80%">
+            <Stop offset="0%" stopColor="#1a1a1a" />
+            <Stop offset="40%" stopColor="#3a3a3a" />
+            <Stop offset="70%" stopColor="#5a5a5a" />
+            <Stop offset="100%" stopColor="#7a7a7a" />
+          </RadialGradient>
 
-      {/* Main hole structure */}
-      <View style={[styles.holeOuter, isActive && styles.holeOuterActive]}>
-        {/* Gradient background for depth */}
-        <LinearGradient
-          colors={['#1a1a1a', '#2a2a2a', '#1a1a1a']}
-          style={styles.holeGradient}
-          start={{x: 0, y: 0}}
-          end={{x: 0, y: 1}}
+          {/* Gradient for bottom highlight */}
+          <RadialGradient
+            id={`bottomHighlight${_colIndex}`}
+            cx="50%"
+            cy="80%"
+            rx="60%"
+            ry="40%">
+            <Stop offset="0%" stopColor="#9a9a9a" />
+            <Stop offset="100%" stopColor="transparent" />
+          </RadialGradient>
+        </Defs>
+
+        {/* The main hole with depth */}
+        <Ellipse
+          cx="21"
+          cy="10"
+          rx="18"
+          ry="7"
+          fill={`url(#holeDepth${_colIndex})`}
         />
 
-        {/* Inner hole with SVG for perfect shape */}
-        <View style={styles.holeInnerContainer}>
-          <Svg width={34} height={14} style={styles.holeSvg}>
-            <Defs>
-              <RadialGradient
-                id={`holeGradient${_colIndex}`}
-                cx="50%"
-                cy="30%"
-                rx="70%"
-                ry="70%">
-                <Stop offset="0%" stopColor="#000000" />
-                <Stop offset="70%" stopColor="#1a1a1a" />
-                <Stop offset="100%" stopColor="#000000" />
-              </RadialGradient>
-            </Defs>
-            <Ellipse
-              cx={17}
-              cy={7}
-              rx={17}
-              ry={7}
-              fill={`url(#holeGradient${_colIndex})`}
-            />
-          </Svg>
-        </View>
+        {/* Bottom highlight for depth */}
+        <Ellipse
+          cx="21"
+          cy="10"
+          rx="16"
+          ry="6"
+          fill={`url(#bottomHighlight${_colIndex})`}
+        />
 
-        {/* Multiple highlight layers for depth */}
-        <View style={styles.holeHighlight1} />
-        <View style={styles.holeHighlight2} />
-        <View style={styles.holeHighlight3} />
+        {/* Darker top section - smaller inner oval */}
+        <Ellipse cx="21" cy="8" rx="14" ry="5" fill="#1a1a1a" opacity="0.8" />
 
-        {/* Inner shadow for depth */}
-        <View style={styles.holeInnerShadow} />
-      </View>
+        {/* Hole rim shadow for depth */}
+        <Ellipse
+          cx="21"
+          cy="10"
+          rx="18"
+          ry="7"
+          fill="none"
+          stroke="#555555"
+          strokeWidth="1.5"
+          opacity="0.8"
+        />
+      </Svg>
     </View>
   );
 };
@@ -466,7 +480,7 @@ export const GameBoard: React.FC = () => {
           <View key={`hole-container-${colIndex}`} style={styles.holeContainer}>
             <ColumnHole
               _colIndex={colIndex}
-              isActive={fallingTiles.has(`0-${colIndex}`)}
+              _isActive={fallingTiles.has(`0-${colIndex}`)}
             />
             <FallingParticles
               _colIndex={colIndex}
@@ -568,8 +582,8 @@ const styles = StyleSheet.create({
   },
   holeOuter: {
     width: 40, // Match tile width exactly
-    height: 18,
-    borderRadius: 18,
+    height: 20, // Proper oval height
+    borderRadius: 0, // No border radius - let SVG be the shape
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -581,7 +595,7 @@ const styles = StyleSheet.create({
   },
   holeInnerContainer: {
     width: 34,
-    height: 14,
+    height: 16, // Proper oval height
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -596,42 +610,73 @@ const styles = StyleSheet.create({
   },
   holeHighlight1: {
     position: 'absolute',
-    top: 2,
+    top: 1,
     left: 7,
     width: 10,
-    height: 5,
+    height: 3,
     backgroundColor: '#444',
-    borderRadius: 5,
+    borderRadius: 3,
     opacity: 0.3,
   },
   holeHighlight2: {
     position: 'absolute',
-    top: 3,
+    top: 2,
     left: 9,
     width: 6,
-    height: 3,
+    height: 2,
     backgroundColor: '#666',
-    borderRadius: 3,
+    borderRadius: 2,
     opacity: 0.5,
   },
   holeHighlight3: {
     position: 'absolute',
-    top: 4,
+    top: 3,
     left: 11,
     width: 3,
-    height: 2,
+    height: 1,
     backgroundColor: '#888',
-    borderRadius: 2,
+    borderRadius: 1,
     opacity: 0.7,
   },
   holeInnerShadow: {
     position: 'absolute',
-    top: 16,
+    top: 18,
     left: 0,
     width: 34,
     height: 2,
     backgroundColor: '#000',
     borderRadius: 1,
+  },
+  holeInnerShadow2: {
+    position: 'absolute',
+    top: 16,
+    left: 2,
+    width: 30,
+    height: 1,
+    backgroundColor: '#000',
+    borderRadius: 1,
+    opacity: 0.7,
+  },
+  holeInnerShadow3: {
+    position: 'absolute',
+    top: 14,
+    left: 4,
+    width: 26,
+    height: 1,
+    backgroundColor: '#000',
+    borderRadius: 1,
+    opacity: 0.5,
+  },
+  holeRim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 40,
+    height: 20,
+    borderRadius: 0, // No border radius - let SVG be the shape
+    borderWidth: 1,
+    borderColor: '#444',
+    opacity: 0.3,
   },
   emptyTile: {
     width: 40,
@@ -654,8 +699,8 @@ const styles = StyleSheet.create({
     top: 0,
     left: 1, // Center the glow within the container (42-40)/2 = 1
     width: 40,
-    height: 18,
-    borderRadius: 18,
+    height: 20, // Match the new oval height
+    borderRadius: 0, // No border radius - let SVG be the shape
     backgroundColor: 'transparent',
     shadowColor: '#000',
     shadowOffset: {width: 0, height: 3},
