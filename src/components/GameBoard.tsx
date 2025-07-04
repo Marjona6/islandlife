@@ -1,6 +1,13 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {View, StyleSheet, Alert} from 'react-native';
-import Svg, {Ellipse, Defs, RadialGradient, Stop} from 'react-native-svg';
+import Svg, {
+  Ellipse,
+  Defs,
+  RadialGradient,
+  Stop,
+  LinearGradient,
+  Path,
+} from 'react-native-svg';
 import {Tile} from './Tile';
 import {useGame} from '../contexts/GameContext';
 import {
@@ -492,6 +499,115 @@ export const GameBoard: React.FC = () => {
 
       {/* Clipping container to hide tiles above hole midpoints */}
       <View style={styles.clippingContainer}>
+        {/* Scalloped sand background with horizontal wave stripes */}
+        <Svg
+          width={360}
+          height="100%"
+          style={styles.sandSvg}
+          viewBox="0 0 360 300">
+          <Defs>
+            <LinearGradient
+              id="sandGradient1"
+              x1="0%"
+              y1="0%"
+              x2="0%"
+              y2="100%">
+              <Stop offset="0%" stopColor="#d2b48c" />
+              <Stop offset="100%" stopColor="#c19a6b" />
+            </LinearGradient>
+            <LinearGradient
+              id="sandGradient2"
+              x1="0%"
+              y1="0%"
+              x2="0%"
+              y2="100%">
+              <Stop offset="0%" stopColor="#c19a6b" />
+              <Stop offset="100%" stopColor="#b08d5a" />
+            </LinearGradient>
+            <LinearGradient
+              id="sandGradient3"
+              x1="0%"
+              y1="0%"
+              x2="0%"
+              y2="100%">
+              <Stop offset="0%" stopColor="#b08d5a" />
+              <Stop offset="100%" stopColor="#9f7a49" />
+            </LinearGradient>
+          </Defs>
+
+          {/* Base sand shape with wavy edges */}
+          <Path
+            d="M 0,0 
+               Q 22.5,-8 45,0 
+               Q 67.5,8 90,0 
+               Q 112.5,-8 135,0 
+               Q 157.5,8 180,0 
+               Q 202.5,-8 225,0 
+               Q 247.5,8 270,0 
+               Q 292.5,-8 315,0 
+               Q 337.5,8 360,0 
+               L 360,300 
+               Q 337.5,308 315,300 
+               Q 292.5,292 270,300 
+               Q 247.5,308 225,300 
+               Q 202.5,292 180,300 
+               Q 157.5,308 135,300 
+               Q 112.5,292 90,300 
+               Q 67.5,308 45,300 
+               Q 22.5,292 0,300 
+               Z"
+            fill="url(#sandGradient1)"
+          />
+
+          {/* Horizontal wave stripe 1 */}
+          <Path
+            d="M 0,90 
+               Q 22.5,82 45,90 
+               Q 67.5,98 90,90 
+               Q 112.5,82 135,90 
+               Q 157.5,98 180,90 
+               Q 202.5,82 225,90 
+               Q 247.5,98 270,90 
+               Q 292.5,82 315,90 
+               Q 337.5,98 360,90 
+               L 360,150 
+               Q 337.5,142 315,150 
+               Q 292.5,158 270,150 
+               Q 247.5,142 225,150 
+               Q 202.5,158 180,150 
+               Q 157.5,142 135,150 
+               Q 112.5,158 90,150 
+               Q 67.5,142 45,150 
+               Q 22.5,158 0,150 
+               Z"
+            fill="url(#sandGradient2)"
+            opacity="0.6"
+          />
+
+          {/* Horizontal wave stripe 2 */}
+          <Path
+            d="M 0,210 
+               Q 30,202 60,210 
+               Q 90,218 120,210 
+               Q 150,202 180,210 
+               Q 210,218 240,210 
+               Q 270,202 300,210 
+               Q 330,218 360,210 
+               Q 390,202 360,210 
+               L 360,270 
+               Q 330,262 300,270 
+               Q 270,278 240,270 
+               Q 210,262 180,270 
+               Q 150,278 120,270 
+               Q 90,262 60,270 
+               Q 30,278 0,270 
+               Q -30,262 0,270 
+               Z"
+            fill="url(#sandGradient3)"
+            opacity="0.4"
+          />
+        </Svg>
+
         {/* Game board */}
         {gameState.board.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
@@ -565,7 +681,7 @@ const styles = StyleSheet.create({
   },
   holesRow: {
     flexDirection: 'row',
-    marginBottom: 10,
+    marginBottom: 20, // Increased from 10 to 20 to move holes up
   },
   holeContainer: {
     position: 'relative',
@@ -690,6 +806,16 @@ const styles = StyleSheet.create({
     marginTop: -20, // Move up to overlap with holes completely
     overflow: 'hidden', // Hide tiles above the clipping boundary
     paddingTop: 20, // Add padding to push content down so it starts at hole edge
+    backgroundColor: '#d2b48c', // More beige, less yellow
+    borderRadius: 20, // More rounded for wavy effect
+    padding: 12, // Back to original padding
+    width: 360, // Width to accommodate 8 tiles (8 * 42 = 336) plus some padding
+    alignSelf: 'center', // Center the beige area
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   matchedTileContainer: {
     position: 'absolute',
@@ -731,5 +857,14 @@ const styles = StyleSheet.create({
     width: 2,
     height: 2,
     borderRadius: 1,
+  },
+  sandSvg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: 360, // Match the beige area width exactly
+    height: '100%',
   },
 });
