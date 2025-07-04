@@ -9,11 +9,12 @@ import {
   dropTiles,
 } from '../utils/gameLogic';
 
-// Enhanced Hole component with CSS gradients
+// Enhanced Hole component with proper oval design
 const ColumnHole: React.FC<{_colIndex: number}> = () => (
   <View style={styles.hole}>
     <View style={styles.holeOuter}>
       <View style={styles.holeInner} />
+      <View style={styles.holeHighlight} />
     </View>
   </View>
 );
@@ -474,26 +475,36 @@ const styles = StyleSheet.create({
   holeOuter: {
     width: 42,
     height: 20,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 10,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 20, // Make it more oval
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  holeInner: {
+    width: 36,
+    height: 16,
+    backgroundColor: '#000',
+    borderRadius: 18, // More oval inner hole
+    shadowColor: '#000',
     shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.6,
     shadowRadius: 4,
     elevation: 5,
   },
-  holeInner: {
-    width: 32,
-    height: 12,
-    backgroundColor: '#000',
+  holeHighlight: {
+    position: 'absolute',
+    top: 2,
+    left: 8,
+    width: 12,
+    height: 6,
+    backgroundColor: '#444',
     borderRadius: 6,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.5,
-    shadowRadius: 2,
-    elevation: 3,
+    opacity: 0.3,
   },
   emptyTile: {
     width: 44,
