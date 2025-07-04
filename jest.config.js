@@ -7,4 +7,5 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(react-native|@react-native|@react-navigation)/)',
   ],
+  setupFilesAfterEnv: ['<rootDir>/__mocks__/setupTests.js'],
 };

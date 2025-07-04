@@ -7,6 +7,8 @@ interface TileProps {
   onPress: () => void;
   onSwipe: (direction: 'up' | 'down' | 'left' | 'right') => void;
   isMatched?: boolean;
+  isFalling?: boolean;
+  fallDistance?: number;
 }
 
 export const Tile: React.FC<TileProps> = ({
@@ -14,9 +16,12 @@ export const Tile: React.FC<TileProps> = ({
   onPress,
   onSwipe,
   isMatched = false,
+  isFalling = false,
+  fallDistance = 0,
 }) => {
   const scale = useRef(new Animated.Value(1)).current;
   const opacity = useRef(new Animated.Value(1)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
 
   // Animate matched tiles fading out
   useEffect(() => {
@@ -31,6 +36,44 @@ export const Tile: React.FC<TileProps> = ({
       opacity.setValue(1);
     }
   }, [isMatched, opacity]);
+
+  // Animate falling tiles
+  useEffect(() => {
+    // console.log(`Tile ${tile.id} falling props:`, {isFalling, fallDistance});
+    if (isFalling && fallDistance > 0) {
+      // console.log(
+      //   `Starting fall animation for tile ${tile.id} with distance ${fallDistance}`,
+      // );
+      // Start from above the target position (further up to show the "hole" effect)
+      translateY.setValue(-(fallDistance + 2));
+
+      // Animate falling down with bounce effect
+      Animated.sequence([
+        // Initial fall
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: 1200, // Much slower for better visibility
+          useNativeDriver: true,
+        }),
+        // Bounce effect
+        Animated.sequence([
+          Animated.timing(translateY, {
+            toValue: -0.3, // Small bounce up
+            duration: 150,
+            useNativeDriver: true,
+          }),
+          Animated.timing(translateY, {
+            toValue: 0, // Settle back down
+            duration: 150,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
+    } else {
+      // Reset position for non-falling tiles
+      translateY.setValue(0);
+    }
+  }, [isFalling, fallDistance, translateY, tile.id]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -120,7 +163,7 @@ export const Tile: React.FC<TileProps> = ({
       style={[
         styles.tile,
         {
-          transform: [{scale}],
+          transform: [{scale}, {translateY}],
           opacity,
         },
       ]}

@@ -2,18 +2,38 @@ import React, {useState, useEffect, useRef} from 'react';
 import {View, StyleSheet, Alert} from 'react-native';
 import {Tile} from './Tile';
 import {useGame} from '../contexts/GameContext';
-import {processTurn, isValidMove} from '../utils/gameLogic';
+import {
+  isValidMove,
+  findMatches,
+  removeMatches,
+  dropTiles,
+} from '../utils/gameLogic';
+
+// Component to show the "holes" at the top where new tiles drop from
+const ColumnHole: React.FC<{_colIndex: number}> = () => (
+  <View style={styles.hole}>
+    <View style={styles.holeInner} />
+  </View>
+);
 
 export const GameBoard: React.FC = () => {
   const {gameState, dispatchGame, dispatchCurrency} = useGame();
   const [isProcessingMove, setIsProcessingMove] = useState(false);
   const [matchedTiles, setMatchedTiles] = useState<Set<string>>(new Set());
+  const [fallingTiles, setFallingTiles] = useState<Map<string, number>>(
+    new Map(),
+  );
   const boardRef = useRef(gameState.board);
 
   // Update ref when board changes
   useEffect(() => {
     boardRef.current = gameState.board;
   }, [gameState.board]);
+
+  // Debug isProcessingMove state changes
+  useEffect(() => {
+    // console.log('isProcessingMove changed to:', isProcessingMove);
+  }, [isProcessingMove]);
 
   // Initialize game on mount
   useEffect(() => {
@@ -100,12 +120,6 @@ export const GameBoard: React.FC = () => {
       swappedBoard.map(row => row.map(tile => tile?.type || 'null')),
     );
     processGameTurn(swappedBoard, row1, col1, row2, col2);
-
-    // Safety timeout to force reset isProcessingMove if it gets stuck
-    setTimeout(() => {
-      console.log('Safety timeout - forcing isProcessingMove to false');
-      setIsProcessingMove(false);
-    }, 3000); // 3 second safety timeout
   };
 
   const processGameTurn = (
@@ -119,20 +133,15 @@ export const GameBoard: React.FC = () => {
       'Processing turn with board:',
       board.map(row => row.map(tile => tile?.type || 'null')),
     );
-    const result = processTurn(board);
-    console.log('Turn result:', {
-      totalMatches: result.totalMatches,
-      matches: result.matches,
-    });
-    console.log(
-      'New board from processTurn:',
-      result.newBoard.map(row => row.map(tile => tile?.type || 'null')),
-    );
 
-    if (result.totalMatches > 0) {
+    // First, find matches
+    const matches = findMatches(board);
+    console.log('Matches found:', matches);
+
+    if (matches.length > 0) {
       // Show matched tiles fading out
       const matchedPositions = new Set<string>();
-      result.matches.forEach(match => {
+      matches.forEach(match => {
         match.forEach(pos => {
           matchedPositions.add(`${pos.row}-${pos.col}`);
         });
@@ -143,31 +152,53 @@ export const GameBoard: React.FC = () => {
       );
       setMatchedTiles(matchedPositions);
 
-      // Update board immediately
-      console.log('Updating board after fade animation');
+      // Remove matched tiles first
+      const boardAfterRemoval = removeMatches(board, matches);
       console.log(
-        'About to update board to:',
-        result.newBoard.map(row => row.map(tile => tile?.type || 'null')),
+        'Board after removal:',
+        boardAfterRemoval.map(row => row.map(tile => tile?.type || 'null')),
       );
 
-      // Update board
-      dispatchGame({type: 'UPDATE_BOARD', payload: result.newBoard});
+      // Calculate falling tiles by comparing current board to board after removal
+      const oldBoard = boardRef.current;
+      const falling = calculateFallingTiles(oldBoard, boardAfterRemoval);
+      console.log('Falling tiles detected:', Array.from(falling.entries()));
+      setFallingTiles(falling);
 
-      // Increment combos
-      dispatchGame({type: 'INCREMENT_COMBOS'});
+      // Update board to show removed tiles
+      dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterRemoval});
 
-      // Clear matched tiles tracking after a short delay for visual effect
+      // Wait for fade animation, then drop tiles
       setTimeout(() => {
+        const boardAfterDrop = dropTiles(boardAfterRemoval);
+        console.log(
+          'Board after drop:',
+          boardAfterDrop.map(row => row.map(tile => tile?.type || 'null')),
+        );
+
+        // Update board with dropped tiles
+        dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterDrop});
+
+        // Increment combos
+        dispatchGame({type: 'INCREMENT_COMBOS'});
+
+        // Clear matched tiles tracking
         setMatchedTiles(new Set());
+
+        // Clear falling tiles after animation completes
+        setTimeout(() => {
+          setFallingTiles(new Map());
+        }, 1500);
+
+        // Check for game win
+        if (gameState.combos + matches.length >= gameState.targetCombos) {
+          handleGameWin();
+        }
+
+        // Reset processing state - processing is complete
+        setIsProcessingMove(false);
+        console.log('Set isProcessingMove to false (match found)');
       }, 300);
-
-      // Check for game win
-      if (gameState.combos + result.totalMatches >= gameState.targetCombos) {
-        handleGameWin();
-      }
-
-      setIsProcessingMove(false);
-      console.log('Set isProcessingMove to false (match found)');
     } else {
       console.log('No matches found, reverting swap');
       // No matches - revert the swap by swapping back
@@ -208,25 +239,86 @@ export const GameBoard: React.FC = () => {
     return matchedTiles.has(`${row}-${col}`);
   };
 
+  const getTileFallDistance = (row: number, col: number) => {
+    return fallingTiles.get(`${row}-${col}`) || 0;
+  };
+
+  const calculateFallingTiles = (oldBoard: any[][], newBoard: any[][]) => {
+    const falling = new Map<string, number>();
+
+    // For each column, track how tiles moved down
+    for (let col = 0; col < 8; col++) {
+      // Find all non-null tiles in the old board for this column
+      const oldTiles = [];
+      for (let row = 0; row < 8; row++) {
+        if (oldBoard[row][col] !== null) {
+          oldTiles.push({row, tile: oldBoard[row][col]});
+        }
+      }
+
+      // Find all non-null tiles in the new board for this column
+      const newTiles = [];
+      for (let row = 0; row < 8; row++) {
+        if (newBoard[row][col] !== null) {
+          newTiles.push({row, tile: newBoard[row][col]});
+        }
+      }
+
+      // Compare tiles to see which ones moved down
+      for (let i = 0; i < Math.min(oldTiles.length, newTiles.length); i++) {
+        const oldTile = oldTiles[i];
+        const newTile = newTiles[i];
+
+        // If the tile moved down (new row > old row), it's falling
+        if (newTile.row > oldTile.row) {
+          const fallDistance = newTile.row - oldTile.row;
+          falling.set(`${newTile.row}-${col}`, fallDistance);
+          console.log(
+            `Tile fell from row ${oldTile.row} to row ${newTile.row} (distance: ${fallDistance})`,
+          );
+        }
+      }
+    }
+
+    return falling;
+  };
+
   if (gameState.board.length === 0) {
     return <View style={styles.container} />;
   }
 
   return (
     <View style={styles.container}>
+      {/* Holes at the top where new tiles drop from */}
+      <View style={styles.holesRow}>
+        {Array.from({length: 8}, (_, colIndex) => (
+          <ColumnHole key={`hole-${colIndex}`} _colIndex={colIndex} />
+        ))}
+      </View>
+
+      {/* Game board */}
       {gameState.board.map((row, rowIndex) => (
         <View key={rowIndex} style={styles.row}>
-          {row.map((tile, colIndex) => (
-            <Tile
-              key={tile.id}
-              tile={tile}
-              onPress={() => handleTilePress(rowIndex, colIndex)}
-              onSwipe={direction =>
-                handleTileSwipe(rowIndex, colIndex, direction)
-              }
-              isMatched={isTileMatched(rowIndex, colIndex)}
-            />
-          ))}
+          {row.map((tile, colIndex) =>
+            tile ? (
+              <Tile
+                key={tile.id}
+                tile={tile}
+                onPress={() => handleTilePress(rowIndex, colIndex)}
+                onSwipe={direction =>
+                  handleTileSwipe(rowIndex, colIndex, direction)
+                }
+                isMatched={isTileMatched(rowIndex, colIndex)}
+                isFalling={fallingTiles.has(`${rowIndex}-${colIndex}`)}
+                fallDistance={getTileFallDistance(rowIndex, colIndex)}
+              />
+            ) : (
+              <View
+                key={`empty-${rowIndex}-${colIndex}`}
+                style={styles.emptyTile}
+              />
+            ),
+          )}
         </View>
       ))}
     </View>
@@ -241,5 +333,28 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
+  },
+  holesRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  hole: {
+    width: 44, // Match tile width (40 + 2*2 border)
+    height: 20,
+    marginHorizontal: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  holeInner: {
+    width: 30,
+    height: 8,
+    backgroundColor: '#333',
+    borderRadius: 4,
+  },
+  emptyTile: {
+    width: 44,
+    height: 44,
+    margin: 1,
+    backgroundColor: 'transparent',
   },
 });
