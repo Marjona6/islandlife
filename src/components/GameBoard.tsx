@@ -336,10 +336,26 @@ export const GameBoard: React.FC<{variant?: 'sand' | 'sea'}> = ({
         boardAfterDrop.map(row => row.map(tile => tile?.type || 'null')),
       );
 
+      // Count collected tiles for collect objectives
+      let collectedTiles = 0;
+      matches.forEach(match => {
+        match.forEach(pos => {
+          const tileType = board[pos.row][pos.col]?.type;
+          if (tileType === '🐚') {
+            collectedTiles++;
+          }
+        });
+      });
+
       // Update board state immediately but keep matched tiles visible for animation
       dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterDrop});
       currentBoardRef.current = boardAfterDrop;
       dispatchGame({type: 'INCREMENT_COMBOS'});
+
+      // Add collected tiles to currency if any were collected
+      if (collectedTiles > 0) {
+        dispatchCurrency({type: 'ADD_SHELLS', payload: collectedTiles});
+      }
 
       // Clear matched tiles after explosion animation
       setTimeout(() => {

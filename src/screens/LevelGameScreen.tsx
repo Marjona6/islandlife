@@ -46,7 +46,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
   // Simple progress tracking - just use game state directly
   const currentProgress = {
     score: gameState.score,
-    collected: Math.floor(gameState.score / 100), // Rough estimate for collect objectives
+    collected: currency.shells, // Use actual collected shells for collect objectives
     cleared: Math.floor(gameState.score / 50), // Rough estimate for clear objectives
     combos: gameState.combos,
   };
