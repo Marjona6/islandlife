@@ -167,6 +167,18 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
 
   const difficultyScore = getLevelDifficulty(currentLevel);
 
+  // Debug logging for sand blockers (only log once per level change)
+  useEffect(() => {
+    // Log sand blockers when level changes (for debugging)
+    const sandBlockers =
+      currentLevel.blockers
+        ?.filter(b => b.type === 'sand')
+        .map(b => ({row: b.row, col: b.col})) || [];
+    if (sandBlockers.length > 0) {
+      console.log('LevelGameScreen: Sand blockers for level:', sandBlockers);
+    }
+  }, [currentLevelId]);
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -220,6 +232,11 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
               ? 'sea'
               : 'sand'
           }
+          sandBlockers={
+            currentLevel.blockers
+              ?.filter(b => b.type === 'sand')
+              .map(b => ({row: b.row, col: b.col})) || []
+          }
         />
       </View>
 
@@ -264,20 +281,6 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Mechanics Info */}
-      {currentLevel.mechanics.length > 0 && (
-        <View style={styles.mechanicsInfo}>
-          <Text style={styles.mechanicsTitle}>Mechanics:</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {currentLevel.mechanics.map((mechanic, index) => (
-              <View key={index} style={styles.mechanicTag}>
-                <Text style={styles.mechanicText}>{mechanic}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      )}
     </SafeAreaView>
   );
 };

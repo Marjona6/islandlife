@@ -135,6 +135,7 @@ export const removeMatches = (
 export const dropTiles = (
   board: Tile[][],
   variant: 'sand' | 'sea' = 'sand',
+  sandBlockers: Array<{row: number; col: number}> = [],
 ): Tile[][] => {
   const newBoard = board.map(row => [...row]);
   const tileTypes = getTileTypes(variant);
@@ -155,6 +156,17 @@ export const dropTiles = (
 
     // Fill remaining spaces with new tiles
     for (let row = writeRow; row >= 0; row--) {
+      // Check if this position has a sand blocker
+      const hasSandBlocker = sandBlockers.some(
+        blocker => blocker.row === row && blocker.col === col,
+      );
+
+      if (hasSandBlocker) {
+        // Don't place a tile in sand blocker position
+        newBoard[row][col] = null as any;
+        continue;
+      }
+
       const randomType =
         tileTypes[Math.floor(Math.random() * tileTypes.length)];
       newBoard[row][col] = {
@@ -227,6 +239,8 @@ export const getValidMoves = (
 // Process a complete game turn (swap, find matches, remove, drop)
 export const processTurn = (
   board: Tile[][],
+  variant: 'sand' | 'sea' = 'sand',
+  sandBlockers: Array<{row: number; col: number}> = [],
 ): {
   newBoard: Tile[][];
   matches: Array<Array<{row: number; col: number}>>;
@@ -246,7 +260,7 @@ export const processTurn = (
       allMatches = allMatches.concat(matches);
       totalMatches += matches.length;
       currentBoard = removeMatches(currentBoard, matches);
-      currentBoard = dropTiles(currentBoard);
+      currentBoard = dropTiles(currentBoard, variant, sandBlockers);
     }
   }
 
@@ -260,6 +274,7 @@ export const processTurn = (
 // Create a board with no initial matches
 export const createValidBoard = (
   variant: 'sand' | 'sea' = 'sand',
+  sandBlockers: Array<{row: number; col: number}> = [],
 ): Tile[][] => {
   const board: Tile[][] = [];
   const tileTypes = getTileTypes(variant);
@@ -267,6 +282,17 @@ export const createValidBoard = (
   for (let row = 0; row < BOARD_SIZE; row++) {
     board[row] = [];
     for (let col = 0; col < BOARD_SIZE; col++) {
+      // Check if this position has a sand blocker
+      const hasSandBlocker = sandBlockers.some(
+        blocker => blocker.row === row && blocker.col === col,
+      );
+
+      if (hasSandBlocker) {
+        // Don't place a tile in sand blocker position
+        board[row][col] = null as any;
+        continue;
+      }
+
       let randomType: TileType;
       let attempts = 0;
       const maxAttempts = 10;

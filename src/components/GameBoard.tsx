@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {View, StyleSheet, Alert} from 'react-native';
+import {View, StyleSheet, Alert, Text} from 'react-native';
 import Svg, {
   Ellipse,
   Defs,
@@ -119,10 +119,17 @@ const FallingParticles: React.FC<{_colIndex: number; isActive: boolean}> = ({
   );
 };
 
-export const GameBoard: React.FC<{variant?: 'sand' | 'sea'}> = ({
-  variant = 'sand',
-}) => {
-  const {gameState, dispatchGame, dispatchCurrency} = useGame();
+export const GameBoard: React.FC<{
+  variant?: 'sand' | 'sea';
+  sandBlockers?: Array<{row: number; col: number}>;
+}> = ({variant = 'sand', sandBlockers = []}) => {
+  const {
+    gameState,
+    dispatchGame,
+    dispatchCurrency,
+    setSandBlockers,
+    clearSandBlocker,
+  } = useGame();
   const [isProcessingMove, setIsProcessingMove] = useState(false);
   const [isProcessingMatches, setIsProcessingMatches] = useState(false);
   const [matchedTiles, setMatchedTiles] = useState<Set<string>>(new Set());
@@ -153,9 +160,28 @@ export const GameBoard: React.FC<{variant?: 'sand' | 'sea'}> = ({
     if (!hasInitializedRef.current && gameState.board.length === 0) {
       console.log('GameBoard: Initializing board');
       hasInitializedRef.current = true;
-      dispatchGame({type: 'INIT_BOARD', payload: {variant}});
+      dispatchGame({type: 'INIT_BOARD', payload: {variant, sandBlockers}});
     }
-  }, [dispatchGame, variant]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dispatchGame, variant, sandBlockers]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Set sand blockers when they change (only if different from current state)
+  useEffect(() => {
+    const currentBlockers = gameState.sandBlockers;
+
+    // Deep comparison to avoid unnecessary updates
+    const blockersChanged =
+      sandBlockers.length !== currentBlockers.length ||
+      sandBlockers.some((blocker, index) => {
+        const current = currentBlockers[index];
+        return (
+          !current || blocker.row !== current.row || blocker.col !== current.col
+        );
+      });
+
+    if (sandBlockers.length > 0 && blockersChanged) {
+      setSandBlockers(sandBlockers);
+    }
+  }, [sandBlockers, gameState.sandBlockers, setSandBlockers]);
 
   const handleTilePress = (_row: number, _col: number) => {
     // Do nothing on tap - only swipe works
@@ -209,6 +235,15 @@ export const GameBoard: React.FC<{variant?: 'sand' | 'sea'}> = ({
     // Check if target position is within bounds
     if (targetRow < 0 || targetRow >= 8 || targetCol < 0 || targetCol >= 8) {
       console.log('Target position out of bounds');
+      return;
+    }
+
+    // Check if target position has a sand blocker
+    const hasSandBlocker = gameState.sandBlockers.some(
+      blocker => blocker.row === targetRow && blocker.col === targetCol,
+    );
+    if (hasSandBlocker) {
+      console.log('Target position has sand blocker');
       return;
     }
 
@@ -323,7 +358,11 @@ export const GameBoard: React.FC<{variant?: 'sand' | 'sea'}> = ({
 
       // Calculate the final board state immediately (no intermediate gappy state)
       const boardAfterRemoval = removeMatches(board, matches);
-      const boardAfterDrop = dropTiles(boardAfterRemoval, variant);
+      const boardAfterDrop = dropTiles(
+        boardAfterRemoval,
+        variant,
+        gameState.sandBlockers,
+      );
 
       // Calculate which tiles need to fall for animation
       const falling = calculateFallingTiles(boardAfterRemoval, boardAfterDrop);
@@ -345,6 +384,31 @@ export const GameBoard: React.FC<{variant?: 'sand' | 'sea'}> = ({
             collectedTiles++;
           }
         });
+      });
+
+      // Check for sand blockers that should be cleared
+      const sandBlockersToClear: Array<{row: number; col: number}> = [];
+
+      gameState.sandBlockers.forEach(blocker => {
+        // Check if any matched tile is adjacent to this sand blocker
+        const isAdjacent = matches.some(match =>
+          match.some(
+            pos =>
+              (Math.abs(pos.row - blocker.row) === 1 &&
+                pos.col === blocker.col) ||
+              (Math.abs(pos.col - blocker.col) === 1 &&
+                pos.row === blocker.row),
+          ),
+        );
+
+        if (isAdjacent) {
+          sandBlockersToClear.push(blocker);
+        }
+      });
+
+      // Clear adjacent sand blockers
+      sandBlockersToClear.forEach(blocker => {
+        clearSandBlocker(blocker.row, blocker.col);
       });
 
       // Update board state immediately but keep matched tiles visible for animation
@@ -498,7 +562,6 @@ export const GameBoard: React.FC<{variant?: 'sand' | 'sea'}> = ({
     return falling;
   };
 
-  // Variant-specific background component
   const renderBackground = () => {
     if (variant === 'sand') {
       return (
@@ -745,8 +808,30 @@ export const GameBoard: React.FC<{variant?: 'sand' | 'sea'}> = ({
         {/* Game board */}
         {gameState.board.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
-            {row.map((tile, colIndex) =>
-              tile ? (
+            {row.map((tile, colIndex) => {
+              const hasSandBlocker = gameState.sandBlockers.some(
+                blocker => blocker.row === rowIndex && blocker.col === colIndex,
+              );
+
+              // Use the original for now, but this will help us debug
+              if (hasSandBlocker) {
+                return (
+                  <View
+                    key={`sand-blocker-${rowIndex}-${colIndex}`}
+                    style={[
+                      styles.sandBlocker,
+                      {
+                        position: 'relative',
+                        width: 40,
+                        height: 40,
+                        margin: 1,
+                      },
+                    ]}>
+                    <Text style={styles.sandBlockerText}>🏖️</Text>
+                  </View>
+                );
+              }
+              return tile ? (
                 <Tile
                   key={tile.id}
                   tile={tile}
@@ -754,7 +839,7 @@ export const GameBoard: React.FC<{variant?: 'sand' | 'sea'}> = ({
                   onSwipe={direction =>
                     handleTileSwipe(rowIndex, colIndex, direction)
                   }
-                  isMatched={false} // Don't mark tiles as matched from board state
+                  isMatched={false}
                   isFalling={fallingTiles.has(`${rowIndex}-${colIndex}`)}
                   fallDistance={getTileFallDistance(rowIndex, colIndex)}
                 />
@@ -763,8 +848,8 @@ export const GameBoard: React.FC<{variant?: 'sand' | 'sea'}> = ({
                   key={`empty-${rowIndex}-${colIndex}`}
                   style={styles.emptyTile}
                 />
-              ),
-            )}
+              );
+            })}
           </View>
         ))}
 
@@ -1010,5 +1095,20 @@ const styles = StyleSheet.create({
     height: 'auto',
     overflow: 'hidden',
     zIndex: -1,
+  },
+  sandBlocker: {
+    position: 'absolute',
+    width: 32,
+    height: 32,
+    backgroundColor: '#D2B48C',
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#8B4513',
+    zIndex: 10,
+  },
+  sandBlockerText: {
+    fontSize: 24,
   },
 });

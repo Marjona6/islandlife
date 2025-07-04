@@ -21,6 +21,7 @@ const initialGameState: GameState = {
   targetCombos: TARGET_COMBOS,
   isGameWon: false,
   isGameOver: false,
+  sandBlockers: [],
 };
 
 const initialCurrency: Currency = {
@@ -61,7 +62,13 @@ const initialBeachItems: BeachItem[] = [
 
 // Action types
 type GameAction =
-  | {type: 'INIT_BOARD'; payload?: {variant: 'sand' | 'sea'}}
+  | {
+      type: 'INIT_BOARD';
+      payload?: {
+        variant: 'sand' | 'sea';
+        sandBlockers?: Array<{row: number; col: number}>;
+      };
+    }
   | {
       type: 'SWAP_TILES';
       payload: {row1: number; col1: number; row2: number; col2: number};
@@ -69,7 +76,9 @@ type GameAction =
   | {type: 'UPDATE_BOARD'; payload: Tile[][]}
   | {type: 'INCREMENT_COMBOS'}
   | {type: 'RESET_GAME'}
-  | {type: 'SET_GAME_WON'};
+  | {type: 'SET_GAME_WON'}
+  | {type: 'SET_SAND_BLOCKERS'; payload: Array<{row: number; col: number}>}
+  | {type: 'CLEAR_SAND_BLOCKER'; payload: {row: number; col: number}};
 
 type CurrencyAction =
   | {type: 'ADD_SHELLS'; payload: number}
@@ -87,7 +96,10 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
     case 'INIT_BOARD':
       return {
         ...state,
-        board: createValidBoard(action.payload?.variant || 'sand'),
+        board: createValidBoard(
+          action.payload?.variant || 'sand',
+          action.payload?.sandBlockers || [],
+        ),
         score: 0,
         combos: 0,
         isGameWon: false,
@@ -130,6 +142,24 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return {
         ...state,
         isGameWon: true,
+      };
+
+    case 'SET_SAND_BLOCKERS':
+      return {
+        ...state,
+        sandBlockers: action.payload,
+      };
+
+    case 'CLEAR_SAND_BLOCKER':
+      return {
+        ...state,
+        sandBlockers: state.sandBlockers.filter(
+          blocker =>
+            !(
+              blocker.row === action.payload.row &&
+              blocker.col === action.payload.col
+            ),
+        ),
       };
 
     default:
@@ -176,6 +206,8 @@ interface GameContextType {
   initGame: (variant?: 'sand' | 'sea') => void;
   swapTiles: (row1: number, col1: number, row2: number, col2: number) => void;
   purchaseBeachItem: (itemId: string) => void;
+  setSandBlockers: (blockers: Array<{row: number; col: number}>) => void;
+  clearSandBlocker: (row: number, col: number) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -278,6 +310,20 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({
     [beachItems, currency.keys, dispatchCurrency, dispatchBeach],
   );
 
+  const setSandBlockers = useCallback(
+    (blockers: Array<{row: number; col: number}>) => {
+      dispatchGame({type: 'SET_SAND_BLOCKERS', payload: blockers});
+    },
+    [dispatchGame],
+  );
+
+  const clearSandBlocker = useCallback(
+    (row: number, col: number) => {
+      dispatchGame({type: 'CLEAR_SAND_BLOCKER', payload: {row, col}});
+    },
+    [dispatchGame],
+  );
+
   const value: GameContextType = {
     gameState,
     currency,
@@ -288,6 +334,8 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({
     initGame,
     swapTiles,
     purchaseBeachItem,
+    setSandBlockers,
+    clearSandBlocker,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
