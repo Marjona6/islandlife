@@ -41,12 +41,14 @@ export const Tile: React.FC<TileProps> = ({
   useEffect(() => {
     if (isFalling && fallDistance > 0) {
       // Start from above the current position (simulating the original position)
-      translateY.setValue(-(fallDistance * 46));
+      // Each tile position is 42 pixels (40 height + 2 margin)
+      translateY.setValue(-(fallDistance * 42));
 
       // Fall animation to final position (current position in the board)
+      // Use consistent duration for cohesive column movement
       Animated.timing(translateY, {
         toValue: 0,
-        duration: 1000,
+        duration: 800, // Slightly faster and consistent duration
         useNativeDriver: true,
       }).start();
     } else {

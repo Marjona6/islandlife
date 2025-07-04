@@ -217,12 +217,14 @@ export const GameBoard: React.FC = () => {
 
       // Calculate which tiles need to fall for animation
       const falling = calculateFallingTiles(boardAfterRemoval, boardAfterDrop);
-      setFallingTiles(falling);
 
       // Update to the final, valid board state immediately
       dispatchGame({type: 'UPDATE_BOARD', payload: boardAfterDrop});
       currentBoardRef.current = boardAfterDrop;
       dispatchGame({type: 'INCREMENT_COMBOS'});
+
+      // Set falling state for all tiles at once to ensure synchronized animation
+      setFallingTiles(falling);
 
       console.log(
         'Updated to final board state:',
@@ -327,28 +329,45 @@ export const GameBoard: React.FC = () => {
   ) => {
     const falling = new Map<string, number>();
 
-    // For each column, find tiles that moved down
+    // For each column, find tiles that should be falling
     for (let col = 0; col < 8; col++) {
-      // Find tiles in the final board and trace their movement
-      for (let finalRow = 0; finalRow < 8; finalRow++) {
-        const finalTile = boardAfterDrop[finalRow][col];
-        if (finalTile) {
-          // Find where this tile was in the board after removal
-          let originalRow = -1;
-          for (let row = 0; row < 8; row++) {
-            if (
-              boardAfterRemoval[row][col] &&
-              boardAfterRemoval[row][col].id === finalTile.id
-            ) {
-              originalRow = row;
-              break;
-            }
-          }
+      // Find where tiles were removed (gaps in the column after removal)
+      const gaps: number[] = [];
+      for (let row = 0; row < 8; row++) {
+        if (boardAfterRemoval[row][col] === null) {
+          gaps.push(row);
+        }
+      }
 
-          // If the tile moved down, calculate the fall distance
-          if (originalRow >= 0 && finalRow > originalRow) {
-            const fallDistance = finalRow - originalRow;
-            falling.set(`${finalRow}-${col}`, fallDistance);
+      if (gaps.length > 0) {
+        // Calculate how many tiles were removed (this is the fall distance for the entire column)
+        const tilesRemoved = gaps.length;
+
+        // Mark all tiles in this column that need to fall
+        for (let finalRow = 0; finalRow < 8; finalRow++) {
+          const finalTile = boardAfterDrop[finalRow][col];
+          if (finalTile) {
+            // Find where this tile was in the board after removal
+            let originalRow = -1;
+            for (let row = 0; row < 8; row++) {
+              if (
+                boardAfterRemoval[row][col] &&
+                boardAfterRemoval[row][col].id === finalTile.id
+              ) {
+                originalRow = row;
+                break;
+              }
+            }
+
+            // If this tile moved down (fell), mark it for falling animation
+            if (originalRow >= 0 && finalRow > originalRow) {
+              falling.set(`${finalRow}-${col}`, tilesRemoved);
+            }
+
+            // If this is a new tile (not found in original board), it should fall from the top
+            if (originalRow === -1) {
+              falling.set(`${finalRow}-${col}`, tilesRemoved);
+            }
           }
         }
       }
