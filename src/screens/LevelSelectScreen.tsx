@@ -22,7 +22,25 @@ export const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({
   onNavigateBack,
 }) => {
   // const [selectedWorld, setSelectedWorld] = useState(1); // Not currently used
+
+  // Force clear and reload levels to ensure fresh data
+  levelManager.constructor.clearInstance();
+  levelManager.reloadLevels();
+
   const allLevels = levelManager.getAllLevels();
+
+  // Debug logging to see what levels are actually loaded
+  console.log('=== LevelSelectScreen Debug ===');
+  console.log('Total levels loaded:', allLevels.length);
+  allLevels.forEach((level, index) => {
+    console.log(`${index + 1}. ${level.id}: ${level.name}`);
+  });
+
+  // Get detailed debug info
+  const debugInfo = levelManager.getDebugInfo();
+  console.log('=== LevelManager Debug Info ===');
+  console.log('Debug info:', JSON.stringify(debugInfo, null, 2));
+  console.log('=== End Debug ===');
 
   // Group levels by world (assuming 5 levels per world for now)
   const levelsPerWorld = 5;

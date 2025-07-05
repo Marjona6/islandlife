@@ -41,6 +41,9 @@ export const findMatches = (
         tile1 &&
         tile2 &&
         tile3 &&
+        !tile1.isSpecial && // Don't match special tiles
+        !tile2.isSpecial &&
+        !tile3.isSpecial &&
         tile1.type === tile2.type &&
         tile2.type === tile3.type
       ) {
@@ -54,6 +57,7 @@ export const findMatches = (
         while (
           i < BOARD_SIZE &&
           board[row][i] &&
+          !board[row][i].isSpecial && // Don't match special tiles
           board[row][i].type === tile1.type
         ) {
           match.push({row, col: i});
@@ -78,6 +82,9 @@ export const findMatches = (
         tile1 &&
         tile2 &&
         tile3 &&
+        !tile1.isSpecial && // Don't match special tiles
+        !tile2.isSpecial &&
+        !tile3.isSpecial &&
         tile1.type === tile2.type &&
         tile2.type === tile3.type
       ) {
@@ -91,6 +98,7 @@ export const findMatches = (
         while (
           i < BOARD_SIZE &&
           board[i][col] &&
+          !board[i][col].isSpecial && // Don't match special tiles
           board[i][col].type === tile1.type
         ) {
           match.push({row: i, col});
@@ -165,11 +173,11 @@ export const dropTiles = (
 
     // Process each section independently
     for (const section of sections) {
-      // Collect all non-null tiles in this section
-      const tiles: any[] = [];
+      // Collect all non-null tiles in this section, preserving their properties
+      const tiles: Tile[] = [];
       for (let row = section.start; row <= section.end; row++) {
         if (newBoard[row][col] !== null) {
-          tiles.push(newBoard[row][col]);
+          tiles.push({...newBoard[row][col]}); // Clone the tile to preserve all properties
           newBoard[row][col] = null as any;
         }
       }
@@ -177,12 +185,19 @@ export const dropTiles = (
       // Place existing tiles at the bottom of the section
       let writeRow = section.end;
       for (let i = tiles.length - 1; i >= 0; i--) {
-        newBoard[writeRow][col] = tiles[i];
-        newBoard[writeRow][col].row = writeRow;
+        const tile = tiles[i];
+        newBoard[writeRow][col] = {
+          ...tile,
+          row: writeRow,
+          col,
+          id: tile.id, // Preserve the original ID
+          type: tile.type, // Preserve the original type
+          isSpecial: tile.isSpecial, // Preserve special status
+        };
         writeRow--;
       }
 
-      // Fill remaining spaces with new tiles
+      // Fill remaining spaces with new regular tiles
       for (let row = writeRow; row >= section.start; row--) {
         const randomType =
           tileTypes[Math.floor(Math.random() * tileTypes.length)];
@@ -191,6 +206,7 @@ export const dropTiles = (
           type: randomType,
           row,
           col,
+          isSpecial: false, // New tiles are never special
         };
       }
     }
@@ -393,6 +409,69 @@ export const createValidBoard = (
     console.warn('Board created with matches, regenerating...');
     return createValidBoard(variant); // Recursively try again
   }
+
+  return board;
+};
+
+// Create a board from level configuration
+export const createBoardFromLevel = (
+  levelBoard: (TileType | string | null)[][],
+  variant: 'sand' | 'sea' = 'sand',
+  sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}> = [],
+): Tile[][] => {
+  const board: Tile[][] = Array(BOARD_SIZE)
+    .fill(null)
+    .map(() => Array(BOARD_SIZE).fill(null));
+
+  // First pass: Create tiles from the level board
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      const tileType = levelBoard[row]?.[col];
+      if (tileType) {
+        board[row][col] = {
+          id: `${row}-${col}-${Date.now()}-${Math.random()}`,
+          type: tileType as TileType,
+          row,
+          col,
+          isSpecial: tileType === '🥥', // Mark coconuts as special
+        };
+      }
+    }
+  }
+
+  // Second pass: Ensure no matches exist in the initial board
+  // Only check and fix regular tiles, not special tiles
+  const tileTypes = getTileTypes(variant);
+  let hasMatches = true;
+  while (hasMatches) {
+    const matches = findMatches(board);
+    if (matches.length === 0) {
+      hasMatches = false;
+    } else {
+      // Replace matched regular tiles with random tiles
+      matches.forEach(match => {
+        match.forEach(({row, col}) => {
+          const tile = board[row][col];
+          if (tile && !tile.isSpecial) {
+            // Only replace non-special tiles
+            const randomType =
+              tileTypes[Math.floor(Math.random() * tileTypes.length)];
+            board[row][col] = {
+              id: `${row}-${col}-${Date.now()}-${Math.random()}`,
+              type: randomType,
+              row,
+              col,
+            };
+          }
+        });
+      });
+    }
+  }
+
+  // Third pass: Ensure sand blocker positions are null
+  sandBlockers.forEach(({row, col}) => {
+    board[row][col] = null as any;
+  });
 
   return board;
 };

@@ -1,4 +1,4 @@
-import {TileType} from './game';
+import {TileType, SAND_TILE_EMOJIS, SEA_TILE_EMOJIS} from './game';
 
 // Level configuration types
 export type ObjectiveType = 'score' | 'collect' | 'clear' | 'drop' | 'combo';
@@ -12,19 +12,22 @@ export type MechanicType =
   | 'locked'
   | 'net'
   | 'coral'
-  | 'rock';
+  | 'rock'
+  | 'driftwood';
 export type BlockerType = 'sand' | 'net' | 'ice' | 'rock' | 'coral';
 export type SpecialTileType =
   | 'power-tile'
   | 'locked'
   | 'bomb'
   | 'rainbow'
-  | 'collector';
+  | 'collector'
+  | 'driftwood'
+  | 'coconut';
 
 export interface LevelConfig {
   id: string;
   name: string;
-  board: (TileType | null)[][];
+  board: (TileType | string | null)[][];
   objective: ObjectiveType;
   target: number;
   moves: number;
@@ -63,10 +66,18 @@ export const getLevelsByDifficulty = (
   return LEVEL_CONFIGS.filter(level => level.difficulty === difficulty);
 };
 
+// Helper function to check if a tile is a valid TileType
+const isValidTileType = (tile: string): tile is TileType => {
+  return [...SAND_TILE_EMOJIS, ...SEA_TILE_EMOJIS].includes(tile as TileType);
+};
+
 // Helper function to validate level configuration
 export const validateLevelConfig = (config: LevelConfig): boolean => {
   // Check if board is 8x8
   if (config.board.length !== 8 || config.board.some(row => row.length !== 8)) {
+    console.warn(
+      `[VALIDATION] ${config.id} (${config.name}): Board is not 8x8`,
+    );
     return false;
   }
 
@@ -75,32 +86,44 @@ export const validateLevelConfig = (config: LevelConfig): boolean => {
     const boardTileTypes = new Set<TileType>();
     config.board.forEach(row => {
       row.forEach(tile => {
-        if (tile) boardTileTypes.add(tile);
+        if (tile && typeof tile === 'string' && isValidTileType(tile)) {
+          boardTileTypes.add(tile);
+        }
       });
     });
 
     // Check if all target tile types are present in the board
     for (const targetTile of config.tileTypes) {
       if (!boardTileTypes.has(targetTile)) {
+        console.warn(
+          `[VALIDATION] ${config.id} (${config.name}): Target tile ${targetTile} not found in board`,
+        );
         return false;
       }
     }
   } else {
-    // For other objectives, check if all tile types in board are included in tileTypes array
+    // For other objectives, check if all regular tile types in board are included in tileTypes array
     const boardTileTypes = new Set<TileType>();
     config.board.forEach(row => {
       row.forEach(tile => {
-        if (tile) boardTileTypes.add(tile);
+        if (tile && typeof tile === 'string' && isValidTileType(tile)) {
+          boardTileTypes.add(tile);
+        }
       });
     });
 
     const configTileTypes = new Set(config.tileTypes);
     for (const tileType of boardTileTypes) {
       if (!configTileTypes.has(tileType)) {
+        console.warn(
+          `[VALIDATION] ${config.id} (${config.name}): Board tile ${tileType} not in tileTypes array`,
+        );
         return false;
       }
     }
   }
 
+  // If we get here, validation passed
+  console.log(`[VALIDATION] ${config.id} (${config.name}): PASSED`);
   return true;
 };

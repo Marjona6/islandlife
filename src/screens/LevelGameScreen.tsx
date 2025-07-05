@@ -45,13 +45,22 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
       const isSeaLevel = currentLevel.tileTypes.some(tile =>
         ['🦑', '🦐', '🐡', '🪝'].includes(tile),
       );
-      initGame(isSeaLevel ? 'sea' : 'sand');
 
       // Initialize sand blockers from level config
       const sandBlockers =
         currentLevel.blockers
           ?.filter(b => b.type === 'sand')
           .map(b => ({row: b.row, col: b.col, hasUmbrella: true})) || [];
+
+      // Initialize board from level configuration
+      dispatchGame({
+        type: 'INIT_BOARD_FROM_LEVEL',
+        payload: {
+          levelBoard: currentLevel.board,
+          variant: isSeaLevel ? 'sea' : 'sand',
+          sandBlockers: sandBlockers.map(sb => ({row: sb.row, col: sb.col})),
+        },
+      });
 
       if (sandBlockers.length > 0) {
         console.log(
@@ -62,7 +71,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         dispatchGame({type: 'SET_SAND_BLOCKERS', payload: sandBlockers});
       }
     }
-  }, [currentLevelId, currentLevel, initGame, dispatchGame]);
+  }, [currentLevelId, currentLevel, currentLevel?.blockers, dispatchGame]);
 
   // Simple progress tracking - just use game state directly
   const currentProgress = {
@@ -156,19 +165,28 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
       const isSeaLevel = currentLevel.tileTypes.some(tile =>
         ['🦑', '🦐', '🐡', '🪝'].includes(tile),
       );
-      initGame(isSeaLevel ? 'sea' : 'sand');
-
-      // Reset currency to start fresh for this level
-      dispatchCurrency({
-        type: 'LOAD_CURRENCY',
-        payload: {shells: 0, keys: currency.keys},
-      });
 
       // Re-initialize sand blockers from level config
       const sandBlockers =
         currentLevel.blockers
           ?.filter(b => b.type === 'sand')
           .map(b => ({row: b.row, col: b.col, hasUmbrella: true})) || [];
+
+      // Re-initialize board from level configuration
+      dispatchGame({
+        type: 'INIT_BOARD_FROM_LEVEL',
+        payload: {
+          levelBoard: currentLevel.board,
+          variant: isSeaLevel ? 'sea' : 'sand',
+          sandBlockers: sandBlockers.map(sb => ({row: sb.row, col: sb.col})),
+        },
+      });
+
+      // Reset currency to start fresh for this level
+      dispatchCurrency({
+        type: 'LOAD_CURRENCY',
+        payload: {shells: 0, keys: currency.keys},
+      });
 
       if (sandBlockers.length > 0) {
         console.log(

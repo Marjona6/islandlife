@@ -1,7 +1,7 @@
-import React, {useRef, useEffect} from 'react';
+import React, {useRef} from 'react';
 import {Text, StyleSheet, PanResponder} from 'react-native';
 import * as Animatable from 'react-native-animatable';
-import {Tile as TileType} from '../types/game';
+import {Tile as TileType, isSpecialTile} from '../types/game';
 
 interface TileProps {
   tile: TileType;
@@ -21,47 +21,46 @@ export const Tile: React.FC<TileProps> = ({
   fallDistance = 0,
 }) => {
   const tileRef = useRef<Animatable.View>(null);
+  const hasAnimatedMatch = useRef(false);
+  const hasAnimatedFall = useRef(false);
 
-  // Professional explosion animation for matched tiles
-  useEffect(() => {
-    if (isMatched && tileRef.current) {
-      // Multi-stage explosion effect using built-in animations
+  // Handle matched tile animation
+  const handleMatch = () => {
+    if (isMatched && tileRef.current && !hasAnimatedMatch.current) {
+      hasAnimatedMatch.current = true;
       const currentRef = tileRef.current;
-
-      // Stage 1: Quick scale up and shake (explosion start)
       if (currentRef && currentRef.animate) {
-        currentRef
-          .animate(
-            {
-              0: {scaleX: 1, scaleY: 1, opacity: 1},
-              0.1: {scaleX: 1.4, scaleY: 1.4, opacity: 1},
-              0.2: {scaleX: 1.2, scaleY: 1.2, opacity: 1},
-              0.3: {scaleX: 1.5, scaleY: 1.5, opacity: 0.9},
-              0.4: {scaleX: 1.1, scaleY: 1.1, opacity: 0.8},
-              0.5: {scaleX: 1.3, scaleY: 1.3, opacity: 0.6},
-              0.6: {scaleX: 0.9, scaleY: 0.9, opacity: 0.4},
-              0.7: {scaleX: 0.7, scaleY: 0.7, opacity: 0.2},
-              0.8: {scaleX: 0.5, scaleY: 0.5, opacity: 0.1},
-              1: {scaleX: 0.1, scaleY: 0.1, opacity: 0},
-            },
-            600,
-          )
-          .then(() => {
-            // Animation complete
-          });
+        currentRef.animate(
+          {
+            0: {scaleX: 1, scaleY: 1, opacity: 1},
+            0.1: {scaleX: 1.4, scaleY: 1.4, opacity: 1},
+            0.2: {scaleX: 1.2, scaleY: 1.2, opacity: 1},
+            0.3: {scaleX: 1.5, scaleY: 1.5, opacity: 0.9},
+            0.4: {scaleX: 1.1, scaleY: 1.1, opacity: 0.8},
+            0.5: {scaleX: 1.3, scaleY: 1.3, opacity: 0.6},
+            0.6: {scaleX: 0.9, scaleY: 0.9, opacity: 0.4},
+            0.7: {scaleX: 0.7, scaleY: 0.7, opacity: 0.2},
+            0.8: {scaleX: 0.5, scaleY: 0.5, opacity: 0.1},
+            1: {scaleX: 0.1, scaleY: 0.1, opacity: 0},
+          },
+          600,
+        );
       }
     }
-  }, [isMatched]);
+  };
 
-  // Animate falling tiles using react-native-animatable
-  useEffect(() => {
-    if (isFalling && fallDistance > 0 && tileRef.current) {
+  // Handle falling tile animation
+  const handleFall = () => {
+    if (
+      isFalling &&
+      fallDistance > 0 &&
+      tileRef.current &&
+      !hasAnimatedFall.current
+    ) {
+      hasAnimatedFall.current = true;
       const currentRef = tileRef.current;
-
-      // Calculate the start position based on fall distance
       const startY = -(fallDistance * 42); // Each tile position is 42 pixels
 
-      // Use custom animation for precise falling
       if (currentRef && currentRef.animate) {
         currentRef.animate(
           {
@@ -72,7 +71,15 @@ export const Tile: React.FC<TileProps> = ({
         );
       }
     }
-  }, [isFalling, fallDistance]);
+  };
+
+  // Reset animation flags when props change
+  if (!isMatched) hasAnimatedMatch.current = false;
+  if (!isFalling) hasAnimatedFall.current = false;
+
+  // Run animations when props change
+  if (isMatched) handleMatch();
+  if (isFalling) handleFall();
 
   const panResponder = useRef(
     PanResponder.create({

@@ -8,15 +8,24 @@ import {
   Alert,
 } from 'react-native';
 import {levelManager, getLevelDifficulty} from '../utils/levelManager';
-import {runAllTests, testSpecificLevel} from '../utils/testLevels';
+import {testSpecificLevel} from '../utils/testLevels';
+import {testLevelManager} from '../utils/testLevelManager';
+import {testLevelOrdering} from '../utils/testLevels';
 
 interface LevelTesterProps {
   onLevelSelect?: (levelId: string) => void;
+  onNavigateToLevel: (levelId: string) => void;
+  onNavigateBack: () => void;
 }
 
-export const LevelTester: React.FC<LevelTesterProps> = ({onLevelSelect}) => {
+export const LevelTester: React.FC<LevelTesterProps> = ({
+  onLevelSelect,
+  onNavigateToLevel,
+  onNavigateBack,
+}) => {
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [completedLevels, setCompletedLevels] = useState<string[]>([]);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   const allLevels = levelManager.getAllLevels();
   const progress = levelManager.getLevelProgress(completedLevels);
@@ -33,9 +42,16 @@ export const LevelTester: React.FC<LevelTesterProps> = ({onLevelSelect}) => {
   };
 
   const handleRunTests = () => {
-    // Run tests in console
-    runAllTests();
-    Alert.alert('Tests Complete', 'Check the console for test results!');
+    console.log('=== Running Level Tests ===');
+    testLevelManager();
+    testLevelOrdering();
+
+    // Get debug info
+    const info = levelManager.getDebugInfo();
+    setDebugInfo(info);
+    console.log('Debug info:', info);
+
+    Alert.alert('Tests Complete', 'Check console for results');
   };
 
   const handleTestSpecificLevel = (levelId: string) => {
@@ -57,9 +73,19 @@ export const LevelTester: React.FC<LevelTesterProps> = ({onLevelSelect}) => {
     return '🔒';
   };
 
+  const forceReloadLevels = () => {
+    levelManager.reloadLevels();
+    const info = levelManager.getDebugInfo();
+    setDebugInfo(info);
+    Alert.alert('Levels Reloaded', 'Check debug info below');
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={onNavigateBack}>
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>🎮 Level Tester</Text>
         <Text style={styles.subtitle}>
           Progress: {progress.completed}/{progress.total} (
@@ -67,10 +93,46 @@ export const LevelTester: React.FC<LevelTesterProps> = ({onLevelSelect}) => {
         </Text>
       </View>
 
-      <View style={styles.buttonContainer}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Debug Actions</Text>
         <TouchableOpacity style={styles.testButton} onPress={handleRunTests}>
-          <Text style={styles.buttonText}>🧪 Run All Tests</Text>
+          <Text style={styles.buttonText}>Run Level Tests</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.testButton} onPress={forceReloadLevels}>
+          <Text style={styles.buttonText}>Force Reload Levels</Text>
+        </TouchableOpacity>
+      </View>
+
+      {debugInfo && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Debug Info</Text>
+          <Text style={styles.debugText}>
+            Total Levels: {debugInfo.totalLevels}
+          </Text>
+          <Text style={styles.debugText}>
+            Level IDs: {debugInfo.levelIds.join(', ')}
+          </Text>
+          <Text style={styles.debugText}>Level Names:</Text>
+          {debugInfo.levelNames.map((level: any, index: number) => (
+            <Text key={level.id} style={styles.debugText}>
+              {index + 1}. {level.id}: {level.name}
+            </Text>
+          ))}
+        </View>
+      )}
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Quick Level Access</Text>
+        {levelManager.getAllLevels().map((level, index) => (
+          <TouchableOpacity
+            key={level.id}
+            style={styles.levelButton}
+            onPress={() => onNavigateToLevel(level.id)}>
+            <Text style={styles.levelButtonText}>
+              {index + 1}. {level.name} ({level.id})
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       <View style={styles.section}>
@@ -287,6 +349,35 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    padding: 10,
+    borderRadius: 8,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  levelButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    marginBottom: 5,
+  },
+  levelButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  debugText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
   },
 });
 

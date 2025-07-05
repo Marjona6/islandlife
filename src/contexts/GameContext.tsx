@@ -4,10 +4,11 @@ import React, {
   useReducer,
   useEffect,
   useCallback,
+  useState,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {GameState, Currency, BeachItem, Tile, TileType} from '../types/game';
-import {createValidBoard} from '../utils/gameLogic';
+import {createValidBoard, createBoardFromLevel} from '../utils/gameLogic';
 
 // Game constants
 const BOARD_SIZE = 8;
@@ -70,6 +71,14 @@ type GameAction =
       };
     }
   | {
+      type: 'INIT_BOARD_FROM_LEVEL';
+      payload: {
+        levelBoard: (TileType | string | null)[][];
+        variant: 'sand' | 'sea';
+        sandBlockers?: Array<{row: number; col: number}>;
+      };
+    }
+  | {
       type: 'SWAP_TILES';
       payload: {row1: number; col1: number; row2: number; col2: number};
     }
@@ -125,6 +134,29 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         isGameOver: false,
         sandBlockers:
           action.payload?.sandBlockers?.map(sb => ({
+            row: sb.row,
+            col: sb.col,
+            hasUmbrella: true, // Start with umbrellas on all sand blockers
+          })) || [],
+      };
+
+    case 'INIT_BOARD_FROM_LEVEL':
+      return {
+        ...state,
+        board: createBoardFromLevel(
+          action.payload.levelBoard,
+          action.payload.variant,
+          action.payload.sandBlockers?.map(sb => ({
+            row: sb.row,
+            col: sb.col,
+          })) || [],
+        ),
+        score: 0,
+        combos: 0,
+        isGameWon: false,
+        isGameOver: false,
+        sandBlockers:
+          action.payload.sandBlockers?.map(sb => ({
             row: sb.row,
             col: sb.col,
             hasUmbrella: true, // Start with umbrellas on all sand blockers
@@ -279,6 +311,7 @@ interface GameContextType {
     blockers: Array<{row: number; col: number; hasUmbrella: boolean}>,
   ) => void;
   clearSandBlocker: (row: number, col: number) => void;
+  isInitialized: boolean;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -296,6 +329,7 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({
     beachReducer,
     initialBeachItems,
   );
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Load saved data on mount
   useEffect(() => {
@@ -322,8 +356,13 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({
           payload: JSON.parse(savedBeachItems),
         });
       }
+
+      // Mark as initialized after data is loaded
+      setIsInitialized(true);
     } catch (error) {
       console.error('Error loading saved data:', error);
+      // Still mark as initialized even if there's an error
+      setIsInitialized(true);
     }
   };
 
@@ -407,6 +446,7 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({
     purchaseBeachItem,
     setSandBlockers,
     clearSandBlocker,
+    isInitialized,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

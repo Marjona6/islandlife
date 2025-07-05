@@ -129,7 +129,7 @@ export const GameBoard: React.FC<{
   sandBlockers?: Array<{row: number; col: number}>;
   onMove?: () => void; // Callback when a valid move is made
 }> = ({variant = 'sand', sandBlockers = [], onMove}) => {
-  const {gameState, dispatchGame, dispatchCurrency} = useGame();
+  const {gameState, dispatchGame, dispatchCurrency, isInitialized} = useGame();
   const [isProcessingMove, setIsProcessingMove] = useState(false);
   const [_isProcessingMatches, setIsProcessingMatches] = useState(false);
   const [matchedTiles, setMatchedTiles] = useState<Set<string>>(new Set());
@@ -162,9 +162,13 @@ export const GameBoard: React.FC<{
     // console.log('isProcessingMove changed to:', isProcessingMove);
   }, [isProcessingMove]);
 
-  // Initialize game on mount if not already initialized
+  // Initialize game on mount if not already initialized and context is ready
   useEffect(() => {
-    if (!hasInitializedRef.current && gameState.board.length === 0) {
+    if (
+      isInitialized &&
+      !hasInitializedRef.current &&
+      gameState.board.length === 0
+    ) {
       console.log('GameBoard: Initializing board');
       hasInitializedRef.current = true;
       dispatchGame({
@@ -172,7 +176,16 @@ export const GameBoard: React.FC<{
         payload: {variant, sandBlockers: initialSandBlockersRef.current},
       });
     }
-  }, [dispatchGame, variant, gameState.board.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isInitialized, dispatchGame, variant, gameState.board.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Show loading state if context is not initialized
+  if (!isInitialized) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>Loading game...</Text>
+      </View>
+    );
+  }
 
   const handleTilePress = (_row: number, _col: number) => {
     // Do nothing on tap - only swipe works
@@ -569,6 +582,8 @@ export const GameBoard: React.FC<{
           'Starting next round of matches, cascade count:',
           cascadeCount + 1,
         );
+        // Clear any existing falling animations before next cascade
+        setFallingTiles(new Map());
         processGameTurn(
           updatedBoard, // Use the updated board with filled sand blocker positions
           undefined,
@@ -1280,5 +1295,9 @@ const styles = StyleSheet.create({
   },
   sandBlockerText: {
     fontSize: 24,
+  },
+  loadingText: {
+    fontSize: 24,
+    fontWeight: 'bold',
   },
 });

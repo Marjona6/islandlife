@@ -60,37 +60,107 @@
     },
     {
       "id": "level-3",
-      "name": "Frozen Tides",
+      "name": "Coconut Drop Challenge",
       "board": [
-        ["🦑", "🦐", "🐡", "🪝", "🦑", "🦐", "🐡", "🪝"],
-        ["🦐", "🐡", "🪝", "🦑", "🦐", "🐡", "🪝", "🦑"],
-        ["🐡", "🪝", "🦑", "🦐", "🐡", "🪝", "🦑", "🦐"],
-        ["🪝", "🦑", "🦐", "🐡", "🪝", "🦑", "🦐", "🐡"],
-        ["🦑", "🦐", "🐡", "🪝", "🦑", "🦐", "🐡", "🪝"],
-        ["🦐", "🐡", "🪝", "🦑", "🦐", "🐡", "🪝", "🦑"],
-        ["🐡", "🪝", "🦑", "🦐", "🐡", "🪝", "🦑", "🦐"],
-        ["🪝", "🦑", "🦐", "🐡", "🪝", "🦑", "🦐", "🐡"]
+        ["🥥", "🥥", "🥥", "🥥", "🥥", "🥥", "🥥", "🥥"],
+        ["🌺", "🦀", "🐚", "🐚", "⭐", "🌺", "🦀", "🐚"],
+        ["⭐", "🌺", "🦀", "🐚", "🐚", "⭐", "🌺", "🦀"],
+        ["🐚", "⭐", "🌺", "🦀", "🐚", "🐚", "⭐", "🌺"],
+        ["🦀", "🐚", "⭐", "🌺", "🐚", "🦀", "🐚", "⭐"],
+        ["🌺", "🐚", "🦀", "🐚", "⭐", "🌺", "🐚", "🦀"],
+        ["⭐", "🌺", "🐚", "🦀", "🐚", "⭐", "🌺", "🐚"],
+        ["🐚", "⭐", "🌺", "🐚", "🦀", "🐚", "⭐", "🌺"]
       ],
-      "objective": "clear",
-      "target": 40,
+      "objective": "drop",
+      "target": 3,
       "moves": 30,
-      "tileTypes": ["🦑", "🦐", "🐡", "🪝"],
-      "mechanics": ["ice"],
+      "tileTypes": ["🐚", "⭐", "🌺", "🦀"],
+      "mechanics": ["sand", "driftwood"],
       "blockers": [
-        {"type": "ice", "row": 2, "col": 2},
-        {"type": "ice", "row": 2, "col": 3},
-        {"type": "ice", "row": 2, "col": 4},
-        {"type": "ice", "row": 2, "col": 5},
-        {"type": "ice", "row": 3, "col": 2},
-        {"type": "ice", "row": 3, "col": 5},
-        {"type": "ice", "row": 4, "col": 2},
-        {"type": "ice", "row": 4, "col": 5},
-        {"type": "ice", "row": 5, "col": 2},
-        {"type": "ice", "row": 5, "col": 3},
-        {"type": "ice", "row": 5, "col": 4},
-        {"type": "ice", "row": 5, "col": 5}
+        {"type": "sand", "row": 6, "col": 2},
+        {"type": "sand", "row": 6, "col": 3},
+        {"type": "sand", "row": 6, "col": 4},
+        {"type": "sand", "row": 6, "col": 5},
+        {"type": "sand", "row": 7, "col": 2},
+        {"type": "sand", "row": 7, "col": 3},
+        {"type": "sand", "row": 7, "col": 4},
+        {"type": "sand", "row": 7, "col": 5}
       ],
-      "description": "Clear 40 tiles by breaking through the ice!",
+      "specialTiles": [
+        {
+          "type": "coconut",
+          "row": 0,
+          "col": 0,
+          "properties": {"movable": true, "matchable": false}
+        },
+        {
+          "type": "coconut",
+          "row": 0,
+          "col": 1,
+          "properties": {"movable": true, "matchable": false}
+        },
+        {
+          "type": "coconut",
+          "row": 0,
+          "col": 2,
+          "properties": {"movable": true, "matchable": false}
+        },
+        {
+          "type": "coconut",
+          "row": 0,
+          "col": 3,
+          "properties": {"movable": true, "matchable": false}
+        },
+        {
+          "type": "coconut",
+          "row": 0,
+          "col": 4,
+          "properties": {"movable": true, "matchable": false}
+        },
+        {
+          "type": "coconut",
+          "row": 0,
+          "col": 5,
+          "properties": {"movable": true, "matchable": false}
+        },
+        {
+          "type": "coconut",
+          "row": 0,
+          "col": 6,
+          "properties": {"movable": true, "matchable": false}
+        },
+        {
+          "type": "coconut",
+          "row": 0,
+          "col": 7,
+          "properties": {"movable": true, "matchable": false}
+        },
+        {
+          "type": "power-tile",
+          "row": 1,
+          "col": 3,
+          "properties": {"power": "row-bomb"}
+        },
+        {
+          "type": "power-tile",
+          "row": 2,
+          "col": 1,
+          "properties": {"power": "column-bomb"}
+        },
+        {
+          "type": "driftwood",
+          "row": 3,
+          "col": 2,
+          "properties": {"unbreakable": true}
+        },
+        {
+          "type": "driftwood",
+          "row": 4,
+          "col": 5,
+          "properties": {"unbreakable": true}
+        }
+      ],
+      "description": "Drop 3 coconuts (🥥) to the bottom of the board! Coconuts can be moved but cannot be matched. Use matches to clear paths and power tiles to help!",
       "difficulty": "medium"
     },
     {

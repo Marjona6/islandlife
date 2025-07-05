@@ -22,20 +22,55 @@ export class LevelManager {
     return LevelManager.instance;
   }
 
+  // Debug method to force reload levels
+  public static resetInstance(): void {
+    LevelManager.instance = new LevelManager();
+  }
+
+  // Force clear the singleton completely
+  public static clearInstance(): void {
+    LevelManager.instance = undefined as any;
+  }
+
   private loadLevels(): void {
     // Load levels from the JSON file as the single source of truth
     try {
+      console.log('=== LevelManager: Loading levels from JSON ===');
       const levelsData = require('../data/levels.json');
 
-      levelsData.levels.forEach((level: LevelConfig) => {
-        if (validateLevelConfig(level)) {
+      console.log(
+        'JSON data loaded, levels array length:',
+        levelsData.levels.length,
+      );
+
+      levelsData.levels.forEach((level: LevelConfig, index: number) => {
+        console.log(`Loading level ${index + 1}: ${level.id} - ${level.name}`);
+
+        // Test validation
+        const isValid = validateLevelConfig(level);
+        console.log(`Validation result for ${level.id}: ${isValid}`);
+
+        if (isValid) {
           this.levels.set(level.id, level);
+          console.log(`✓ Successfully loaded: ${level.id}`);
         } else {
-          console.warn(`Invalid level configuration for ${level.id}`);
+          console.warn(`✗ Invalid level configuration for ${level.id}`);
+          // Log validation details
+          console.log(
+            `  Board size: ${level.board.length}x${level.board[0]?.length}`,
+          );
+          console.log(`  TileTypes: ${level.tileTypes.join(', ')}`);
+          console.log(
+            `  Board tiles: ${JSON.stringify(
+              level.board.flat().filter(t => t),
+            )}`,
+          );
         }
       });
 
-      console.log(`Loaded ${this.levels.size} levels from levels.json`);
+      console.log(
+        `=== LevelManager: Loaded ${this.levels.size} levels from levels.json ===`,
+      );
     } catch (error) {
       console.error('Failed to load levels from JSON file:', error);
       // Fallback to types file if JSON loading fails
@@ -153,6 +188,29 @@ export class LevelManager {
       completed,
       percentage,
       nextLevel,
+    };
+  }
+
+  public reloadLevels(): void {
+    console.log('=== Force reloading levels ===');
+    this.levels.clear();
+    this.loadLevels();
+    console.log('=== Reload complete ===');
+  }
+
+  // Debug method to get current state
+  public getDebugInfo(): any {
+    const allLevels = this.getAllLevels();
+    return {
+      totalLevels: this.levels.size,
+      levelIds: Array.from(this.levels.keys()),
+      levelNames: allLevels.map(level => ({id: level.id, name: level.name})),
+      levelDetails: allLevels.map(level => ({
+        id: level.id,
+        name: level.name,
+        objective: level.objective,
+        difficulty: level.difficulty,
+      })),
     };
   }
 }
