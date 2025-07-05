@@ -24,7 +24,8 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
   onNavigateToTester,
   initialLevelId = 'level-1',
 }) => {
-  const {gameState, currency, initGame, dispatchGame} = useGame();
+  const {gameState, currency, initGame, dispatchGame, dispatchCurrency} =
+    useGame();
   const [currentLevelId, setCurrentLevelId] = useState(initialLevelId);
   const [movesMade, setMovesMade] = useState(0);
   const [showVictory, setShowVictory] = useState(false);
@@ -107,6 +108,10 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
     ]);
   };
 
+  const handleGameMove = () => {
+    setMovesMade(prev => prev + 1);
+  };
+
   const handleNextLevel = () => {
     if (nextLevel) {
       setCurrentLevelId(nextLevel.id);
@@ -152,6 +157,12 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         ['🦑', '🦐', '🐡', '🪝'].includes(tile),
       );
       initGame(isSeaLevel ? 'sea' : 'sand');
+
+      // Reset currency to start fresh for this level
+      dispatchCurrency({
+        type: 'LOAD_CURRENCY',
+        payload: {shells: 0, keys: currency.keys},
+      });
 
       // Re-initialize sand blockers from level config
       const sandBlockers =
@@ -331,6 +342,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
               : 'sand'
           }
           sandBlockers={[]} // Pass empty array since we use state for rendering
+          onMove={handleGameMove}
         />
       </View>
 

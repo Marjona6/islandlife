@@ -127,7 +127,8 @@ const FallingParticles: React.FC<{_colIndex: number; isActive: boolean}> = ({
 export const GameBoard: React.FC<{
   variant?: 'sand' | 'sea';
   sandBlockers?: Array<{row: number; col: number}>;
-}> = ({variant = 'sand', sandBlockers = []}) => {
+  onMove?: () => void; // Callback when a valid move is made
+}> = ({variant = 'sand', sandBlockers = [], onMove}) => {
   const {gameState, dispatchGame, dispatchCurrency} = useGame();
   const [isProcessingMove, setIsProcessingMove] = useState(false);
   const [_isProcessingMatches, setIsProcessingMatches] = useState(false);
@@ -269,6 +270,8 @@ export const GameBoard: React.FC<{
       // Set processing to true immediately when user initiates a valid swap
       setIsProcessingMove(true);
       isProcessingMoveRef.current = true;
+      // Notify parent that a move was made
+      onMove?.();
       performSwap(row, col, targetRow, targetCol);
     } else {
       console.log('Invalid move');
