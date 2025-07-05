@@ -6,7 +6,6 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Alert,
-  ScrollView,
 } from 'react-native';
 import {GameBoard} from '../components/GameBoard';
 import VictoryScreen from '../components/VictoryScreen';
@@ -51,19 +50,15 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
       const sandBlockers =
         currentLevel.blockers
           ?.filter(b => b.type === 'sand')
-          .map(b => ({row: b.row, col: b.col})) || [];
+          .map(b => ({row: b.row, col: b.col, hasUmbrella: true})) || [];
 
       if (sandBlockers.length > 0) {
         console.log(
           'LevelGameScreen: Initializing sand blockers from level config:',
           sandBlockers,
         );
-        // Use dispatchGame to set sand blockers and umbrellas in game state
+        // Use dispatchGame to set sand blockers with umbrellas
         dispatchGame({type: 'SET_SAND_BLOCKERS', payload: sandBlockers});
-        dispatchGame({
-          type: 'SET_SAND_BLOCKERS_WITH_UMBRELLAS',
-          payload: sandBlockers,
-        });
       }
     }
   }, [currentLevelId, currentLevel, initGame, dispatchGame]);
@@ -149,6 +144,30 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
   const handleVictoryRestart = () => {
     setShowVictory(false);
     setMovesMade(0);
+
+    // Reset the game state to start fresh
+    if (currentLevel) {
+      // Re-initialize the game with the same level
+      const isSeaLevel = currentLevel.tileTypes.some(tile =>
+        ['🦑', '🦐', '🐡', '🪝'].includes(tile),
+      );
+      initGame(isSeaLevel ? 'sea' : 'sand');
+
+      // Re-initialize sand blockers from level config
+      const sandBlockers =
+        currentLevel.blockers
+          ?.filter(b => b.type === 'sand')
+          .map(b => ({row: b.row, col: b.col, hasUmbrella: true})) || [];
+
+      if (sandBlockers.length > 0) {
+        console.log(
+          'LevelGameScreen: Re-initializing sand blockers for restart:',
+          sandBlockers,
+        );
+        // Reset sand blockers to initial state with umbrellas
+        dispatchGame({type: 'SET_SAND_BLOCKERS', payload: sandBlockers});
+      }
+    }
   };
 
   const isLevelComplete = () => {

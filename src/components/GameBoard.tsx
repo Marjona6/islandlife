@@ -652,42 +652,70 @@ export const GameBoard: React.FC<{
 
     // For each column, find tiles that should be falling
     for (let col = 0; col < 8; col++) {
-      // Find where tiles were removed (gaps in the column after removal)
-      const gaps: number[] = [];
-      for (let row = 0; row < 8; row++) {
-        if (boardAfterRemoval[row][col] === null) {
-          gaps.push(row);
+      // Get sand blocker positions in this column
+      const sandBlockerRows = currentSandBlockersRef.current
+        .filter(blocker => blocker.col === col)
+        .map(blocker => blocker.row)
+        .sort((a, b) => a - b);
+
+      // Create sections separated by sand blockers
+      const sections: Array<{start: number; end: number}> = [];
+      let currentStart = 0;
+
+      for (const blockerRow of sandBlockerRows) {
+        if (blockerRow > currentStart) {
+          sections.push({start: currentStart, end: blockerRow - 1});
         }
+        currentStart = blockerRow + 1;
       }
 
-      if (gaps.length > 0) {
-        // Calculate how many tiles were removed
-        const tilesRemoved = gaps.length;
+      // Add the final section if there's space after the last sand blocker
+      if (currentStart < 8) {
+        sections.push({start: currentStart, end: 7});
+      }
 
-        // Mark all tiles in this column that need to fall
-        for (let finalRow = 0; finalRow < 8; finalRow++) {
-          const finalTile = boardAfterDrop[finalRow][col];
-          if (finalTile) {
-            // Find where this tile was in the board after removal
-            let originalRow = -1;
-            for (let row = 0; row < 8; row++) {
-              if (
-                boardAfterRemoval[row][col] &&
-                boardAfterRemoval[row][col].id === finalTile.id
-              ) {
-                originalRow = row;
-                break;
+      // Process each section independently for falling calculation
+      for (const section of sections) {
+        // Find gaps in this section after removal
+        const gaps: number[] = [];
+        for (let row = section.start; row <= section.end; row++) {
+          if (boardAfterRemoval[row][col] === null) {
+            gaps.push(row);
+          }
+        }
+
+        if (gaps.length > 0) {
+          // Mark tiles in this section that need to fall
+          for (
+            let finalRow = section.start;
+            finalRow <= section.end;
+            finalRow++
+          ) {
+            const finalTile = boardAfterDrop[finalRow][col];
+            if (finalTile) {
+              // Find where this tile was in the board after removal (within this section)
+              let originalRow = -1;
+              for (let row = section.start; row <= section.end; row++) {
+                if (
+                  boardAfterRemoval[row][col] &&
+                  boardAfterRemoval[row][col].id === finalTile.id
+                ) {
+                  originalRow = row;
+                  break;
+                }
               }
-            }
 
-            // If this tile moved down (fell), mark it for falling animation
-            if (originalRow >= 0 && finalRow > originalRow) {
-              falling.set(`${finalRow}-${col}`, finalRow - originalRow);
-            }
+              // If this tile moved down (fell) within the section, mark it for falling animation
+              if (originalRow >= 0 && finalRow > originalRow) {
+                falling.set(`${finalRow}-${col}`, finalRow - originalRow);
+              }
 
-            // If this is a new tile (not found in original board), it should fall from the top
-            if (originalRow === -1) {
-              falling.set(`${finalRow}-${col}`, tilesRemoved);
+              // If this is a new tile (not found in original board), it should fall from the top of the section
+              if (originalRow === -1) {
+                // Calculate how far it should fall within this section
+                const fallDistance = finalRow - section.start + 1;
+                falling.set(`${finalRow}-${col}`, fallDistance);
+              }
             }
           }
         }
