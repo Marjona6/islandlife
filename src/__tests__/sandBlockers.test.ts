@@ -1,4 +1,5 @@
 import {Tile as GameTile} from '../types/game';
+import {dropTiles} from '../utils/gameLogic';
 
 describe('Sand Blockers Mechanic', () => {
   beforeEach(() => {
@@ -532,7 +533,9 @@ describe('Sand Blockers Mechanic', () => {
     });
 
     it('should not allow sand blockers to reappear after being cleared', () => {
-      // Simulate a sand blocker that has already been cleared
+      // This test simulates the scenario where a sand blocker was cleared in a previous turn
+      // and then a new turn starts. The sand blocker should not reappear.
+
       const board = createMockBoard([
         ['🦀', '🦀', '🦀', 'null', 'null', 'null', 'null', 'null'],
         ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
@@ -544,17 +547,15 @@ describe('Sand Blockers Mechanic', () => {
         ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
       ]);
 
-      // This sand blocker was previously cleared and should not be in the list
+      // Simulate the state after a sand blocker was cleared in a previous turn
+      // The sand blocker at (0,3) was cleared and should not be in the list
       const sandBlockers = createSandBlockers([
-        {row: 0, col: 3}, // This one should remain
-        {row: 4, col: 4}, // This one should remain
+        {row: 4, col: 4}, // Only this one should remain
       ]);
 
-      // The umbrella list should not contain the cleared sand blocker
+      // The umbrella list should also not contain the cleared sand blocker
       const umbrellas = createSandBlockers([
-        {row: 0, col: 3}, // Has umbrella
-        {row: 4, col: 4}, // Has umbrella
-        // Note: {row: 5, col: 6} is NOT in this list because it was cleared
+        {row: 4, col: 4}, // Only this one should have an umbrella
       ]);
 
       const matches = [
@@ -572,11 +573,143 @@ describe('Sand Blockers Mechanic', () => {
         umbrellas,
       );
 
-      // Should only affect the adjacent sand blocker that still exists
+      // Should not affect any sand blockers since the adjacent one was already cleared
+      expect(result.umbrellasToRemove).toHaveLength(0);
+      expect(result.sandBlockersToClear).toHaveLength(0);
+      expect(result.updatedSandBlockers).toEqual(sandBlockers);
+      expect(result.updatedUmbrellas).toEqual(umbrellas);
+    });
+
+    it('should properly track umbrella state across multiple turns', () => {
+      // This test simulates multiple turns to ensure umbrella state is properly tracked
+
+      const board = createMockBoard([
+        ['🦀', '🦀', '🦀', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+      ]);
+
+      // Initial state: sand blocker with umbrella
+      let sandBlockers = createSandBlockers([{row: 0, col: 3}]);
+
+      let umbrellas = createSandBlockers([{row: 0, col: 3}]);
+
+      const matches = [
+        [
+          {row: 0, col: 0},
+          {row: 0, col: 1},
+          {row: 0, col: 2},
+        ],
+      ];
+
+      // First turn: should remove umbrella
+      let result = processSandBlockers(board, matches, sandBlockers, umbrellas);
+
       expect(result.umbrellasToRemove).toEqual([{row: 0, col: 3}]);
       expect(result.sandBlockersToClear).toHaveLength(0);
       expect(result.updatedSandBlockers).toEqual(sandBlockers);
-      expect(result.updatedUmbrellas).toEqual([{row: 4, col: 4}]);
+      expect(result.updatedUmbrellas).toEqual([]);
+
+      // Update state for second turn
+      sandBlockers = result.updatedSandBlockers;
+      umbrellas = result.updatedUmbrellas;
+
+      // Second turn: should clear the sand blocker entirely
+      result = processSandBlockers(board, matches, sandBlockers, umbrellas);
+
+      expect(result.umbrellasToRemove).toHaveLength(0);
+      expect(result.sandBlockersToClear).toEqual([{row: 0, col: 3}]);
+      expect(result.updatedSandBlockers).toEqual([]);
+      expect(result.updatedUmbrellas).toEqual([]);
+
+      // Third turn: sand blocker should not reappear
+      result = processSandBlockers(
+        board,
+        matches,
+        result.updatedSandBlockers,
+        result.updatedUmbrellas,
+      );
+
+      expect(result.umbrellasToRemove).toHaveLength(0);
+      expect(result.sandBlockersToClear).toHaveLength(0);
+      expect(result.updatedSandBlockers).toEqual([]);
+      expect(result.updatedUmbrellas).toEqual([]);
+    });
+  });
+
+  describe('Sand Blocker Obstacle Behavior', () => {
+    it('should prevent tiles from falling through sand blockers', () => {
+      // Create a board with a sand blocker in the middle and empty spaces above and below
+      const board = createMockBoard([
+        ['🦀', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+      ]);
+
+      // Sand blocker at position (3, 0)
+      const sandBlockers = [{row: 3, col: 0}];
+
+      // Drop tiles - the tile at (0, 0) should fall to (2, 0) and stop at the sand blocker
+      const result = dropTiles(board as any, 'sand', sandBlockers);
+
+      // Check that the tile stopped at row 2 (above the sand blocker at row 3)
+      expect(result[2][0]).toBeTruthy();
+      expect(result[2][0].type).toBe('🦀');
+
+      // Check that the sand blocker position remains null
+      expect(result[3][0]).toBeNull();
+
+      // Check that positions below the sand blocker are filled with new tiles
+      expect(result[4][0]).toBeTruthy();
+      expect(result[5][0]).toBeTruthy();
+      expect(result[6][0]).toBeTruthy();
+      expect(result[7][0]).toBeTruthy();
+    });
+
+    it('should not place tiles in sand blocker positions when filling empty spaces', () => {
+      // Create an empty board
+      const board = createMockBoard([
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
+      ]);
+
+      // Sand blockers at various positions
+      const sandBlockers = [
+        {row: 2, col: 0},
+        {row: 4, col: 0},
+        {row: 6, col: 0},
+      ];
+
+      // Drop tiles - should fill around sand blockers
+      const result = dropTiles(board as any, 'sand', sandBlockers);
+
+      // Check that sand blocker positions remain null
+      expect(result[2][0]).toBeNull();
+      expect(result[4][0]).toBeNull();
+      expect(result[6][0]).toBeNull();
+
+      // Check that other positions are filled
+      expect(result[0][0]).toBeTruthy();
+      expect(result[1][0]).toBeTruthy();
+      expect(result[3][0]).toBeTruthy();
+      expect(result[5][0]).toBeTruthy();
+      expect(result[7][0]).toBeTruthy();
     });
   });
 });

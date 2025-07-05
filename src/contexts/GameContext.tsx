@@ -22,7 +22,6 @@ const initialGameState: GameState = {
   isGameWon: false,
   isGameOver: false,
   sandBlockers: [],
-  sandBlockersWithUmbrellas: [],
 };
 
 const initialCurrency: Currency = {
@@ -79,12 +78,22 @@ type GameAction =
   | {type: 'ADD_SCORE'; payload: number}
   | {type: 'RESET_GAME'}
   | {type: 'SET_GAME_WON'}
-  | {type: 'SET_SAND_BLOCKERS'; payload: Array<{row: number; col: number}>}
+  | {
+      type: 'SET_SAND_BLOCKERS';
+      payload: Array<{row: number; col: number; hasUmbrella: boolean}>;
+    }
   | {type: 'CLEAR_SAND_BLOCKER'; payload: {row: number; col: number}}
   | {type: 'REMOVE_UMBRELLA'; payload: {row: number; col: number}}
   | {
       type: 'SET_SAND_BLOCKERS_WITH_UMBRELLAS';
       payload: Array<{row: number; col: number}>;
+    }
+  | {
+      type: 'UPDATE_SAND_BLOCKER_STATE';
+      payload: {
+        sandBlockers: Array<{row: number; col: number}>;
+        umbrellas: Array<{row: number; col: number}>;
+      };
     };
 
 type CurrencyAction =
@@ -105,14 +114,21 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ...state,
         board: createValidBoard(
           action.payload?.variant || 'sand',
-          action.payload?.sandBlockers || [],
+          action.payload?.sandBlockers?.map(sb => ({
+            row: sb.row,
+            col: sb.col,
+          })) || [],
         ),
         score: 0,
         combos: 0,
         isGameWon: false,
         isGameOver: false,
-        sandBlockers: action.payload?.sandBlockers || [],
-        sandBlockersWithUmbrellas: action.payload?.sandBlockers || [], // Start with umbrellas on all sand blockers
+        sandBlockers:
+          action.payload?.sandBlockers?.map(sb => ({
+            row: sb.row,
+            col: sb.col,
+            hasUmbrella: true, // Start with umbrellas on all sand blockers
+          })) || [],
       };
 
     case 'SWAP_TILES':
@@ -175,31 +191,44 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
               blocker.col === action.payload.col
             ),
         ),
-        sandBlockersWithUmbrellas: state.sandBlockersWithUmbrellas.filter(
-          blocker =>
-            !(
-              blocker.row === action.payload.row &&
-              blocker.col === action.payload.col
-            ),
-        ),
       };
 
     case 'REMOVE_UMBRELLA':
       return {
         ...state,
-        sandBlockersWithUmbrellas: state.sandBlockersWithUmbrellas.filter(
-          blocker =>
-            !(
-              blocker.row === action.payload.row &&
-              blocker.col === action.payload.col
-            ),
+        sandBlockers: state.sandBlockers.map(blocker =>
+          blocker.row === action.payload.row &&
+          blocker.col === action.payload.col
+            ? {...blocker, hasUmbrella: false}
+            : blocker,
         ),
       };
 
     case 'SET_SAND_BLOCKERS_WITH_UMBRELLAS':
+      // This action is now deprecated but kept for backward compatibility
       return {
         ...state,
-        sandBlockersWithUmbrellas: action.payload,
+        sandBlockers: state.sandBlockers.map(blocker => ({
+          ...blocker,
+          hasUmbrella: action.payload.some(
+            umbrella =>
+              umbrella.row === blocker.row && umbrella.col === blocker.col,
+          ),
+        })),
+      };
+
+    case 'UPDATE_SAND_BLOCKER_STATE':
+      // Convert the old format to the new format
+      const newSandBlockers = action.payload.sandBlockers.map(sb => ({
+        row: sb.row,
+        col: sb.col,
+        hasUmbrella: action.payload.umbrellas.some(
+          umbrella => umbrella.row === sb.row && umbrella.col === sb.col,
+        ),
+      }));
+      return {
+        ...state,
+        sandBlockers: newSandBlockers,
       };
 
     default:
@@ -246,7 +275,9 @@ interface GameContextType {
   initGame: (variant?: 'sand' | 'sea') => void;
   swapTiles: (row1: number, col1: number, row2: number, col2: number) => void;
   purchaseBeachItem: (itemId: string) => void;
-  setSandBlockers: (blockers: Array<{row: number; col: number}>) => void;
+  setSandBlockers: (
+    blockers: Array<{row: number; col: number; hasUmbrella: boolean}>,
+  ) => void;
   clearSandBlocker: (row: number, col: number) => void;
 }
 
@@ -351,7 +382,7 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({
   );
 
   const setSandBlockers = useCallback(
-    (blockers: Array<{row: number; col: number}>) => {
+    (blockers: Array<{row: number; col: number; hasUmbrella: boolean}>) => {
       dispatchGame({type: 'SET_SAND_BLOCKERS', payload: blockers});
     },
     [dispatchGame],

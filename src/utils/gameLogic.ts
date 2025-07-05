@@ -135,46 +135,69 @@ export const removeMatches = (
 export const dropTiles = (
   board: Tile[][],
   variant: 'sand' | 'sea' = 'sand',
-  sandBlockers: Array<{row: number; col: number}> = [],
+  sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}> = [],
 ): Tile[][] => {
   const newBoard = board.map(row => [...row]);
   const tileTypes = getTileTypes(variant);
 
   for (let col = 0; col < BOARD_SIZE; col++) {
-    let writeRow = BOARD_SIZE - 1;
+    // Get all sand blocker positions in this column
+    const sandBlockerRows = sandBlockers
+      .filter(blocker => blocker.col === col)
+      .map(blocker => blocker.row)
+      .sort((a, b) => a - b); // Sort from top to bottom
 
-    // Move from bottom to top, keeping non-null tiles
-    for (let row = BOARD_SIZE - 1; row >= 0; row--) {
-      if (newBoard[row][col] !== null) {
-        if (writeRow !== row) {
-          newBoard[writeRow][col] = newBoard[row][col];
-          newBoard[writeRow][col].row = writeRow;
+    // Create sections separated by sand blockers
+    const sections: Array<{start: number; end: number}> = [];
+    let currentStart = 0;
+
+    for (const blockerRow of sandBlockerRows) {
+      if (blockerRow > currentStart) {
+        sections.push({start: currentStart, end: blockerRow - 1});
+      }
+      currentStart = blockerRow + 1;
+    }
+
+    // Add the final section if there's space after the last sand blocker
+    if (currentStart < BOARD_SIZE) {
+      sections.push({start: currentStart, end: BOARD_SIZE - 1});
+    }
+
+    // Process each section independently
+    for (const section of sections) {
+      // Collect all non-null tiles in this section
+      const tiles: any[] = [];
+      for (let row = section.start; row <= section.end; row++) {
+        if (newBoard[row][col] !== null) {
+          tiles.push(newBoard[row][col]);
+          newBoard[row][col] = null as any;
         }
+      }
+
+      // Place existing tiles at the bottom of the section
+      let writeRow = section.end;
+      for (let i = tiles.length - 1; i >= 0; i--) {
+        newBoard[writeRow][col] = tiles[i];
+        newBoard[writeRow][col].row = writeRow;
         writeRow--;
+      }
+
+      // Fill remaining spaces with new tiles
+      for (let row = writeRow; row >= section.start; row--) {
+        const randomType =
+          tileTypes[Math.floor(Math.random() * tileTypes.length)];
+        newBoard[row][col] = {
+          id: `${row}-${col}-${Date.now()}-${Math.random()}`,
+          type: randomType,
+          row,
+          col,
+        };
       }
     }
 
-    // Fill remaining spaces with new tiles
-    for (let row = writeRow; row >= 0; row--) {
-      // Check if this position has a sand blocker
-      const hasSandBlocker = sandBlockers.some(
-        blocker => blocker.row === row && blocker.col === col,
-      );
-
-      if (hasSandBlocker) {
-        // Don't place a tile in sand blocker position
-        newBoard[row][col] = null as any;
-        continue;
-      }
-
-      const randomType =
-        tileTypes[Math.floor(Math.random() * tileTypes.length)];
-      newBoard[row][col] = {
-        id: `${row}-${col}-${Date.now()}-${Math.random()}`,
-        type: randomType,
-        row,
-        col,
-      };
+    // Ensure sand blocker positions are null
+    for (const blockerRow of sandBlockerRows) {
+      newBoard[blockerRow][col] = null as any;
     }
   }
 
@@ -240,7 +263,7 @@ export const getValidMoves = (
 export const processTurn = (
   board: Tile[][],
   variant: 'sand' | 'sea' = 'sand',
-  sandBlockers: Array<{row: number; col: number}> = [],
+  sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}> = [],
 ): {
   newBoard: Tile[][];
   matches: Array<Array<{row: number; col: number}>>;
@@ -274,7 +297,7 @@ export const processTurn = (
 // Create a board with no initial matches
 export const createValidBoard = (
   variant: 'sand' | 'sea' = 'sand',
-  sandBlockers: Array<{row: number; col: number}> = [],
+  sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}> = [],
 ): Tile[][] => {
   const board: Tile[][] = [];
   const tileTypes = getTileTypes(variant);

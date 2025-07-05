@@ -28,8 +28,7 @@ export interface GameState {
   targetCombos: number;
   isGameWon: boolean;
   isGameOver: boolean;
-  sandBlockers: Array<{row: number; col: number}>;
-  sandBlockersWithUmbrellas: Array<{row: number; col: number}>;
+  sandBlockers: Array<{row: number; col: number; hasUmbrella: boolean}>;
 }
 
 export interface Currency {

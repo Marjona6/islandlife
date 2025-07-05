@@ -19,7 +19,7 @@ export const checkIfGameImpossible = (board: GameTile[][]): boolean => {
  */
 export const rearrangeBoard = (
   board: GameTile[][],
-  sandBlockers: Array<{row: number; col: number}>,
+  sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}>,
 ): GameTile[][] => {
   console.log('Game is impossible - rearranging board...');
 

@@ -9,6 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import {GameBoard} from '../components/GameBoard';
+import VictoryScreen from '../components/VictoryScreen';
 import {useGame} from '../contexts/GameContext';
 import {levelManager, getLevelDifficulty} from '../utils/levelManager';
 import {testLevelManager} from '../utils/testLevelManager';
@@ -27,6 +28,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
   const {gameState, currency, initGame, dispatchGame} = useGame();
   const [currentLevelId, setCurrentLevelId] = useState(initialLevelId);
   const [movesMade, setMovesMade] = useState(0);
+  const [showVictory, setShowVictory] = useState(false);
 
   const currentLevel = levelManager.getLevel(currentLevelId);
   const nextLevel = levelManager.getNextLevel(currentLevelId);
@@ -131,14 +133,37 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         text: 'Restart',
         onPress: () => {
           setMovesMade(0);
+          setShowVictory(false);
         },
       },
     ]);
   };
 
+  const handleVictoryContinue = () => {
+    setShowVictory(false);
+    if (nextLevel) {
+      setCurrentLevelId(nextLevel.id);
+    }
+  };
+
+  const handleVictoryRestart = () => {
+    setShowVictory(false);
+    setMovesMade(0);
+  };
+
   const isLevelComplete = () => {
     if (!currentLevel) return false;
 
+    // For levels with sand blockers, check if all sand blockers are cleared
+    const sandBlockers =
+      currentLevel.blockers?.filter(b => b.type === 'sand') || [];
+    if (sandBlockers.length > 0) {
+      // Get the current sand blockers from the game state
+      const currentSandBlockers = gameState.sandBlockers || [];
+      return currentSandBlockers.length === 0;
+    }
+
+    // For other levels, use the original logic
     switch (currentLevel.objective) {
       case 'score':
         return currentProgress.score >= currentLevel.target;
@@ -164,6 +189,16 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
   const getProgressText = () => {
     if (!currentLevel) return '';
 
+    // For levels with sand blockers, show sand blocker progress
+    const sandBlockers =
+      currentLevel.blockers?.filter(b => b.type === 'sand') || [];
+    if (sandBlockers.length > 0) {
+      const currentSandBlockers = gameState.sandBlockers || [];
+      const cleared = sandBlockers.length - currentSandBlockers.length;
+      return `Sand Blockers: ${cleared}/${sandBlockers.length}`;
+    }
+
+    // For other levels, use the original logic
     switch (currentLevel.objective) {
       case 'score':
         return `Score: ${currentProgress.score}/${currentLevel.target}`;
@@ -201,6 +236,13 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
       console.log('LevelGameScreen: Sand blockers for level:', sandBlockers);
     }
   }, [currentLevelId]);
+
+  // Show victory screen when level is completed
+  useEffect(() => {
+    if (isLevelComplete() && !showVictory) {
+      setShowVictory(true);
+    }
+  }, [gameState.sandBlockers, currentProgress, showVictory]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -314,6 +356,13 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Victory Screen */}
+      <VictoryScreen
+        isVisible={showVictory}
+        onContinue={handleVictoryContinue}
+        onRestart={handleVictoryRestart}
+      />
     </SafeAreaView>
   );
 };
