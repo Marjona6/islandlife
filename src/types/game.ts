@@ -29,6 +29,7 @@ export interface GameState {
   isGameWon: boolean;
   isGameOver: boolean;
   sandBlockers: Array<{row: number; col: number}>;
+  sandBlockersWithUmbrellas: Array<{row: number; col: number}>;
 }
 
 export interface Currency {

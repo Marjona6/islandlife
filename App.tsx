@@ -8,27 +8,54 @@ import {SafeAreaView, StyleSheet} from 'react-native';
 import {GameProvider} from './src/contexts/GameContext';
 import {GameScreen} from './src/screens/GameScreen';
 import {LevelGameScreen} from './src/screens/LevelGameScreen';
+import {HomeScreen} from './src/screens/HomeScreen';
+import {LevelSelectScreen} from './src/screens/LevelSelectScreen';
 import {BeachScreen} from './src/screens/BeachScreen';
 import LevelTester from './src/components/LevelTester';
 
-type Screen = 'game' | 'level-game' | 'beach' | 'tester';
+type Screen =
+  | 'home'
+  | 'game'
+  | 'level-game'
+  | 'level-select'
+  | 'beach'
+  | 'tester';
 
 function App(): React.JSX.Element {
-  const [currentScreen, setCurrentScreen] = useState<Screen>('level-game'); // Start with level game
+  const [currentScreen, setCurrentScreen] = useState<Screen>('home'); // Start with home screen
+  const [selectedLevelId, setSelectedLevelId] = useState<string>('level-1');
 
+  const navigateToHome = () => setCurrentScreen('home');
   const navigateToGame = () => setCurrentScreen('game');
-  const navigateToBeach = () => setCurrentScreen('beach');
+  const navigateToLevelSelect = () => setCurrentScreen('level-select');
+  const navigateToLevelGame = (levelId: string) => {
+    setSelectedLevelId(levelId);
+    setCurrentScreen('level-game');
+  };
+  // const navigateToBeach = () => setCurrentScreen('beach'); // Beach decorating temporarily disabled
   const navigateToTester = () => setCurrentScreen('tester');
 
   return (
     <GameProvider>
       <SafeAreaView style={styles.container}>
-        {currentScreen === 'game' ? (
-          <GameScreen onNavigateToBeach={navigateToBeach} />
+        {currentScreen === 'home' ? (
+          <HomeScreen
+            onNavigateToLevels={navigateToLevelSelect}
+            onNavigateToSettings={() => console.log('Settings')}
+            onNavigateToShop={() => console.log('Shop')}
+            onNavigateToDailyRewards={() => console.log('Daily Rewards')}
+          />
+        ) : currentScreen === 'game' ? (
+          <GameScreen />
+        ) : currentScreen === 'level-select' ? (
+          <LevelSelectScreen
+            onNavigateToLevel={navigateToLevelGame}
+            onNavigateBack={navigateToHome}
+          />
         ) : currentScreen === 'level-game' ? (
           <LevelGameScreen
-            onNavigateToBeach={navigateToBeach}
             onNavigateToTester={navigateToTester}
+            initialLevelId={selectedLevelId}
           />
         ) : currentScreen === 'beach' ? (
           <BeachScreen onNavigateToGame={navigateToGame} />
@@ -36,8 +63,7 @@ function App(): React.JSX.Element {
           <LevelTester
             onLevelSelect={levelId => {
               console.log('Selected level:', levelId);
-              // Navigate to level game with selected level
-              setCurrentScreen('level-game');
+              navigateToLevelGame(levelId);
             }}
           />
         )}

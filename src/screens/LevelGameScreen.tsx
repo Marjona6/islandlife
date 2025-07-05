@@ -11,15 +11,16 @@ import {
 import {GameBoard} from '../components/GameBoard';
 import {useGame} from '../contexts/GameContext';
 import {levelManager, getLevelDifficulty} from '../utils/levelManager';
+import {testLevelManager} from '../utils/testLevelManager';
 
 interface LevelGameScreenProps {
-  onNavigateToBeach: () => void;
+  // onNavigateToBeach: () => void; // Beach decorating temporarily disabled
   onNavigateToTester: () => void;
   initialLevelId?: string;
 }
 
 export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
-  onNavigateToBeach,
+  // onNavigateToBeach, // Beach decorating temporarily disabled
   onNavigateToTester,
   initialLevelId = 'level-1',
 }) => {
@@ -32,6 +33,9 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
   const prevLevel = levelManager.getPreviousLevel(currentLevelId);
 
   useEffect(() => {
+    // Test level manager on first load
+    testLevelManager();
+
     if (currentLevel) {
       setMovesMade(0);
       // Initialize game with level's tile types
@@ -52,8 +56,12 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
           'LevelGameScreen: Initializing sand blockers from level config:',
           sandBlockers,
         );
-        // Use dispatchGame to set sand blockers in game state
+        // Use dispatchGame to set sand blockers and umbrellas in game state
         dispatchGame({type: 'SET_SAND_BLOCKERS', payload: sandBlockers});
+        dispatchGame({
+          type: 'SET_SAND_BLOCKERS_WITH_UMBRELLAS',
+          payload: sandBlockers,
+        });
       }
     }
   }, [currentLevelId, currentLevel, initGame, dispatchGame]);
@@ -199,14 +207,19 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.currencyContainer}>
-          <Text style={styles.currencyText}>🐚 {currency.shells}</Text>
-          <Text style={styles.currencyText}>🔑 {currency.keys}</Text>
+          <View style={styles.currencyItem}>
+            <Text style={styles.currencyIcon}>🐚</Text>
+            <Text style={styles.currencyText}>{currency.shells}</Text>
+          </View>
+          <View style={styles.currencyItem}>
+            <Text style={styles.currencyIcon}>💎</Text>
+            <Text style={styles.currencyText}>0</Text>
+          </View>
+          <View style={styles.currencyItem}>
+            <Text style={styles.currencyIcon}>❤️</Text>
+            <Text style={styles.currencyText}>5/5</Text>
+          </View>
         </View>
-        <TouchableOpacity
-          style={styles.beachButton}
-          onPress={onNavigateToBeach}>
-          <Text style={styles.beachButtonText}>🏖️ Beach</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Level Info */}
@@ -214,15 +227,20 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         <Text style={styles.levelTitle}>{currentLevel.name}</Text>
         <Text style={styles.levelDescription}>{currentLevel.description}</Text>
         <View style={styles.levelStats}>
-          <Text style={styles.statText}>
-            Difficulty: {currentLevel.difficulty} ({difficultyScore}/5)
-          </Text>
-          <Text style={styles.statText}>
-            Objective: {currentLevel.objective}
-          </Text>
-          <Text style={styles.statText}>
-            Moves: {movesMade}/{currentLevel.moves}
-          </Text>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Difficulty</Text>
+            <Text style={styles.statValue}>{difficultyScore}/5</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Objective</Text>
+            <Text style={styles.statValue}>{currentLevel.objective}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Moves</Text>
+            <Text style={styles.statValue}>
+              {movesMade}/{currentLevel.moves}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -230,10 +248,14 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
       <View style={styles.progressContainer}>
         <Text style={styles.progressText}>{getProgressText()}</Text>
         {isLevelComplete() && (
-          <Text style={styles.completeText}>🎉 Level Complete!</Text>
+          <View style={styles.statusContainer}>
+            <Text style={styles.completeText}>🎉 Level Complete!</Text>
+          </View>
         )}
         {isLevelFailed() && (
-          <Text style={styles.failedText}>❌ Out of Moves!</Text>
+          <View style={styles.statusContainer}>
+            <Text style={styles.failedText}>❌ Out of Moves!</Text>
+          </View>
         )}
       </View>
 
@@ -247,7 +269,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
               ? 'sea'
               : 'sand'
           }
-          sandBlockers={gameState.sandBlockers}
+          sandBlockers={[]} // Pass empty array since we use state for rendering
         />
       </View>
 
@@ -299,18 +321,29 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#87ceeb',
+    backgroundColor: '#4A90E2',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#4682b4',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    marginHorizontal: 20,
+    marginTop: 10,
+    borderRadius: 25,
   },
   currencyContainer: {
     flexDirection: 'row',
     gap: 20,
+  },
+  currencyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  currencyIcon: {
+    fontSize: 20,
   },
   currencyText: {
     fontSize: 18,
@@ -353,10 +386,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     flexWrap: 'wrap',
   },
-  statText: {
+  statItem: {
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  statLabel: {
     fontSize: 12,
-    color: '#888',
+    color: '#666',
+    fontWeight: '500',
     marginBottom: 2,
+  },
+  statValue: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: 'bold',
   },
   progressContainer: {
     alignItems: 'center',
@@ -370,17 +413,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
+  statusContainer: {
+    marginTop: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+  },
   completeText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#4CAF50',
-    marginTop: 5,
   },
   failedText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#F44336',
-    marginTop: 5,
   },
   boardContainer: {
     flex: 0.6,

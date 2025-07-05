@@ -22,6 +22,7 @@ const initialGameState: GameState = {
   isGameWon: false,
   isGameOver: false,
   sandBlockers: [],
+  sandBlockersWithUmbrellas: [],
 };
 
 const initialCurrency: Currency = {
@@ -79,7 +80,12 @@ type GameAction =
   | {type: 'RESET_GAME'}
   | {type: 'SET_GAME_WON'}
   | {type: 'SET_SAND_BLOCKERS'; payload: Array<{row: number; col: number}>}
-  | {type: 'CLEAR_SAND_BLOCKER'; payload: {row: number; col: number}};
+  | {type: 'CLEAR_SAND_BLOCKER'; payload: {row: number; col: number}}
+  | {type: 'REMOVE_UMBRELLA'; payload: {row: number; col: number}}
+  | {
+      type: 'SET_SAND_BLOCKERS_WITH_UMBRELLAS';
+      payload: Array<{row: number; col: number}>;
+    };
 
 type CurrencyAction =
   | {type: 'ADD_SHELLS'; payload: number}
@@ -105,6 +111,8 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         combos: 0,
         isGameWon: false,
         isGameOver: false,
+        sandBlockers: action.payload?.sandBlockers || [],
+        sandBlockersWithUmbrellas: action.payload?.sandBlockers || [], // Start with umbrellas on all sand blockers
       };
 
     case 'SWAP_TILES':
@@ -167,6 +175,31 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
               blocker.col === action.payload.col
             ),
         ),
+        sandBlockersWithUmbrellas: state.sandBlockersWithUmbrellas.filter(
+          blocker =>
+            !(
+              blocker.row === action.payload.row &&
+              blocker.col === action.payload.col
+            ),
+        ),
+      };
+
+    case 'REMOVE_UMBRELLA':
+      return {
+        ...state,
+        sandBlockersWithUmbrellas: state.sandBlockersWithUmbrellas.filter(
+          blocker =>
+            !(
+              blocker.row === action.payload.row &&
+              blocker.col === action.payload.col
+            ),
+        ),
+      };
+
+    case 'SET_SAND_BLOCKERS_WITH_UMBRELLAS':
+      return {
+        ...state,
+        sandBlockersWithUmbrellas: action.payload,
       };
 
     default:

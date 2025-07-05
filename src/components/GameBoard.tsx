@@ -10,12 +10,17 @@ import Svg, {
 } from 'react-native-svg';
 import {Tile} from './Tile';
 import {useGame} from '../contexts/GameContext';
+
 import {
   isValidMove,
   findMatches,
   removeMatches,
   dropTiles,
 } from '../utils/gameLogic';
+import {
+  checkIfGameImpossible,
+  rearrangeBoard,
+} from '../utils/gameImpossibleLogic';
 
 // Enhanced Hole component with realistic hole effect
 const ColumnHole: React.FC<{_colIndex: number; _isActive: boolean}> = ({
@@ -143,6 +148,8 @@ export const GameBoard: React.FC<{
 
   // Track if board has been initialized
   const hasInitializedRef = useRef(false);
+  // Store initial sand blockers to prevent re-initialization
+  const initialSandBlockersRef = useRef(sandBlockers);
 
   // Debug isProcessingMove state changes
   useEffect(() => {
@@ -154,9 +161,12 @@ export const GameBoard: React.FC<{
     if (!hasInitializedRef.current && gameState.board.length === 0) {
       console.log('GameBoard: Initializing board');
       hasInitializedRef.current = true;
-      dispatchGame({type: 'INIT_BOARD', payload: {variant, sandBlockers}});
+      dispatchGame({
+        type: 'INIT_BOARD',
+        payload: {variant, sandBlockers: initialSandBlockersRef.current},
+      });
     }
-  }, [dispatchGame, variant, sandBlockers]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [dispatchGame, variant, gameState.board.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTilePress = (_row: number, _col: number) => {
     // Do nothing on tap - only swipe works
@@ -292,6 +302,9 @@ export const GameBoard: React.FC<{
     }, 150); // Short delay for swap animation
   };
 
+  // Check if the game is impossible (no valid moves available)
+  // Using imported functions from gameImpossibleLogic.ts
+
   const processGameTurn = (
     board: any[][],
     row1?: number,
@@ -299,6 +312,8 @@ export const GameBoard: React.FC<{
     row2?: number,
     col2?: number,
     cascadeCount: number = 0,
+    currentSandBlockers?: Array<{row: number; col: number}>,
+    passedUmbrellas?: Array<{row: number; col: number}>,
   ) => {
     console.log(
       'Processing turn with board:',
@@ -333,36 +348,102 @@ export const GameBoard: React.FC<{
 
       // Check for sand blockers that should be cleared
       const sandBlockersToClear: Array<{row: number; col: number}> = [];
+      const umbrellasToRemove: Array<{row: number; col: number}> = [];
 
-      console.log('Current sand blockers:', gameState.sandBlockers);
+      // Use passed sand blockers or fall back to state
+      const sandBlockersToCheck = currentSandBlockers || gameState.sandBlockers;
+      // Use passed umbrella state or fall back to current state
+      let currentUmbrellas: Array<{row: number; col: number}> =
+        passedUmbrellas || [...gameState.sandBlockersWithUmbrellas];
+
+      console.log('Current sand blockers:', sandBlockersToCheck);
+      console.log('Current umbrellas:', currentUmbrellas);
+      console.log('Cascade count:', cascadeCount);
       console.log('Matches found:', matches);
 
-      gameState.sandBlockers.forEach(blocker => {
-        // Check if any matched tile is adjacent to this sand blocker
-        const isAdjacent = matches.some(match =>
-          match.some(
-            pos =>
-              (Math.abs(pos.row - blocker.row) === 1 &&
-                pos.col === blocker.col) ||
-              (Math.abs(pos.col - blocker.col) === 1 &&
-                pos.row === blocker.row),
-          ),
+      // Track which sand blockers are adjacent to matches in this turn
+      const adjacentBlockers = new Set<string>();
+
+      matches.forEach(match => {
+        match.forEach(pos => {
+          // Check all 4 adjacent positions for sand blockers
+          const adjacentPositions = [
+            {row: pos.row - 1, col: pos.col}, // up
+            {row: pos.row + 1, col: pos.col}, // down
+            {row: pos.row, col: pos.col - 1}, // left
+            {row: pos.row, col: pos.col + 1}, // right
+          ];
+
+          adjacentPositions.forEach(adjPos => {
+            if (
+              adjPos.row >= 0 &&
+              adjPos.row < 8 &&
+              adjPos.col >= 0 &&
+              adjPos.col < 8
+            ) {
+              const blockerKey = `${adjPos.row},${adjPos.col}`;
+              if (
+                sandBlockersToCheck.some(
+                  b => b.row === adjPos.row && b.col === adjPos.col,
+                )
+              ) {
+                adjacentBlockers.add(blockerKey);
+              }
+            }
+          });
+        });
+      });
+
+      // Process each adjacent sand blocker
+      adjacentBlockers.forEach(blockerKey => {
+        const [row, col] = blockerKey.split(',').map(Number);
+        const blocker = {row, col};
+
+        console.log(
+          `Sand blocker at ${blocker.row},${blocker.col} - adjacent to match: true`,
+        );
+
+        // Check if this sand blocker has an umbrella
+        const hasUmbrella = currentUmbrellas.some(
+          (umbrella: {row: number; col: number}) =>
+            umbrella.row === blocker.row && umbrella.col === blocker.col,
         );
 
         console.log(
-          `Sand blocker at ${blocker.row},${blocker.col} - adjacent to match: ${isAdjacent}`,
+          `Sand blocker at ${blocker.row},${blocker.col} - has umbrella: ${hasUmbrella}`,
         );
 
-        if (isAdjacent) {
+        if (hasUmbrella) {
+          // First match: remove umbrella
           console.log(
-            `Clearing sand blocker at ${blocker.row},${blocker.col} due to adjacent match`,
+            `Removing umbrella from sand blocker at ${blocker.row},${blocker.col}`,
+          );
+          umbrellasToRemove.push(blocker);
+        } else {
+          // Second match: clear the sand blocker completely
+          console.log(
+            `Clearing sand blocker at ${blocker.row},${blocker.col} due to second adjacent match`,
           );
           sandBlockersToClear.push(blocker);
         }
       });
 
+      // Update currentUmbrellas to reflect the removed umbrellas for this cascade
+      currentUmbrellas = currentUmbrellas.filter(
+        umbrella =>
+          !umbrellasToRemove.some(
+            toRemove =>
+              toRemove.row === umbrella.row && toRemove.col === umbrella.col,
+          ),
+      );
+
+      // Remove umbrellas from game state (but don't rely on it for this turn)
+      umbrellasToRemove.forEach((umbrella: {row: number; col: number}) => {
+        dispatchGame({type: 'REMOVE_UMBRELLA', payload: umbrella});
+      });
+
       // Clear adjacent sand blockers from state immediately
-      const updatedSandBlockers = gameState.sandBlockers.filter(
+      const updatedSandBlockers = sandBlockersToCheck.filter(
         blocker =>
           !sandBlockersToClear.some(
             toClear =>
@@ -373,6 +454,7 @@ export const GameBoard: React.FC<{
       // Update sand blockers state immediately
       dispatchGame({type: 'SET_SAND_BLOCKERS', payload: updatedSandBlockers});
 
+      console.log('Umbrellas to remove:', umbrellasToRemove);
       console.log('Sand blockers to clear:', sandBlockersToClear);
       console.log('Updated sand blockers:', updatedSandBlockers);
 
@@ -462,6 +544,14 @@ export const GameBoard: React.FC<{
         handleGameWin();
       }
 
+      // Update the game state with the final umbrella state at the end of the turn
+      if (cascadeCount === 0) {
+        dispatchGame({
+          type: 'SET_SAND_BLOCKERS_WITH_UMBRELLAS',
+          payload: currentUmbrellas,
+        });
+      }
+
       // Recursively process next round of matches after animations
       setTimeout(() => {
         console.log(
@@ -475,6 +565,8 @@ export const GameBoard: React.FC<{
           undefined,
           undefined,
           cascadeCount + 1,
+          updatedSandBlockers, // Pass the updated sand blockers to the next cascade
+          currentUmbrellas, // Pass the updated umbrellas to the next cascade
         );
       }, 1200); // Wait for animations to complete before next round
     } else {
@@ -492,6 +584,21 @@ export const GameBoard: React.FC<{
           payload: {row1: row2, col1: col2, row2: row1, col2: col1},
         });
       }
+
+      // Check if game is impossible after no matches
+      if (cascadeCount === 0) {
+        const isImpossible = checkIfGameImpossible(currentBoardRef.current);
+        if (isImpossible) {
+          console.log('Game is impossible - rearranging board...');
+          const rearrangedBoard = rearrangeBoard(
+            currentBoardRef.current,
+            currentSandBlockers || sandBlockers,
+          );
+          dispatchGame({type: 'UPDATE_BOARD', payload: rearrangedBoard});
+          currentBoardRef.current = rearrangedBoard;
+        }
+      }
+
       setIsProcessingMove(false);
       setIsProcessingMatches(false);
       isProcessingMoveRef.current = false;
@@ -835,8 +942,12 @@ export const GameBoard: React.FC<{
         {gameState.board.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
             {row.map((tile, colIndex) => {
-              const hasSandBlocker = sandBlockers.some(
+              const hasSandBlocker = gameState.sandBlockers.some(
                 blocker => blocker.row === rowIndex && blocker.col === colIndex,
+              );
+              const hasUmbrella = gameState.sandBlockersWithUmbrellas.some(
+                umbrella =>
+                  umbrella.row === rowIndex && umbrella.col === colIndex,
               );
 
               // Use the original for now, but this will help us debug
@@ -853,7 +964,9 @@ export const GameBoard: React.FC<{
                         margin: 1,
                       },
                     ]}>
-                    <Text style={styles.sandBlockerText}>🏖️</Text>
+                    <Text style={styles.sandBlockerText}>
+                      {hasUmbrella ? '🏖️' : ''}
+                    </Text>
                   </View>
                 );
               }

@@ -23,17 +23,31 @@ export class LevelManager {
   }
 
   private loadLevels(): void {
-    // This would typically load from a JSON file or API
-    // For now, we'll use the levels from the types file
-    const {LEVEL_CONFIGS} = require('../types/levels');
+    // Load levels from the JSON file as the single source of truth
+    try {
+      const levelsData = require('../data/levels.json');
 
-    LEVEL_CONFIGS.forEach((level: LevelConfig) => {
-      if (validateLevelConfig(level)) {
-        this.levels.set(level.id, level);
-      } else {
-        console.warn(`Invalid level configuration for ${level.id}`);
-      }
-    });
+      levelsData.levels.forEach((level: LevelConfig) => {
+        if (validateLevelConfig(level)) {
+          this.levels.set(level.id, level);
+        } else {
+          console.warn(`Invalid level configuration for ${level.id}`);
+        }
+      });
+
+      console.log(`Loaded ${this.levels.size} levels from levels.json`);
+    } catch (error) {
+      console.error('Failed to load levels from JSON file:', error);
+      // Fallback to types file if JSON loading fails
+      const {LEVEL_CONFIGS} = require('../types/levels');
+      LEVEL_CONFIGS.forEach((level: LevelConfig) => {
+        if (validateLevelConfig(level)) {
+          this.levels.set(level.id, level);
+        } else {
+          console.warn(`Invalid level configuration for ${level.id}`);
+        }
+      });
+    }
   }
 
   public getLevel(id: string): LevelConfig | undefined {

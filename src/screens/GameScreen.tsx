@@ -11,10 +11,10 @@ import {GameBoard} from '../components/GameBoard';
 import {useGame} from '../contexts/GameContext';
 
 interface GameScreenProps {
-  onNavigateToBeach: () => void;
+  // onNavigateToBeach: () => void; // Beach decorating temporarily disabled
 }
 
-export const GameScreen: React.FC<GameScreenProps> = ({onNavigateToBeach}) => {
+export const GameScreen: React.FC<GameScreenProps> = ({}) => {
   const {gameState, currency, initGame} = useGame();
   const [variant] = useState<'sand' | 'sea'>('sand');
 
@@ -33,11 +33,13 @@ export const GameScreen: React.FC<GameScreenProps> = ({onNavigateToBeach}) => {
           <Text style={styles.currencyText}>🐚 {currency.shells}</Text>
           <Text style={styles.currencyText}>🔑 {currency.keys}</Text>
         </View>
+        {/* Beach decorating temporarily disabled
         <TouchableOpacity
           style={styles.beachButton}
           onPress={onNavigateToBeach}>
           <Text style={styles.beachButtonText}>🏖️ Beach</Text>
         </TouchableOpacity>
+        */}
       </View>
 
       {/* Game Info */}

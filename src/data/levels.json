@@ -40,10 +40,20 @@
       "tileTypes": ["🦀", "🌴", "⭐", "🌺", "🐚"],
       "mechanics": ["sand"],
       "blockers": [
+        {"type": "sand", "row": 1, "col": 1},
+        {"type": "sand", "row": 1, "col": 2},
+        {"type": "sand", "row": 1, "col": 5},
+        {"type": "sand", "row": 1, "col": 6},
+        {"type": "sand", "row": 2, "col": 1},
+        {"type": "sand", "row": 2, "col": 6},
         {"type": "sand", "row": 3, "col": 3},
         {"type": "sand", "row": 3, "col": 4},
         {"type": "sand", "row": 4, "col": 3},
-        {"type": "sand", "row": 4, "col": 4}
+        {"type": "sand", "row": 4, "col": 4},
+        {"type": "sand", "row": 5, "col": 1},
+        {"type": "sand", "row": 5, "col": 6},
+        {"type": "sand", "row": 6, "col": 1},
+        {"type": "sand", "row": 6, "col": 6}
       ],
       "description": "Score 5000 points while clearing sand!",
       "difficulty": "easy"
