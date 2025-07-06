@@ -220,6 +220,30 @@ export const dropTiles = (
   return newBoard;
 };
 
+// Check if a move creates bomb or rocket patterns
+const checkSpecialPatterns = (
+  board: Tile[][],
+  fromRow: number,
+  fromCol: number,
+  toRow: number,
+  toCol: number,
+): boolean => {
+  // Check for bomb trigger
+  if (detectBombTrigger(board, fromRow, fromCol, toRow, toCol)) {
+    return true;
+  }
+
+  // Check for rocket trigger
+  const rocketResult = detectRocketTrigger(
+    board,
+    fromRow,
+    fromCol,
+    toRow,
+    toCol,
+  );
+  return rocketResult.triggered;
+};
+
 // Check if a move is valid (will create a match)
 export const isValidMove = (
   board: Tile[][],
@@ -238,9 +262,18 @@ export const isValidMove = (
   testBoard[row1][col1] = testBoard[row2][col2];
   testBoard[row2][col2] = temp;
 
-  // Check if the swap creates any matches
+  // Check if the swap creates any basic matches
   const matches = findMatches(testBoard);
-  return matches.length > 0;
+  if (matches.length > 0) {
+    return true;
+  }
+
+  // Check if the swap creates bomb or rocket patterns
+  if (checkSpecialPatterns(testBoard, row1, col1, row2, col2)) {
+    return true;
+  }
+
+  return false;
 };
 
 // Get all valid moves on the current board
@@ -280,6 +313,7 @@ export const processTurn = (
   board: Tile[][],
   variant: 'sand' | 'sea' = 'sand',
   sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}> = [],
+  userSwap?: {row1: number; col1: number; row2: number; col2: number},
 ): {
   newBoard: Tile[][];
   matches: Array<Array<{row: number; col: number}>>;
@@ -289,7 +323,73 @@ export const processTurn = (
   let allMatches: Array<Array<{row: number; col: number}>> = [];
   let totalMatches = 0;
 
-  // Keep processing until no more matches
+  // If userSwap is provided, check for bomb/rocket mechanics
+  if (userSwap) {
+    // Swap the tiles
+    const {row1, col1, row2, col2} = userSwap;
+    const temp = currentBoard[row1][col1];
+    currentBoard[row1][col1] = currentBoard[row2][col2];
+    currentBoard[row2][col2] = temp;
+
+    // Check for bomb trigger first (bomb takes precedence)
+    if (detectBombTrigger(currentBoard, row1, col1, row2, col2)) {
+      const bombArea = getBombExplosionTiles(row2, col2);
+      allMatches.push(bombArea);
+      totalMatches += 1;
+      currentBoard = removeMatches(currentBoard, [bombArea]);
+      currentBoard = dropTiles(currentBoard, variant, sandBlockers);
+    } else {
+      // Check for rocket trigger
+      const rocketResult = detectRocketTrigger(
+        currentBoard,
+        row1,
+        col1,
+        row2,
+        col2,
+      );
+      if (rocketResult.triggered) {
+        const rocketArea = getRocketExplosionTiles(
+          row2,
+          col2,
+          rocketResult.isHorizontal,
+        );
+        allMatches.push(rocketArea);
+        totalMatches += 1;
+        currentBoard = removeMatches(currentBoard, [rocketArea]);
+        currentBoard = dropTiles(currentBoard, variant, sandBlockers);
+      } else {
+        // No bomb or rocket, just process normal matches
+        const matches = findMatches(currentBoard);
+        if (matches.length > 0) {
+          allMatches = allMatches.concat(matches);
+          totalMatches += matches.length;
+          currentBoard = removeMatches(currentBoard, matches);
+          currentBoard = dropTiles(currentBoard, variant, sandBlockers);
+        }
+      }
+    }
+
+    // After special effect, process cascades as normal
+    let hasMatches = true;
+    while (hasMatches) {
+      const matches = findMatches(currentBoard);
+      if (matches.length === 0) {
+        hasMatches = false;
+      } else {
+        allMatches = allMatches.concat(matches);
+        totalMatches += matches.length;
+        currentBoard = removeMatches(currentBoard, matches);
+        currentBoard = dropTiles(currentBoard, variant, sandBlockers);
+      }
+    }
+    return {
+      newBoard: currentBoard,
+      matches: allMatches,
+      totalMatches,
+    };
+  }
+
+  // If not a user swap, process as before (cascades only)
   let hasMatches = true;
   while (hasMatches) {
     const matches = findMatches(currentBoard);
@@ -474,4 +574,142 @@ export const createBoardFromLevel = (
   });
 
   return board;
+};
+
+// Bomb and Rocket Mechanics
+
+// Check if a user swap triggers a bomb (both vertical and horizontal matches at swapped-in tile)
+export const detectBombTrigger = (
+  board: Tile[][],
+  fromRow: number,
+  fromCol: number,
+  toRow: number,
+  toCol: number,
+): boolean => {
+  // Create a copy of the board with the swap
+  const testBoard = board.map(row => [...row]);
+  const temp = testBoard[fromRow][fromCol];
+  testBoard[fromRow][fromCol] = testBoard[toRow][toCol];
+  testBoard[toRow][toCol] = temp;
+
+  // The swapped-in tile is the axis (where the user moved a tile TO)
+  const axisRow = toRow;
+  const axisCol = toCol;
+  const axisTile = testBoard[axisRow][axisCol];
+
+  if (!axisTile || axisTile.isSpecial) return false;
+
+  // Find all matches that include the axis point
+  const matches = findMatches(testBoard);
+  const matchesAtAxis = matches.filter(match =>
+    match.some(pos => pos.row === axisRow && pos.col === axisCol),
+  );
+
+  // Check for both horizontal and vertical matches at the axis
+  let horizontalMatch: Array<{row: number; col: number}> | null = null;
+  let verticalMatch: Array<{row: number; col: number}> | null = null;
+
+  for (const match of matchesAtAxis) {
+    if (match.every(pos => pos.row === axisRow)) {
+      horizontalMatch = match;
+    }
+    if (match.every(pos => pos.col === axisCol)) {
+      verticalMatch = match;
+    }
+  }
+
+  // Bomb condition: both matches exist, same type, axis point is intersection
+  return !!(
+    horizontalMatch &&
+    verticalMatch &&
+    horizontalMatch.length >= 3 &&
+    verticalMatch.length >= 3 &&
+    axisTile.type ===
+      testBoard[horizontalMatch[0].row][horizontalMatch[0].col].type &&
+    axisTile.type === testBoard[verticalMatch[0].row][verticalMatch[0].col].type
+  );
+};
+
+// Get the 5x5 explosion area for a bomb centered on the axis tile
+export const getBombExplosionTiles = (
+  axisRow: number,
+  axisCol: number,
+): Array<{row: number; col: number}> => {
+  const explosionArea: Array<{row: number; col: number}> = [];
+
+  // 5x5 grid centered on axis (±2 rows/cols)
+  for (let dr = -2; dr <= 2; dr++) {
+    for (let dc = -2; dc <= 2; dc++) {
+      const r = axisRow + dr;
+      const c = axisCol + dc;
+      if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
+        explosionArea.push({row: r, col: c});
+      }
+    }
+  }
+
+  return explosionArea;
+};
+
+// Check if a user swap triggers a rocket (match of exactly 4 tiles)
+export const detectRocketTrigger = (
+  board: Tile[][],
+  fromRow: number,
+  fromCol: number,
+  toRow: number,
+  toCol: number,
+): {triggered: boolean; isHorizontal: boolean} => {
+  // Create a copy of the board with the swap
+  const testBoard = board.map(row => [...row]);
+  const temp = testBoard[fromRow][fromCol];
+  testBoard[fromRow][fromCol] = testBoard[toRow][toCol];
+  testBoard[toRow][toCol] = temp;
+
+  // The swapped-in tile is the axis
+  const axisRow = toRow;
+  const axisCol = toCol;
+  const axisTile = testBoard[axisRow][axisCol];
+
+  if (!axisTile || axisTile.isSpecial)
+    return {triggered: false, isHorizontal: false};
+
+  // Find all matches that include the axis point
+  const matches = findMatches(testBoard);
+  const matchesAtAxis = matches.filter(match =>
+    match.some(pos => pos.row === axisRow && pos.col === axisCol),
+  );
+
+  // Check for match of exactly 4 tiles
+  for (const match of matchesAtAxis) {
+    if (match.length === 4) {
+      // Determine if it's horizontal or vertical
+      const isHorizontal = match.every(pos => pos.row === axisRow);
+      return {triggered: true, isHorizontal};
+    }
+  }
+
+  return {triggered: false, isHorizontal: false};
+};
+
+// Get the explosion area for a rocket (perpendicular row or column)
+export const getRocketExplosionTiles = (
+  axisRow: number,
+  axisCol: number,
+  isHorizontal: boolean,
+): Array<{row: number; col: number}> => {
+  const explosionArea: Array<{row: number; col: number}> = [];
+
+  if (isHorizontal) {
+    // Horizontal match: explode the entire column of the axis
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      explosionArea.push({row, col: axisCol});
+    }
+  } else {
+    // Vertical match: explode the entire row of the axis
+    for (let col = 0; col < BOARD_SIZE; col++) {
+      explosionArea.push({row: axisRow, col});
+    }
+  }
+
+  return explosionArea;
 };
