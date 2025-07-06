@@ -94,10 +94,6 @@ type GameAction =
   | {type: 'CLEAR_SAND_BLOCKER'; payload: {row: number; col: number}}
   | {type: 'REMOVE_UMBRELLA'; payload: {row: number; col: number}}
   | {
-      type: 'SET_SAND_BLOCKERS_WITH_UMBRELLAS';
-      payload: Array<{row: number; col: number}>;
-    }
-  | {
       type: 'UPDATE_SAND_BLOCKER_STATE';
       payload: {
         sandBlockers: Array<{row: number; col: number}>;
@@ -234,19 +230,6 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
             ? {...blocker, hasUmbrella: false}
             : blocker,
         ),
-      };
-
-    case 'SET_SAND_BLOCKERS_WITH_UMBRELLAS':
-      // This action is now deprecated but kept for backward compatibility
-      return {
-        ...state,
-        sandBlockers: state.sandBlockers.map(blocker => ({
-          ...blocker,
-          hasUmbrella: action.payload.some(
-            umbrella =>
-              umbrella.row === blocker.row && umbrella.col === blocker.col,
-          ),
-        })),
       };
 
     case 'UPDATE_SAND_BLOCKER_STATE':

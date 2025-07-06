@@ -10,6 +10,8 @@ interface TileProps {
   isMatched?: boolean;
   isFalling?: boolean;
   fallDistance?: number;
+  isCoconutExiting?: boolean;
+  onCoconutExit?: () => void;
 }
 
 export const Tile: React.FC<TileProps> = ({
@@ -19,10 +21,13 @@ export const Tile: React.FC<TileProps> = ({
   isMatched = false,
   isFalling = false,
   fallDistance = 0,
+  isCoconutExiting = false,
+  onCoconutExit,
 }) => {
   const tileRef = useRef<Animatable.View>(null);
   const hasAnimatedMatch = useRef(false);
   const hasAnimatedFall = useRef(false);
+  const hasAnimatedCoconutExit = useRef(false);
 
   // Handle matched tile animation
   const handleMatch = () => {
@@ -73,13 +78,45 @@ export const Tile: React.FC<TileProps> = ({
     }
   };
 
+  // Handle coconut exit animation
+  const handleCoconutExit = () => {
+    if (
+      isCoconutExiting &&
+      tile.type === '🥥' &&
+      tileRef.current &&
+      !hasAnimatedCoconutExit.current
+    ) {
+      hasAnimatedCoconutExit.current = true;
+      const currentRef = tileRef.current;
+      if (currentRef && currentRef.animate) {
+        // Swoop sideways and fade out
+        currentRef
+          .animate(
+            {
+              0: {translateY: 0, translateX: 0, opacity: 1},
+              0.2: {translateY: 20, translateX: 10, opacity: 1},
+              0.5: {translateY: 40, translateX: 40, opacity: 0.7},
+              0.8: {translateY: 60, translateX: 80, opacity: 0.3},
+              1: {translateY: 80, translateX: 120, opacity: 0},
+            },
+            900,
+          )
+          .then(() => {
+            if (onCoconutExit) onCoconutExit();
+          });
+      }
+    }
+  };
+
   // Reset animation flags when props change
   if (!isMatched) hasAnimatedMatch.current = false;
   if (!isFalling) hasAnimatedFall.current = false;
+  if (!isCoconutExiting) hasAnimatedCoconutExit.current = false;
 
   // Run animations when props change
   if (isMatched) handleMatch();
   if (isFalling) handleFall();
+  if (isCoconutExiting) handleCoconutExit();
 
   const panResponder = useRef(
     PanResponder.create({

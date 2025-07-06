@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {View, StyleSheet, Text} from 'react-native';
 import Svg, {
   Ellipse,
@@ -16,6 +16,7 @@ import {
   findMatches,
   removeMatches,
   dropTiles,
+  getTileTypes,
 } from '../utils/gameLogic';
 import {
   checkIfGameImpossible,
@@ -129,6 +130,7 @@ export const GameBoard: React.FC<{
   sandBlockers?: Array<{row: number; col: number}>;
   onMove?: () => void; // Callback when a valid move is made
 }> = ({variant = 'sand', sandBlockers = [], onMove}) => {
+  // All hooks must be at the top, before any return
   const {gameState, dispatchGame, dispatchCurrency, isInitialized} = useGame();
   const [isProcessingMove, setIsProcessingMove] = useState(false);
   const [_isProcessingMatches, setIsProcessingMatches] = useState(false);
@@ -136,6 +138,9 @@ export const GameBoard: React.FC<{
   const [fallingTiles, setFallingTiles] = useState<Map<string, number>>(
     new Map(),
   );
+  const [coconutsExiting, setCoconutsExiting] = useState<
+    Array<{row: number; col: number; id: string}>
+  >([]);
 
   // Game state refs for immediate access during processing
   const currentBoardRef = useRef<any[][]>([]);
@@ -178,7 +183,110 @@ export const GameBoard: React.FC<{
     }
   }, [isInitialized, dispatchGame, variant, gameState.board.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Show loading state if context is not initialized
+  const isCoconutExiting = useCallback(
+    (row: number, col: number, id: string) => {
+      return coconutsExiting.some(
+        c => c.row === row && c.col === col && c.id === id,
+      );
+    },
+    [coconutsExiting],
+  );
+
+  const finalizeCoconutExit = useCallback(
+    (row: number, col: number, id: string) => {
+      setCoconutsExiting(prev =>
+        prev.filter(c => !(c.row === row && c.col === col && c.id === id)),
+      );
+      // Process coconut exit immediately
+      const rawBoard = currentBoardRef.current;
+
+      // Defensive check to ensure rawBoard exists and is an array
+      if (!rawBoard || !Array.isArray(rawBoard)) {
+        console.warn(
+          'finalizeCoconutExit: rawBoard is not available or not an array',
+        );
+        return;
+      }
+
+      const board = Array.from({length: 8}, (_, r) =>
+        Array.isArray(rawBoard[r]) ? [...rawBoard[r]] : Array(8).fill(null),
+      );
+
+      // Defensive check to ensure board[row] exists before accessing
+      if (board[row] && Array.isArray(board[row])) {
+        board[row][col] = null;
+        for (let r = row; r > 0; r--) {
+          if (
+            board[r] &&
+            board[r - 1] &&
+            Array.isArray(board[r]) &&
+            Array.isArray(board[r - 1])
+          ) {
+            board[r][col] = board[r - 1][col]
+              ? {...board[r - 1][col], row: r}
+              : null;
+          }
+        }
+        // Only generate a new tile if the top is not a sand blocker
+        if (board[0] && Array.isArray(board[0])) {
+          // Check for sand blocker at the top
+          const isSandBlocker = (gameState.sandBlockers || []).some(
+            b => b.row === 0 && b.col === col,
+          );
+          if (!isSandBlocker) {
+            // Use the current variant for tile types
+            const tileTypes = getTileTypes(variant);
+            const randomType =
+              tileTypes[Math.floor(Math.random() * tileTypes.length)];
+            board[0][col] = {
+              id: `0-${col}-${Date.now()}-${Math.random()}`,
+              type: randomType,
+              row: 0,
+              col: col,
+              isSpecial: false,
+            };
+          } else {
+            board[0][col] = null;
+          }
+        }
+      }
+
+      dispatchGame({type: 'UPDATE_BOARD', payload: board});
+      currentBoardRef.current = board;
+    },
+    [dispatchGame, gameState.sandBlockers, variant],
+  );
+
+  useEffect(() => {
+    if (fallingTiles.size > 0) return;
+    const board = currentBoardRef.current;
+    const exiting: Array<{row: number; col: number; id: string}> = [];
+
+    // Check if board and board[7] exist before accessing
+    if (board && Array.isArray(board) && board[7] && Array.isArray(board[7])) {
+      for (let col = 0; col < 8; col++) {
+        const tile = board[7][col];
+        if (tile && tile.type === '🥥' && !isCoconutExiting(7, col, tile.id)) {
+          exiting.push({row: 7, col, id: tile.id});
+        }
+      }
+    }
+    if (exiting.length > 0) {
+      setCoconutsExiting(prev => [...prev, ...exiting]);
+      // Process coconut exits immediately without delay
+      exiting.forEach(coconut => {
+        finalizeCoconutExit(coconut.row, coconut.col, coconut.id);
+      });
+    }
+  }, [
+    gameState.board,
+    coconutsExiting,
+    fallingTiles,
+    finalizeCoconutExit,
+    isCoconutExiting,
+  ]);
+
+  // Now it's safe to return early
   if (!isInitialized) {
     return (
       <View style={styles.container}>
@@ -206,7 +314,13 @@ export const GameBoard: React.FC<{
     });
     console.log(
       'Current board state:',
-      currentBoardRef.current.map(row => row.map(tile => tile?.type || 'null')),
+      currentBoardRef.current && Array.isArray(currentBoardRef.current)
+        ? currentBoardRef.current.map(row =>
+            Array.isArray(row)
+              ? row.map(tile => tile?.type || 'null')
+              : Array(8).fill('null'),
+          )
+        : 'Board not available',
     );
 
     if (isProcessingMoveRef.current || isProcessingMatchesRef.current) {
@@ -254,27 +368,55 @@ export const GameBoard: React.FC<{
     // Log the board and tile types at the swipe location
     console.log(
       'handleTileSwipe: board at swipe:',
-      currentBoardRef.current.map(row => row.map(tile => tile?.type || 'null')),
+      currentBoardRef.current && Array.isArray(currentBoardRef.current)
+        ? currentBoardRef.current.map(row =>
+            Array.isArray(row)
+              ? row.map(tile => tile?.type || 'null')
+              : Array(8).fill('null'),
+          )
+        : 'Board not available',
     );
     console.log(
       'handleTileSwipe: tile at swipe:',
-      currentBoardRef.current[row]?.[col]?.type,
+      currentBoardRef.current &&
+        Array.isArray(currentBoardRef.current) &&
+        currentBoardRef.current[row] &&
+        Array.isArray(currentBoardRef.current[row])
+        ? currentBoardRef.current[row][col]?.type
+        : undefined,
       'target:',
-      currentBoardRef.current[targetRow]?.[targetCol]?.type,
+      currentBoardRef.current &&
+        Array.isArray(currentBoardRef.current) &&
+        currentBoardRef.current[targetRow] &&
+        Array.isArray(currentBoardRef.current[targetRow])
+        ? currentBoardRef.current[targetRow][targetCol]?.type
+        : undefined,
     );
 
     // Check if the move is valid using current board state
     console.log('Checking if move is valid:', {row, col, targetRow, targetCol});
     console.log(
       'Current board state:',
-      currentBoardRef.current.map(row => row.map(tile => tile?.type || 'null')),
+      currentBoardRef.current && Array.isArray(currentBoardRef.current)
+        ? currentBoardRef.current.map(row =>
+            Array.isArray(row)
+              ? row.map(tile => tile?.type || 'null')
+              : Array(8).fill('null'),
+          )
+        : 'Board not available',
     );
 
     // Use the most current board state for validation
     const currentBoard = currentBoardRef.current;
     console.log(
       'About to call isValidMove with board:',
-      currentBoard.map(row => row.map(tile => tile?.type || 'null')),
+      currentBoard && Array.isArray(currentBoard)
+        ? currentBoard.map(row =>
+            Array.isArray(row)
+              ? row.map(tile => tile?.type || 'null')
+              : Array(8).fill('null'),
+          )
+        : 'Board not available',
     );
     const isValid = isValidMove(currentBoard, row, col, targetRow, targetCol);
     console.log('isValidMove result:', isValid);
@@ -301,11 +443,33 @@ export const GameBoard: React.FC<{
     console.log('Performing swap');
     setMatchedTiles(new Set()); // Clear any existing matched tiles
 
-    // Create the swapped board state immediately
-    const swappedBoard = currentBoardRef.current.map(row => [...row]);
-    const temp = swappedBoard[row1][col1];
-    swappedBoard[row1][col1] = swappedBoard[row2][col2];
-    swappedBoard[row2][col2] = temp;
+    // Defensive copy of the board
+    const currentBoard = currentBoardRef.current;
+    if (!currentBoard || !Array.isArray(currentBoard)) {
+      console.warn(
+        'performSwap: currentBoard is not available or not an array',
+      );
+      return;
+    }
+
+    const swappedBoard = currentBoard.map(row =>
+      Array.isArray(row) ? [...row] : Array(8).fill(null),
+    );
+
+    // Defensive check to ensure the rows exist before accessing
+    if (
+      swappedBoard[row1] &&
+      swappedBoard[row2] &&
+      Array.isArray(swappedBoard[row1]) &&
+      Array.isArray(swappedBoard[row2])
+    ) {
+      const temp = swappedBoard[row1][col1];
+      swappedBoard[row1][col1] = swappedBoard[row2][col2];
+      swappedBoard[row2][col2] = temp;
+    } else {
+      console.warn('performSwap: Invalid board state for swap operation');
+      return;
+    }
 
     // Perform the swap immediately
     dispatchGame({
@@ -317,7 +481,11 @@ export const GameBoard: React.FC<{
     setTimeout(() => {
       console.log(
         'Processing turn with swapped board:',
-        swappedBoard.map(row => row.map(tile => tile?.type || 'null')),
+        swappedBoard.map(row =>
+          Array.isArray(row)
+            ? row.map(tile => tile?.type || 'null')
+            : Array(8).fill('null'),
+        ),
       );
       // Pass the current umbrella state for the new turn using refs
       processGameTurn(
@@ -348,9 +516,14 @@ export const GameBoard: React.FC<{
       hasUmbrella: boolean;
     }>,
   ) => {
+    // Defensive logging
     console.log(
       'Processing turn with board:',
-      board.map(row => row.map(tile => tile?.type || 'null')),
+      (board || Array(8).fill(null)).map(row =>
+        Array.isArray(row)
+          ? row.map(tile => tile?.type || 'null')
+          : Array(8).fill('null'),
+      ),
     );
 
     // Reset isProcessingMove since swap animation is complete (only on first call)
@@ -525,7 +698,9 @@ export const GameBoard: React.FC<{
       dispatchGame({type: 'ADD_SCORE', payload: matchScore});
 
       // Create updated board with cleared sand blocker positions filled
-      let updatedBoard = boardAfterDrop.map(row => [...row]);
+      let updatedBoard = (boardAfterDrop || Array(8).fill(null)).map(row =>
+        Array.isArray(row) ? [...row] : Array(8).fill(null),
+      );
 
       // Fill cleared sand blocker positions with new tiles
       const clearedBlockers = sandBlockersToCheck.filter(
@@ -636,8 +811,10 @@ export const GameBoard: React.FC<{
       );
       console.log(
         'Final board state:',
-        currentBoardRef.current.map(row =>
-          row.map(tile => tile?.type || 'null'),
+        (currentBoardRef.current || Array(8).fill(null)).map(row =>
+          Array.isArray(row)
+            ? row.map(tile => tile?.type || 'null')
+            : Array(8).fill('null'),
         ),
       );
       console.log('=== END PROCESSING ===');
@@ -668,10 +845,21 @@ export const GameBoard: React.FC<{
   ) => {
     const falling = new Map<string, number>();
 
+    // Ensure boards are valid arrays
+    const safeBoardAfterRemoval = Array.isArray(boardAfterRemoval)
+      ? boardAfterRemoval
+      : [];
+    const safeBoardAfterDrop = Array.isArray(boardAfterDrop)
+      ? boardAfterDrop
+      : [];
+
     // For each column, find tiles that should be falling
     for (let col = 0; col < 8; col++) {
       // Get sand blocker positions in this column
-      const sandBlockerRows = currentSandBlockersRef.current
+      const sandBlockers = Array.isArray(currentSandBlockersRef.current)
+        ? currentSandBlockersRef.current
+        : [];
+      const sandBlockerRows = sandBlockers
         .filter(blocker => blocker.col === col)
         .map(blocker => blocker.row)
         .sort((a, b) => a - b);
@@ -697,7 +885,10 @@ export const GameBoard: React.FC<{
         // Find gaps in this section after removal
         const gaps: number[] = [];
         for (let row = section.start; row <= section.end; row++) {
-          if (boardAfterRemoval[row][col] === null) {
+          const rowArray = Array.isArray(safeBoardAfterRemoval[row])
+            ? safeBoardAfterRemoval[row]
+            : [];
+          if (rowArray[col] === null) {
             gaps.push(row);
           }
         }
@@ -709,14 +900,22 @@ export const GameBoard: React.FC<{
             finalRow <= section.end;
             finalRow++
           ) {
-            const finalTile = boardAfterDrop[finalRow][col];
+            const finalRowArray = Array.isArray(safeBoardAfterDrop[finalRow])
+              ? safeBoardAfterDrop[finalRow]
+              : [];
+            const finalTile = finalRowArray[col];
             if (finalTile) {
               // Find where this tile was in the board after removal (within this section)
               let originalRow = -1;
               for (let row = section.start; row <= section.end; row++) {
+                const originalRowArray = Array.isArray(
+                  safeBoardAfterRemoval[row],
+                )
+                  ? safeBoardAfterRemoval[row]
+                  : [];
                 if (
-                  boardAfterRemoval[row][col] &&
-                  boardAfterRemoval[row][col].id === finalTile.id
+                  originalRowArray[col] &&
+                  originalRowArray[col].id === finalTile.id
                 ) {
                   originalRow = row;
                   break;
@@ -987,63 +1186,87 @@ export const GameBoard: React.FC<{
         {renderBackground()}
 
         {/* Game board */}
-        {gameState.board.map((row, rowIndex) => (
+        {(gameState.board && Array.isArray(gameState.board)
+          ? gameState.board
+          : Array(8).fill(null)
+        ).map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
-            {row.map((tile, colIndex) => {
-              const sandBlocker = gameState.sandBlockers.find(
-                blocker => blocker.row === rowIndex && blocker.col === colIndex,
-              );
-              const hasSandBlocker = !!sandBlocker;
-              const hasUmbrella = sandBlocker?.hasUmbrella || false;
-
-              // Use the original for now, but this will help us debug
-              if (hasSandBlocker) {
-                return (
-                  <View
-                    key={`sand-blocker-${rowIndex}-${colIndex}`}
-                    style={[
-                      styles.sandBlocker,
-                      {
-                        position: 'relative',
-                        width: 40,
-                        height: 40,
-                        margin: 1,
-                      },
-                    ]}>
-                    <Text style={styles.sandBlockerText}>
-                      {hasUmbrella ? '🏖️' : ''}
-                    </Text>
-                  </View>
+            {(Array.isArray(row) ? row : Array(8).fill(null)).map(
+              (tile, colIndex) => {
+                const sandBlocker = (
+                  gameState.sandBlockers &&
+                  Array.isArray(gameState.sandBlockers)
+                    ? gameState.sandBlockers
+                    : []
+                ).find(
+                  blocker =>
+                    blocker.row === rowIndex && blocker.col === colIndex,
                 );
-              }
-              return tile ? (
-                <Tile
-                  key={tile.id}
-                  tile={tile}
-                  onPress={() => handleTilePress(rowIndex, colIndex)}
-                  onSwipe={direction =>
-                    handleTileSwipe(rowIndex, colIndex, direction)
-                  }
-                  isMatched={false}
-                  isFalling={fallingTiles.has(`${rowIndex}-${colIndex}`)}
-                  fallDistance={getTileFallDistance(rowIndex, colIndex)}
-                />
-              ) : (
-                <View
-                  key={`empty-${rowIndex}-${colIndex}`}
-                  style={styles.emptyTile}
-                />
-              );
-            })}
+                const hasSandBlocker = !!sandBlocker;
+                const hasUmbrella = sandBlocker?.hasUmbrella || false;
+
+                // Use the original for now, but this will help us debug
+                if (hasSandBlocker) {
+                  return (
+                    <View
+                      key={`sand-blocker-${rowIndex}-${colIndex}`}
+                      style={[
+                        styles.sandBlocker,
+                        {
+                          position: 'relative',
+                          width: 40,
+                          height: 40,
+                          margin: 1,
+                        },
+                      ]}>
+                      <Text style={styles.sandBlockerText}>
+                        {hasUmbrella ? '🏖️' : ''}
+                      </Text>
+                    </View>
+                  );
+                }
+                return tile ? (
+                  <Tile
+                    key={tile.id}
+                    tile={tile}
+                    onPress={() => handleTilePress(rowIndex, colIndex)}
+                    onSwipe={direction =>
+                      handleTileSwipe(rowIndex, colIndex, direction)
+                    }
+                    isMatched={false}
+                    isFalling={fallingTiles.has(`${rowIndex}-${colIndex}`)}
+                    fallDistance={getTileFallDistance(rowIndex, colIndex)}
+                    isCoconutExiting={isCoconutExiting(
+                      rowIndex,
+                      colIndex,
+                      tile.id,
+                    )}
+                    onCoconutExit={() =>
+                      finalizeCoconutExit(rowIndex, colIndex, tile.id)
+                    }
+                  />
+                ) : (
+                  <View
+                    key={`empty-${rowIndex}-${colIndex}`}
+                    style={styles.emptyTile}
+                  />
+                );
+              },
+            )}
           </View>
         ))}
 
         {/* Separate layer for matched tiles (exploding) */}
-        {Array.from(matchedTiles).map(matchKey => {
+        {Array.from(matchedTiles || []).map(matchKey => {
           const [rowStr, colStr] = matchKey.split('-');
           const row = parseInt(rowStr);
           const col = parseInt(colStr);
-          const originalTile = gameState.board[row]?.[col];
+          const board =
+            gameState.board && Array.isArray(gameState.board)
+              ? gameState.board
+              : [];
+          const rowArray = Array.isArray(board[row]) ? board[row] : [];
+          const originalTile = rowArray[col];
 
           if (originalTile) {
             return (

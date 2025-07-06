@@ -77,10 +77,6 @@
       "tileTypes": ["🐚", "⭐", "🌺", "🦀"],
       "mechanics": ["sand", "driftwood"],
       "blockers": [
-        {"type": "sand", "row": 6, "col": 2},
-        {"type": "sand", "row": 6, "col": 3},
-        {"type": "sand", "row": 6, "col": 4},
-        {"type": "sand", "row": 6, "col": 5},
         {"type": "sand", "row": 7, "col": 2},
         {"type": "sand", "row": 7, "col": 3},
         {"type": "sand", "row": 7, "col": 4},
