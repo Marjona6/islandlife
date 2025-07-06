@@ -370,9 +370,30 @@ export const GameBoard: React.FC<{
     }
 
     // Check if target position has a sand blocker
-    const hasSandBlocker = gameState.sandBlockers.some(
+    const hasSandBlocker = currentSandBlockersRef.current.some(
       blocker => blocker.row === targetRow && blocker.col === targetCol,
     );
+
+    // Add detailed logging for sand blocker detection
+    console.log('=== SAND BLOCKER DETECTION DEBUG ===');
+    console.log('Swipe from:', {row, col}, 'to:', {targetRow, targetCol});
+    console.log('Prop sandBlockers:', sandBlockers);
+    console.log('GameState sandBlockers:', gameState.sandBlockers);
+    console.log('Current sand blockers ref:', currentSandBlockersRef.current);
+    console.log('Checking for sand blocker at position:', {
+      targetRow,
+      targetCol,
+    });
+    console.log('Has sand blocker:', hasSandBlocker);
+
+    if (hasSandBlocker) {
+      const matchingBlocker = currentSandBlockersRef.current.find(
+        blocker => blocker.row === targetRow && blocker.col === targetCol,
+      );
+      console.log('Matching sand blocker found:', matchingBlocker);
+    }
+    console.log('=== END SAND BLOCKER DETECTION DEBUG ===');
+
     if (hasSandBlocker) {
       console.log('Target position has sand blocker');
       return;

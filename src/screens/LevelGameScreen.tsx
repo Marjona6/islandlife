@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useMemo, useCallback} from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Pressable,
 } from 'react-native';
 import {GameBoard} from '../components/GameBoard';
-import VictoryScreen from '../components/VictoryScreen';
+import {VictoryScreen} from '../components/VictoryScreen';
 import {useGame} from '../contexts/GameContext';
 import {levelManager, getLevelDifficulty} from '../utils/levelManager';
 import {testLevelManager} from '../utils/testLevelManager';
@@ -67,15 +67,18 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
   }, [currentLevelId, currentLevel, dispatchGame]);
 
   // Simple progress tracking - just use game state directly
-  const currentProgress = {
-    score: gameState.score,
-    collected: currency.shells,
-    cleared: Math.floor(gameState.score / 50),
-    combos: gameState.combos,
-    dropped: droppedItems,
-  };
+  const currentProgress = useMemo(
+    () => ({
+      score: gameState.score,
+      collected: currency.shells,
+      cleared: Math.floor(gameState.score / 50),
+      combos: gameState.combos,
+      dropped: droppedItems,
+    }),
+    [gameState.score, currency.shells, gameState.combos, droppedItems],
+  );
 
-  const isLevelComplete = () => {
+  const isLevelComplete = useCallback(() => {
     if (!currentLevel) return false;
     switch (currentLevel.objective) {
       case 'score':
@@ -88,10 +91,13 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         return currentProgress.combos >= currentLevel.target;
       case 'drop':
         return currentProgress.dropped >= currentLevel.target;
+      case 'sand-clear':
+        // Check if all sand blockers have been cleared
+        return gameState.sandBlockers.length === 0;
       default:
         return false;
     }
-  };
+  }, [currentLevel, currentProgress, gameState.sandBlockers.length]);
 
   useEffect(() => {
     if (isLevelComplete() && !showVictory) {
@@ -124,6 +130,11 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         case 'combo':
           instructions += `🎯 Objective: Create ${currentLevel.target} combos\n`;
           instructions += '💡 Tip: Chain matches together for combos!';
+          break;
+        case 'sand-clear':
+          instructions += `🎯 Objective: Clear all sand blockers\n`;
+          instructions +=
+            '💡 Tip: Create matches adjacent to sand blockers to clear them!';
           break;
         default:
           instructions += '💡 Tip: Create matches to progress!';
@@ -269,6 +280,8 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
                     } else {
                       return `Drop ${currentLevel.target} coconuts`;
                     }
+                  case 'sand-clear':
+                    return `Clear all sand blockers`;
                   default:
                     return '';
                 }
@@ -320,6 +333,8 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
                   return `Combos: ${currentProgress.combos}/${currentLevel.target}`;
                 case 'drop':
                   return `Dropped: ${currentProgress.dropped}/${currentLevel.target}`;
+                case 'sand-clear':
+                  return `Sand blockers: ${gameState.sandBlockers.length} remaining`;
                 default:
                   return '';
               }

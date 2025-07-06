@@ -1,7 +1,13 @@
 import {TileType, SAND_TILE_EMOJIS, SEA_TILE_EMOJIS} from './game';
 
 // Level configuration types
-export type ObjectiveType = 'score' | 'collect' | 'clear' | 'drop' | 'combo';
+export type ObjectiveType =
+  | 'score'
+  | 'collect'
+  | 'clear'
+  | 'drop'
+  | 'combo'
+  | 'sand-clear';
 export type MechanicType =
   | 'sand'
   | 'drop-targets'
