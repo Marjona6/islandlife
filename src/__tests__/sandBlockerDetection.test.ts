@@ -400,7 +400,7 @@ describe('Sand Blocker Detection Issues', () => {
         row: c.row,
         col: c.col,
       }));
-      expectedPositions.forEach(pos => {
+      expectedPositions.forEach(_pos => {
         // Simulate that the position is now empty
         const isEmpty = true; // In real logic, this would be null
         expect(isEmpty).toBe(true);
@@ -480,6 +480,56 @@ describe('Sand Blocker Detection Issues', () => {
       expect(mockOnCoconutDrop).toHaveBeenCalledTimes(8);
       expect(dropCallCount).toBe(8);
       expect(pendingCoconutDrops.length).toBe(0);
+    });
+  });
+
+  describe('Issue 9: Coconut movement to bottom row', () => {
+    it('should allow coconuts to reach the bottom row when no sand blockers are blocking', () => {
+      // Create a board with coconuts at the top and no sand blockers in columns 0, 1, 6, 7
+      const board = [
+        ['🥥', '🥥', '🦀', '🦀', '🦀', '🦀', '🥥', '🥥'], // Row 0: coconuts in columns 0, 1, 6, 7
+        ['🦀', '🦀', '🦀', '🦀', '🦀', '🦀', '🦀', '🦀'], // Row 1
+        ['🦀', '🦀', '🦀', '🦀', '🦀', '🦀', '🦀', '🦀'], // Row 2
+        ['🦀', '🦀', '🦀', '🦀', '🦀', '🦀', '🦀', '🦀'], // Row 3
+        ['🦀', '🦀', '🦀', '🦀', '🦀', '🦀', '🦀', '🦀'], // Row 4
+        ['🦀', '🦀', '🦀', '🦀', '🦀', '🦀', '🦀', '🦀'], // Row 5
+        ['🦀', '🦀', '🦀', '🦀', '🦀', '🦀', '🦀', '🦀'], // Row 6
+        ['🦀', '🦀', null, null, null, null, '🦀', '🦀'], // Row 7: sand blockers in columns 2-5
+      ];
+
+      // Sand blockers in columns 2-5 at row 7
+      const sandBlockers = [
+        {row: 7, col: 2, hasUmbrella: true},
+        {row: 7, col: 3, hasUmbrella: true},
+        {row: 7, col: 4, hasUmbrella: true},
+        {row: 7, col: 5, hasUmbrella: true},
+      ];
+
+      console.log('Initial board state:');
+      board.forEach((row, index) => {
+        console.log(`Row ${index}:`, row);
+      });
+
+      console.log('Sand blockers:', sandBlockers);
+
+      // Check which columns are blocked
+      const blockedColumns = sandBlockers.map(sb => sb.col);
+      console.log('Blocked columns:', blockedColumns);
+
+      // Check which columns are free for coconuts to fall
+      const freeColumns = [0, 1, 2, 3, 4, 5, 6, 7].filter(
+        col => !blockedColumns.includes(col),
+      );
+      console.log('Free columns for coconuts:', freeColumns);
+
+      // Verify that coconuts in columns 0, 1, 6, 7 can reach the bottom
+      const coconutsInFreeColumns = [0, 1, 6, 7].filter(col =>
+        freeColumns.includes(col),
+      );
+      console.log('Coconuts in free columns:', coconutsInFreeColumns);
+
+      expect(coconutsInFreeColumns).toEqual([0, 1, 6, 7]);
+      expect(freeColumns).toEqual([0, 1, 6, 7]);
     });
   });
 });

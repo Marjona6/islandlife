@@ -193,19 +193,33 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
     setMovesMade(prev => prev + 1);
   };
 
-  const handleItemDrop = () => {
+  const handleItemDrop = (count: number = 1) => {
     console.log('=== COCONUT DROP COUNTER INCREMENT ===');
     console.log('Previous dropped items count:', droppedItems);
     console.log('Current level target:', currentLevel?.target);
-    console.log('Incrementing dropped items counter');
+    console.log('Incrementing dropped items counter by:', count);
     setDroppedItems(prev => {
-      const newCount = prev + 1;
+      const newCount = prev + count;
       console.log('New dropped items count:', newCount);
+
+      // Check for level completion using the new count directly
+      if (
+        currentLevel?.objective === 'drop' &&
+        newCount >= currentLevel.target
+      ) {
+        console.log('Level complete detected, starting transition...');
+        setIsTransitioning(true);
+
+        // Add a delay to ensure all animations and cascades complete
+        setTimeout(() => {
+          console.log('Transition complete, showing victory screen');
+          setShowVictory(true);
+          setIsTransitioning(false);
+        }, 1000); // 1 second delay
+      }
+
       return newCount;
     });
-
-    // Check for level completion after coconut drop
-    setTimeout(() => checkLevelCompletion(), 0);
   };
 
   // Callback for GameBoard to trigger level completion checks

@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import React, {useRef, useEffect, useCallback} from 'react';
 import {Text, StyleSheet, PanResponder} from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import {Tile as TileType} from '../types/game';
@@ -33,7 +33,7 @@ export const Tile: React.FC<TileProps> = ({
   const hasStartedShaking = useRef(false);
 
   // Handle matched tile animation
-  const handleMatch = () => {
+  const handleMatch = useCallback(() => {
     if (isMatched && tileRef.current && !hasAnimatedMatch.current) {
       hasAnimatedMatch.current = true;
       const currentRef = tileRef.current;
@@ -55,10 +55,10 @@ export const Tile: React.FC<TileProps> = ({
         );
       }
     }
-  };
+  }, [isMatched]);
 
   // Handle falling tile animation
-  const handleFall = () => {
+  const handleFall = useCallback(() => {
     if (
       isFalling &&
       fallDistance > 0 &&
@@ -79,10 +79,10 @@ export const Tile: React.FC<TileProps> = ({
         );
       }
     }
-  };
+  }, [isFalling, fallDistance]);
 
   // Handle item exit animation
-  const handleCoconutExit = () => {
+  const handleCoconutExit = useCallback(() => {
     if (
       isCoconutExiting &&
       tile.isSpecial &&
@@ -114,10 +114,10 @@ export const Tile: React.FC<TileProps> = ({
           });
       }
     }
-  };
+  }, [isCoconutExiting, tile.isSpecial, onCoconutExit]);
 
   // Handle shaking animation for bomb tiles
-  const handleShaking = () => {
+  const handleShaking = useCallback(() => {
     if (isShaking && tileRef.current && !hasStartedShaking.current) {
       hasStartedShaking.current = true;
       const currentRef = tileRef.current;
@@ -150,19 +150,33 @@ export const Tile: React.FC<TileProps> = ({
         shakeAnimation();
       }
     }
-  };
+  }, [isShaking]);
 
-  // Reset animation flags when props change
-  if (!isMatched) hasAnimatedMatch.current = false;
-  if (!isFalling) hasAnimatedFall.current = false;
-  if (!isCoconutExiting) hasAnimatedCoconutExit.current = false;
-  if (!isShaking) hasStartedShaking.current = false;
+  // Use useEffect to handle animations after render
+  useEffect(() => {
+    // Reset animation flags when props change
+    if (!isMatched) hasAnimatedMatch.current = false;
+    if (!isFalling) hasAnimatedFall.current = false;
+    if (!isCoconutExiting) hasAnimatedCoconutExit.current = false;
+    if (!isShaking) hasStartedShaking.current = false;
 
-  // Run animations when props change
-  if (isMatched) handleMatch();
-  if (isFalling) handleFall();
-  if (isCoconutExiting) handleCoconutExit();
-  if (isShaking) handleShaking();
+    // Run animations when props change
+    if (isMatched) handleMatch();
+    if (isFalling) handleFall();
+    if (isCoconutExiting) handleCoconutExit();
+    if (isShaking) handleShaking();
+  }, [
+    isMatched,
+    isFalling,
+    fallDistance,
+    isCoconutExiting,
+    isShaking,
+    tile.isSpecial,
+    handleMatch,
+    handleFall,
+    handleCoconutExit,
+    handleShaking,
+  ]);
 
   const panResponder = useRef(
     PanResponder.create({

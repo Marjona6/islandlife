@@ -1,4 +1,10 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useImperativeHandle,
+  forwardRef,
+} from 'react';
 import {View, StyleSheet, Text} from 'react-native';
 import Svg, {
   Ellipse,
@@ -128,25 +134,44 @@ const FallingParticles: React.FC<{_colIndex: number; isActive: boolean}> = ({
   );
 };
 
-export const GameBoard: React.FC<{
+type GameBoardProps = {
   variant?: 'sand' | 'sea';
   sandBlockers?: Array<{row: number; col: number}>;
-  onMove?: () => void; // Callback when a valid move is made
-  onCoconutDrop?: () => void; // Callback when a drop item is dropped (kept for backward compatibility)
-  onGameAction?: () => void; // Callback when any game action occurs (for level completion checks)
-  isTransitioning?: boolean; // New prop to prevent interactions during transitions
-}> = ({
-  variant = 'sand',
-  sandBlockers = [],
-  onMove,
-  onCoconutDrop,
-  onGameAction,
-  isTransitioning = false,
-}) => {
+  onMove?: () => void;
+  onCoconutDrop?: (count: number) => void;
+  onGameAction?: () => void;
+  isTransitioning?: boolean;
+};
+
+type GameBoardHandle = {
+  processGameTurn: (
+    board: any[][],
+    row1?: number,
+    col1?: number,
+    row2?: number,
+    col2?: number,
+    cascadeCount?: number,
+    currentSandBlockers?: Array<{
+      row: number;
+      col: number;
+      hasUmbrella: boolean;
+    }>,
+  ) => void;
+};
+
+const GameBoardInner = (
+  {
+    variant = 'sand',
+    sandBlockers = [],
+    onMove,
+    onCoconutDrop,
+    onGameAction,
+    isTransitioning = false,
+  }: GameBoardProps,
+  ref: React.Ref<GameBoardHandle>,
+) => {
   // All hooks must be at the top, before any return
   const {gameState, dispatchGame, dispatchCurrency, isInitialized} = useGame();
-  const [isProcessingMove, setIsProcessingMove] = useState(false);
-  const [_isProcessingMatches, setIsProcessingMatches] = useState(false);
   const [matchedTiles, setMatchedTiles] = useState<Set<string>>(new Set());
   const [fallingTiles, setFallingTiles] = useState<Map<string, number>>(
     new Map(),
@@ -167,6 +192,11 @@ export const GameBoard: React.FC<{
     Array<{row: number; col: number; id: string}>
   >([]);
 
+  // Expose processGameTurn for testing - must be called before any conditional returns
+  useImperativeHandle(ref, () => ({
+    processGameTurn,
+  }));
+
   // Initialize refs when game state changes
   useEffect(() => {
     currentBoardRef.current = gameState.board;
@@ -179,11 +209,6 @@ export const GameBoard: React.FC<{
   const hasInitializedRef = useRef(false);
   // Store initial sand blockers to prevent re-initialization
   const initialSandBlockersRef = useRef(sandBlockers);
-
-  // Debug isProcessingMove state changes
-  useEffect(() => {
-    // console.log('isProcessingMove changed to:', isProcessingMove);
-  }, [isProcessingMove]);
 
   // Initialize game on mount if not already initialized and context is ready
   useEffect(() => {
@@ -226,15 +251,19 @@ export const GameBoard: React.FC<{
     }
 
     // Prevent swipes during processing
-    if (isProcessingMove || isProcessingMoveRef.current) {
+    if (isProcessingMoveRef.current || isProcessingMatchesRef.current) {
       console.log('Swipe blocked: move is being processed');
+      console.log('isProcessingMove state:', isProcessingMoveRef.current);
+      console.log(
+        'isProcessingMatchesRef.current:',
+        isProcessingMatchesRef.current,
+      );
       return;
     }
 
     console.log('=== SWIPE ATTEMPT ===');
     console.log('Swipe attempted:', {row, col, direction});
-    console.log('isProcessingMove:', isProcessingMove);
-    console.log('isProcessingMoveRef.current:', isProcessingMoveRef.current);
+    console.log('isProcessingMove:', isProcessingMoveRef.current);
 
     let targetRow = row;
     let targetCol = col;
@@ -349,7 +378,6 @@ export const GameBoard: React.FC<{
     if (isValid) {
       console.log('Valid move, initiating swap');
       // Set processing to true immediately when user initiates a valid swap
-      setIsProcessingMove(true);
       isProcessingMoveRef.current = true;
       // Notify parent that a move was made
       onMove?.();
@@ -454,7 +482,6 @@ export const GameBoard: React.FC<{
 
     // Reset isProcessingMove since swap animation is complete (only on first call)
     if (cascadeCount === 0) {
-      setIsProcessingMove(false);
       isProcessingMoveRef.current = false;
       console.log('Set isProcessingMove to false (swap complete)');
     }
@@ -537,7 +564,6 @@ export const GameBoard: React.FC<{
 
     if (matches.length > 0) {
       // Set match processing to true
-      setIsProcessingMatches(true);
       isProcessingMatchesRef.current = true;
       console.log('Set isProcessingMatches to true');
 
@@ -705,16 +731,21 @@ export const GameBoard: React.FC<{
         (row: any[]) => (Array.isArray(row) ? [...row] : Array(8).fill(null)),
       );
 
-      // Remove the old logic that filled cleared sand blocker positions with random tiles
-      // Instead, after updating sand blockers, let gravity handle the falling
-      // (i.e., call dropTiles with the updated sand blocker state)
+      // Apply gravity to let tiles fall
       finalBoard = dropTiles(finalBoard, variant, finalSandBlockers);
 
       // Check for coconuts that have reached the bottom row and should exit
       const coconutsToExit: Array<{row: number; col: number; id: string}> = [];
       if (finalBoard[7] && Array.isArray(finalBoard[7])) {
+        console.log('Checking bottom row for coconuts:');
         for (let col = 0; col < 8; col++) {
           const tile = finalBoard[7][col];
+          console.log(
+            `Column ${col}:`,
+            tile
+              ? {type: tile.type, isSpecial: tile.isSpecial, id: tile.id}
+              : 'null',
+          );
           if (tile && tile.isSpecial) {
             coconutsToExit.push({row: 7, col, id: tile.id});
           }
@@ -724,12 +755,14 @@ export const GameBoard: React.FC<{
       if (coconutsToExit.length > 0) {
         console.log('=== COCONUTS REACHED BOTTOM ROW ===');
         console.log('Coconuts to exit:', coconutsToExit);
+        if (onCoconutDrop) onCoconutDrop(coconutsToExit.length);
 
         // Remove coconuts from the bottom row
         coconutsToExit.forEach(item => {
           finalBoard[item.row][item.col] = null;
           // Collect coconut drops to notify parent later to avoid state conflicts
           pendingCoconutDropsRef.current.push(item);
+          console.log('Coconut detected at bottom row, will be removed:', item);
         });
 
         // Apply gravity again to fill the gaps left by exiting coconuts
@@ -808,6 +841,55 @@ export const GameBoard: React.FC<{
         });
       }
 
+      // Check for coconuts that have reached the bottom row and should exit (even when no matches)
+      const coconutsToExit: Array<{row: number; col: number; id: string}> = [];
+      if (
+        currentBoardRef.current[7] &&
+        Array.isArray(currentBoardRef.current[7])
+      ) {
+        console.log('Checking bottom row for coconuts (no matches branch):');
+        for (let col = 0; col < 8; col++) {
+          const tile = currentBoardRef.current[7][col];
+          console.log(
+            `Column ${col}:`,
+            tile
+              ? {type: tile.type, isSpecial: tile.isSpecial, id: tile.id}
+              : 'null',
+          );
+          if (tile && tile.isSpecial) {
+            coconutsToExit.push({row: 7, col, id: tile.id});
+          }
+        }
+      }
+
+      if (coconutsToExit.length > 0) {
+        console.log('=== COCONUTS REACHED BOTTOM ROW (NO MATCHES) ===');
+        console.log('Coconuts to exit:', coconutsToExit);
+
+        // Remove coconuts from the bottom row
+        const updatedBoard = currentBoardRef.current.map(row => [...row]);
+        coconutsToExit.forEach(item => {
+          updatedBoard[item.row][item.col] = null;
+          // Collect coconut drops to notify parent later to avoid state conflicts
+          pendingCoconutDropsRef.current.push(item);
+          console.log(
+            'Coconut detected at bottom row (no matches), will be removed:',
+            item,
+          );
+        });
+
+        // Apply gravity again to fill the gaps left by exiting coconuts
+        const finalBoard = dropTiles(
+          updatedBoard,
+          variant,
+          currentSandBlockersRef.current,
+        );
+
+        // Update the board with the coconuts removed
+        dispatchGame({type: 'UPDATE_BOARD', payload: finalBoard});
+        currentBoardRef.current = finalBoard;
+      }
+
       // Check if game is impossible after each cascade completes
       const isImpossible = checkIfGameImpossible(
         currentBoardRef.current,
@@ -833,36 +915,34 @@ export const GameBoard: React.FC<{
 
       // Notify parent of all collected coconut drops to avoid state conflicts
       if (onCoconutDrop && pendingCoconutDropsRef.current.length > 0) {
-        // Only log if there are multiple drops or during development
-        if (pendingCoconutDropsRef.current.length > 1) {
-          console.log(
-            'Notifying parent of',
-            pendingCoconutDropsRef.current.length,
-            'coconut drops',
-          );
-        }
-        // Call onCoconutDrop for each collected drop
-        pendingCoconutDropsRef.current.forEach(() => {
-          onCoconutDrop();
-        });
+        console.log(
+          'Calling onCoconutDrop for',
+          pendingCoconutDropsRef.current.length,
+          'coconut drops',
+        );
+        // Call onCoconutDrop with the count of drops to avoid state batching issues
+        onCoconutDrop(pendingCoconutDropsRef.current.length);
         // Clear the pending drops
         pendingCoconutDropsRef.current = [];
       }
 
-      setIsProcessingMove(false);
-      setIsProcessingMatches(false);
-      isProcessingMoveRef.current = false;
       isProcessingMatchesRef.current = false;
       console.log('=== PROCESSING COMPLETE ===');
       console.log(
-        'Set isProcessingMove and isProcessingMatches to false (no matches or cascades left)',
+        'Set isProcessingMatches to false (no matches or cascades left)',
       );
       console.log('=== END PROCESSING ===');
 
       // Add a small delay to ensure state updates have propagated
       setTimeout(() => {
         console.log('State reset complete - ready for new moves');
-      }, 50);
+        console.log('Final processing state check:');
+        console.log('isProcessingMove:', isProcessingMoveRef.current);
+        console.log(
+          'isProcessingMatchesRef.current:',
+          isProcessingMatchesRef.current,
+        );
+      }, 100);
     }
   };
 
@@ -1340,6 +1420,10 @@ export const GameBoard: React.FC<{
     </View>
   );
 };
+
+export const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(
+  GameBoardInner,
+);
 
 const styles = StyleSheet.create({
   container: {
