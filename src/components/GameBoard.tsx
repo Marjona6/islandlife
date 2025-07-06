@@ -13,10 +13,14 @@ import {useGame} from '../contexts/GameContext';
 
 import {
   isValidMove,
+  getTileTypes,
   findMatches,
   removeMatches,
   dropTiles,
-  getTileTypes,
+  detectBombTrigger,
+  detectRocketTrigger,
+  getBombExplosionTiles,
+  getRocketExplosionTiles,
 } from '../utils/gameLogic';
 import {
   checkIfGameImpossible,
@@ -540,8 +544,69 @@ export const GameBoard: React.FC<{
       console.log('Set isProcessingMove to false (swap complete)');
     }
 
-    // First, find matches
-    const matches = findMatches(board);
+    // Check for rocket/bomb mechanics on first cascade only
+    let matches: Array<Array<{row: number; col: number}>> = [];
+    let boardAfterProcessing = board;
+
+    if (
+      cascadeCount === 0 &&
+      row1 !== undefined &&
+      col1 !== undefined &&
+      row2 !== undefined &&
+      col2 !== undefined
+    ) {
+      // Check for bomb trigger first (bomb takes precedence)
+      if (detectBombTrigger(board, row1, col1, row2, col2)) {
+        const bombArea = getBombExplosionTiles(row2, col2);
+        matches = [bombArea];
+        boardAfterProcessing = removeMatches(board, [bombArea]);
+        boardAfterProcessing = dropTiles(
+          boardAfterProcessing,
+          variant,
+          currentSandBlockers || currentSandBlockersRef.current,
+        );
+      } else {
+        // Check for rocket trigger
+        const rocketResult = detectRocketTrigger(board, row1, col1, row2, col2);
+        if (rocketResult.triggered) {
+          const rocketArea = getRocketExplosionTiles(
+            row2,
+            col2,
+            rocketResult.isHorizontal,
+          );
+          matches = [rocketArea];
+          boardAfterProcessing = removeMatches(board, [rocketArea]);
+          boardAfterProcessing = dropTiles(
+            boardAfterProcessing,
+            variant,
+            currentSandBlockers || currentSandBlockersRef.current,
+          );
+        } else {
+          // No bomb or rocket, just process normal matches
+          matches = findMatches(board);
+          if (matches.length > 0) {
+            boardAfterProcessing = removeMatches(board, matches);
+            boardAfterProcessing = dropTiles(
+              boardAfterProcessing,
+              variant,
+              currentSandBlockers || currentSandBlockersRef.current,
+            );
+          }
+        }
+      }
+    } else {
+      // Normal cascade processing
+      matches = findMatches(board);
+      if (matches.length > 0) {
+        boardAfterProcessing = removeMatches(board, matches);
+        boardAfterProcessing = dropTiles(
+          boardAfterProcessing,
+          variant,
+          currentSandBlockers || currentSandBlockersRef.current,
+        );
+      }
+    }
+
     console.log('Matches found:', matches);
 
     if (matches.length > 0) {
@@ -552,8 +617,8 @@ export const GameBoard: React.FC<{
 
       // Show matched tiles fading out
       const matchedPositions = new Set<string>();
-      matches.forEach(match => {
-        match.forEach(pos => {
+      matches.forEach((match: Array<{row: number; col: number}>) => {
+        match.forEach((pos: {row: number; col: number}) => {
           matchedPositions.add(`${pos.row}-${pos.col}`);
         });
       });
@@ -570,8 +635,8 @@ export const GameBoard: React.FC<{
       // Find all sand blockers adjacent to matches and count adjacent matches
       const adjacentBlockers = new Map<string, number>(); // key: "row,col", value: match count
 
-      matches.forEach(match => {
-        match.forEach(pos => {
+      matches.forEach((match: Array<{row: number; col: number}>) => {
+        match.forEach((pos: {row: number; col: number}) => {
           const adjacentPositions = [
             {row: pos.row - 1, col: pos.col}, // up
             {row: pos.row + 1, col: pos.col}, // down
@@ -662,23 +727,18 @@ export const GameBoard: React.FC<{
 
       console.log('Final sand blockers:', finalSandBlockers);
 
-      // Calculate the final board state immediately (no intermediate gappy state)
-      const boardAfterRemoval = removeMatches(board, matches);
-      const boardAfterDrop = dropTiles(
-        boardAfterRemoval,
-        variant,
-        finalSandBlockers, // Use updated sand blockers
-      );
-
+      // Use the updated board from processing (which includes rocket/bomb effects)
       // Calculate which tiles need to fall for animation
-      const falling = calculateFallingTiles(boardAfterRemoval, boardAfterDrop);
+      const falling = calculateFallingTiles(board, boardAfterProcessing);
 
       // Set falling state for all tiles at once to ensure synchronized animation
       setFallingTiles(falling);
 
       console.log(
         'Updated to final board state:',
-        boardAfterDrop.map(row => row.map(tile => tile?.type || 'null')),
+        boardAfterProcessing.map((row: any[]) =>
+          row.map((tile: any) => tile?.type || 'null'),
+        ),
       );
 
       // Calculate score and count collected tiles
@@ -705,8 +765,8 @@ export const GameBoard: React.FC<{
       dispatchGame({type: 'ADD_SCORE', payload: matchScore});
 
       // Create updated board with cleared sand blocker positions filled
-      let updatedBoard = (boardAfterDrop || Array(8).fill(null)).map(row =>
-        Array.isArray(row) ? [...row] : Array(8).fill(null),
+      let finalBoard = (boardAfterProcessing || Array(8).fill(null)).map(
+        (row: any[]) => (Array.isArray(row) ? [...row] : Array(8).fill(null)),
       );
 
       // Fill cleared sand blocker positions with new tiles
@@ -725,7 +785,7 @@ export const GameBoard: React.FC<{
             : (['🦑', '🦐', '🐡', '🪝'] as const);
         const randomType =
           tileTypes[Math.floor(Math.random() * tileTypes.length)];
-        updatedBoard[blocker.row][blocker.col] = {
+        finalBoard[blocker.row][blocker.col] = {
           id: `${blocker.row}-${blocker.col}-${Date.now()}-${Math.random()}`,
           type: randomType,
           row: blocker.row,
@@ -734,8 +794,8 @@ export const GameBoard: React.FC<{
       });
 
       // Update board state immediately but keep matched tiles visible for animation
-      dispatchGame({type: 'UPDATE_BOARD', payload: updatedBoard});
-      currentBoardRef.current = updatedBoard;
+      dispatchGame({type: 'UPDATE_BOARD', payload: finalBoard});
+      currentBoardRef.current = finalBoard;
       dispatchGame({type: 'INCREMENT_COMBOS'});
 
       // Add collected tiles to currency if any were collected
@@ -744,14 +804,18 @@ export const GameBoard: React.FC<{
       }
 
       // Clear matched tiles after explosion animation
+      // Use longer animation for bomb/rocket explosions
+      const isSpecialExplosion = matches.some(match => match.length >= 8); // Rocket (8) or Bomb (25)
+      const explosionDuration = isSpecialExplosion ? 800 : 250; // Longer for special explosions
+
       setTimeout(() => {
         setMatchedTiles(new Set());
-      }, 250); // Reduced from 500ms to 250ms
+      }, explosionDuration);
 
       // Clear falling animation after it completes
       setTimeout(() => {
         setFallingTiles(new Map());
-      }, 500); // Reduced from 1000ms to 500ms
+      }, 500); // Keep original timing
 
       // Check for game win
       if (gameState.combos + matches.length >= gameState.targetCombos) {
@@ -767,7 +831,7 @@ export const GameBoard: React.FC<{
         // Clear any existing falling animations before next cascade
         setFallingTiles(new Map());
         processGameTurn(
-          updatedBoard, // Use the updated board with filled sand blocker positions
+          finalBoard, // Use the updated board with filled sand blocker positions
           undefined,
           undefined,
           undefined,
@@ -775,7 +839,7 @@ export const GameBoard: React.FC<{
           cascadeCount + 1,
           finalSandBlockers, // Pass the updated sand blockers to the next cascade
         );
-      }, 600); // Reduced from 1200ms to 600ms
+      }, 600); // Keep original timing
     } else {
       // No matches found, finish processing
       if (
@@ -792,18 +856,16 @@ export const GameBoard: React.FC<{
         });
       }
 
-      // Check if game is impossible after no matches
-      if (cascadeCount === 0) {
-        const isImpossible = checkIfGameImpossible(currentBoardRef.current);
-        if (isImpossible) {
-          console.log('Game is impossible - rearranging board...');
-          const rearrangedBoard = rearrangeBoard(
-            currentBoardRef.current,
-            currentSandBlockers || sandBlockers,
-          );
-          dispatchGame({type: 'UPDATE_BOARD', payload: rearrangedBoard});
-          currentBoardRef.current = rearrangedBoard;
-        }
+      // Check if game is impossible after each cascade completes
+      const isImpossible = checkIfGameImpossible(currentBoardRef.current);
+      if (isImpossible) {
+        console.log('Game is impossible after cascade - rearranging board...');
+        const rearrangedBoard = rearrangeBoard(
+          currentBoardRef.current,
+          currentSandBlockers || sandBlockers,
+        );
+        dispatchGame({type: 'UPDATE_BOARD', payload: rearrangedBoard});
+        currentBoardRef.current = rearrangedBoard;
       }
 
       // No need to update sand blocker state here as it's already updated atomically during processing

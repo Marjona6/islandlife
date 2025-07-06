@@ -669,25 +669,50 @@ export const detectRocketTrigger = (
   const axisRow = toRow;
   const axisCol = toCol;
   const axisTile = testBoard[axisRow][axisCol];
-
   if (!axisTile || axisTile.isSpecial)
     return {triggered: false, isHorizontal: false};
 
-  // Find all matches that include the axis point
-  const matches = findMatches(testBoard);
-  const matchesAtAxis = matches.filter(match =>
-    match.some(pos => pos.row === axisRow && pos.col === axisCol),
-  );
-
-  // Check for match of exactly 4 tiles
-  for (const match of matchesAtAxis) {
-    if (match.length === 4) {
-      // Determine if it's horizontal or vertical
-      const isHorizontal = match.every(pos => pos.row === axisRow);
-      return {triggered: true, isHorizontal};
+  // Helper to check for a window of 4 matching tiles including the axis
+  function checkWindow(deltaRow: number, deltaCol: number): boolean {
+    for (let offset = -3; offset <= 0; offset++) {
+      let match = true;
+      for (let i = 0; i < 4; i++) {
+        const r = axisRow + (offset + i) * deltaRow;
+        const c = axisCol + (offset + i) * deltaCol;
+        if (
+          r < 0 ||
+          r >= testBoard.length ||
+          c < 0 ||
+          c >= testBoard[0].length ||
+          !testBoard[r][c] ||
+          testBoard[r][c].type !== axisTile.type
+        ) {
+          match = false;
+          break;
+        }
+      }
+      // Axis must be within this window
+      if (match) {
+        for (let i = 0; i < 4; i++) {
+          const r = axisRow + (offset + i) * deltaRow;
+          const c = axisCol + (offset + i) * deltaCol;
+          if (r === axisRow && c === axisCol) {
+            return true;
+          }
+        }
+      }
     }
+    return false;
   }
 
+  // Check horizontal
+  if (checkWindow(0, 1)) {
+    return {triggered: true, isHorizontal: true};
+  }
+  // Check vertical
+  if (checkWindow(1, 0)) {
+    return {triggered: true, isHorizontal: false};
+  }
   return {triggered: false, isHorizontal: false};
 };
 

@@ -9,6 +9,10 @@ import React, {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {GameState, Currency, BeachItem, Tile, TileType} from '../types/game';
 import {createValidBoard, createBoardFromLevel} from '../utils/gameLogic';
+import {
+  checkIfGameImpossible,
+  rearrangeBoard,
+} from '../utils/gameImpossibleLogic';
 
 // Game constants
 const BOARD_SIZE = 8;
@@ -115,15 +119,23 @@ type BeachAction =
 const gameReducer = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'INIT_BOARD':
+      let board = createValidBoard(
+        action.payload?.variant || 'sand',
+        action.payload?.sandBlockers?.map(sb => ({
+          row: sb.row,
+          col: sb.col,
+        })) || [],
+      );
+
+      // Check if the board is impossible and rearrange if needed
+      if (checkIfGameImpossible(board)) {
+        console.log('Initial board is impossible, rearranging...');
+        board = rearrangeBoard(board, action.payload?.sandBlockers || []);
+      }
+
       return {
         ...state,
-        board: createValidBoard(
-          action.payload?.variant || 'sand',
-          action.payload?.sandBlockers?.map(sb => ({
-            row: sb.row,
-            col: sb.col,
-          })) || [],
-        ),
+        board,
         score: 0,
         combos: 0,
         isGameWon: false,
@@ -137,16 +149,27 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       };
 
     case 'INIT_BOARD_FROM_LEVEL':
+      let levelBoard = createBoardFromLevel(
+        action.payload.levelBoard,
+        action.payload.variant,
+        action.payload.sandBlockers?.map(sb => ({
+          row: sb.row,
+          col: sb.col,
+        })) || [],
+      );
+
+      // Check if the level board is impossible and rearrange if needed
+      if (checkIfGameImpossible(levelBoard)) {
+        console.log('Level board is impossible, rearranging...');
+        levelBoard = rearrangeBoard(
+          levelBoard,
+          action.payload.sandBlockers || [],
+        );
+      }
+
       return {
         ...state,
-        board: createBoardFromLevel(
-          action.payload.levelBoard,
-          action.payload.variant,
-          action.payload.sandBlockers?.map(sb => ({
-            row: sb.row,
-            col: sb.col,
-          })) || [],
-        ),
+        board: levelBoard,
         score: 0,
         combos: 0,
         isGameWon: false,
