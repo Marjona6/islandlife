@@ -16,8 +16,12 @@ function createBoardFromRows(rows: string[]): Tile[][] {
     for (let x = 0; x < SIZE; x++) {
       // Default to 🦀 if not provided
       let ch = '🦀';
-      if (y < rows.length && x < rows[y].length) {
-        ch = rows[y][x];
+      if (y < rows.length) {
+        // Use Array.from to properly split emojis into individual characters
+        const rowChars = Array.from(rows[y]);
+        if (x < rowChars.length) {
+          ch = rowChars[x];
+        }
       }
       board[y][x] = {
         id: `${y}-${x}`,
