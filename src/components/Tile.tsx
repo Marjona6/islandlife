@@ -105,7 +105,12 @@ export const Tile: React.FC<TileProps> = ({
             900,
           )
           .then(() => {
-            if (onCoconutExit) onCoconutExit();
+            // Defer the callback to avoid state transition warnings
+            if (onCoconutExit) {
+              setTimeout(() => {
+                onCoconutExit();
+              }, 0);
+            }
           });
       }
     }

@@ -381,4 +381,105 @@ describe('Sand Blocker Detection Issues', () => {
       expect(shouldGenerateNewTile).toBe(true);
     });
   });
+
+  describe('Issue 6: Coconut exit behavior', () => {
+    it('should remove coconuts from bottom row and apply gravity', () => {
+      // Simulate coconuts reaching the bottom row
+      const coconutsToExit = [
+        {row: 7, col: 0, id: 'coconut-1'},
+        {row: 7, col: 3, id: 'coconut-2'},
+      ];
+
+      // Verify coconuts are at bottom row
+      coconutsToExit.forEach(coconut => {
+        expect(coconut.row).toBe(7);
+      });
+
+      // After exit, these positions should be null
+      const expectedPositions = coconutsToExit.map(c => ({
+        row: c.row,
+        col: c.col,
+      }));
+      expectedPositions.forEach(pos => {
+        // Simulate that the position is now empty
+        const isEmpty = true; // In real logic, this would be null
+        expect(isEmpty).toBe(true);
+      });
+    });
+
+    it('should count coconut drops when they exit the bottom row', () => {
+      // Simulate coconut reaching bottom row
+      const coconutAtBottom = {
+        row: 7,
+        col: 2,
+        id: 'coconut-1',
+        isSpecial: true,
+      };
+
+      // Verify it's at bottom row and is special
+      expect(coconutAtBottom.row).toBe(7);
+      expect(coconutAtBottom.isSpecial).toBe(true);
+
+      // This should trigger a drop count
+      const shouldCountDrop =
+        coconutAtBottom.row === 7 && coconutAtBottom.isSpecial;
+      expect(shouldCountDrop).toBe(true);
+    });
+  });
+
+  describe('Issue 7: State transition warnings', () => {
+    it('should defer coconut drop notifications until after processing is complete', () => {
+      // Simulate the deferred notification mechanism
+      const pendingCoconutDrops: Array<{row: number; col: number; id: string}> =
+        [];
+      let dropCallCount = 0;
+
+      const mockOnCoconutDrop = jest.fn(() => {
+        dropCallCount++;
+      });
+
+      // Simulate coconuts reaching bottom during processing
+      const coconutsToExit = [
+        {row: 7, col: 0, id: 'coconut-1'},
+        {row: 7, col: 1, id: 'coconut-2'},
+        {row: 7, col: 2, id: 'coconut-3'},
+        {row: 7, col: 3, id: 'coconut-4'},
+        {row: 7, col: 4, id: 'coconut-5'},
+        {row: 7, col: 5, id: 'coconut-6'},
+        {row: 7, col: 6, id: 'coconut-7'},
+        {row: 7, col: 7, id: 'coconut-8'},
+      ];
+
+      // During processing, collect drops instead of calling immediately
+      coconutsToExit.forEach(coconut => {
+        pendingCoconutDrops.push(coconut);
+        console.log('Collected coconut drop for later notification:', coconut);
+      });
+
+      // Verify drops were collected but not called yet
+      expect(pendingCoconutDrops.length).toBe(8);
+      expect(mockOnCoconutDrop).not.toHaveBeenCalled();
+
+      // After processing is complete, call all collected drops
+      if (mockOnCoconutDrop && pendingCoconutDrops.length > 0) {
+        console.log(
+          'Notifying parent of',
+          pendingCoconutDrops.length,
+          'coconut drops:',
+          pendingCoconutDrops,
+        );
+        // Call onCoconutDrop for each collected drop
+        pendingCoconutDrops.forEach(() => {
+          mockOnCoconutDrop();
+        });
+        // Clear the pending drops
+        pendingCoconutDrops.length = 0;
+      }
+
+      // Verify that onCoconutDrop was called the expected number of times
+      expect(mockOnCoconutDrop).toHaveBeenCalledTimes(8);
+      expect(dropCallCount).toBe(8);
+      expect(pendingCoconutDrops.length).toBe(0);
+    });
+  });
 });

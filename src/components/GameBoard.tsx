@@ -133,12 +133,14 @@ export const GameBoard: React.FC<{
   sandBlockers?: Array<{row: number; col: number}>;
   onMove?: () => void; // Callback when a valid move is made
   onCoconutDrop?: () => void; // Callback when a drop item is dropped (kept for backward compatibility)
+  onGameAction?: () => void; // Callback when any game action occurs (for level completion checks)
   isTransitioning?: boolean; // New prop to prevent interactions during transitions
 }> = ({
   variant = 'sand',
   sandBlockers = [],
   onMove,
   onCoconutDrop,
+  onGameAction,
   isTransitioning = false,
 }) => {
   // All hooks must be at the top, before any return
@@ -160,11 +162,17 @@ export const GameBoard: React.FC<{
   const currentSandBlockersRef = useRef<
     Array<{row: number; col: number; hasUmbrella: boolean}>
   >([]);
+  // Add ref to collect coconut drops during processing to avoid state conflicts
+  const pendingCoconutDropsRef = useRef<
+    Array<{row: number; col: number; id: string}>
+  >([]);
 
   // Initialize refs when game state changes
   useEffect(() => {
     currentBoardRef.current = gameState.board;
     currentSandBlockersRef.current = [...gameState.sandBlockers];
+    // Clear pending coconut drops when game state changes
+    pendingCoconutDropsRef.current = [];
   }, [gameState.board, gameState.sandBlockers]);
 
   // Track if board has been initialized
@@ -645,6 +653,11 @@ export const GameBoard: React.FC<{
 
       console.log('Final sand blockers:', finalSandBlockers);
 
+      // Trigger level completion check for sand-clear objectives
+      if (onGameAction) {
+        setTimeout(() => onGameAction(), 0);
+      }
+
       // Use the updated board from processing (which includes rocket/bomb effects)
       // Calculate which tiles need to fall for animation
       const falling = calculateFallingTiles(board, boardAfterProcessing);
@@ -682,6 +695,11 @@ export const GameBoard: React.FC<{
       // Add score to game state
       dispatchGame({type: 'ADD_SCORE', payload: matchScore});
 
+      // Trigger level completion check for score objectives
+      if (onGameAction) {
+        setTimeout(() => onGameAction(), 0);
+      }
+
       // Create updated board with cleared sand blocker positions filled
       let finalBoard = (boardAfterProcessing || Array(8).fill(null)).map(
         (row: any[]) => (Array.isArray(row) ? [...row] : Array(8).fill(null)),
@@ -692,14 +710,49 @@ export const GameBoard: React.FC<{
       // (i.e., call dropTiles with the updated sand blocker state)
       finalBoard = dropTiles(finalBoard, variant, finalSandBlockers);
 
+      // Check for coconuts that have reached the bottom row and should exit
+      const coconutsToExit: Array<{row: number; col: number; id: string}> = [];
+      if (finalBoard[7] && Array.isArray(finalBoard[7])) {
+        for (let col = 0; col < 8; col++) {
+          const tile = finalBoard[7][col];
+          if (tile && tile.isSpecial) {
+            coconutsToExit.push({row: 7, col, id: tile.id});
+          }
+        }
+      }
+
+      if (coconutsToExit.length > 0) {
+        console.log('=== COCONUTS REACHED BOTTOM ROW ===');
+        console.log('Coconuts to exit:', coconutsToExit);
+
+        // Remove coconuts from the bottom row
+        coconutsToExit.forEach(item => {
+          finalBoard[item.row][item.col] = null;
+          // Collect coconut drops to notify parent later to avoid state conflicts
+          pendingCoconutDropsRef.current.push(item);
+        });
+
+        // Apply gravity again to fill the gaps left by exiting coconuts
+        finalBoard = dropTiles(finalBoard, variant, finalSandBlockers);
+      }
+
       // Update board state immediately but keep matched tiles visible for animation
       dispatchGame({type: 'UPDATE_BOARD', payload: finalBoard});
       currentBoardRef.current = finalBoard;
       dispatchGame({type: 'INCREMENT_COMBOS'});
 
+      // Trigger level completion check for combo objectives
+      if (onGameAction) {
+        setTimeout(() => onGameAction(), 0);
+      }
+
       // Add collected tiles to currency if any were collected
       if (collectedTiles > 0) {
         dispatchCurrency({type: 'ADD_SHELLS', payload: collectedTiles});
+        // Trigger level completion check for collect objectives
+        if (onGameAction) {
+          setTimeout(() => onGameAction(), 0);
+        }
       }
 
       // Clear matched tiles after explosion animation
@@ -723,10 +776,10 @@ export const GameBoard: React.FC<{
 
       // Recursively process next round of matches after animations
       setTimeout(() => {
-        console.log(
-          'Starting next round of matches, cascade count:',
-          cascadeCount + 1,
-        );
+        // Only log cascade info during development or for debugging
+        if (cascadeCount === 0) {
+          console.log('Starting cascade processing');
+        }
         // Clear any existing falling animations before next cascade
         setFallingTiles(new Map());
         processGameTurn(
@@ -778,6 +831,24 @@ export const GameBoard: React.FC<{
 
       // No need to update sand blocker state here as it's already updated atomically during processing
 
+      // Notify parent of all collected coconut drops to avoid state conflicts
+      if (onCoconutDrop && pendingCoconutDropsRef.current.length > 0) {
+        // Only log if there are multiple drops or during development
+        if (pendingCoconutDropsRef.current.length > 1) {
+          console.log(
+            'Notifying parent of',
+            pendingCoconutDropsRef.current.length,
+            'coconut drops',
+          );
+        }
+        // Call onCoconutDrop for each collected drop
+        pendingCoconutDropsRef.current.forEach(() => {
+          onCoconutDrop();
+        });
+        // Clear the pending drops
+        pendingCoconutDropsRef.current = [];
+      }
+
       setIsProcessingMove(false);
       setIsProcessingMatches(false);
       isProcessingMoveRef.current = false;
@@ -785,14 +856,6 @@ export const GameBoard: React.FC<{
       console.log('=== PROCESSING COMPLETE ===');
       console.log(
         'Set isProcessingMove and isProcessingMatches to false (no matches or cascades left)',
-      );
-      console.log(
-        'Final board state:',
-        (currentBoardRef.current || Array(8).fill(null)).map(row =>
-          Array.isArray(row)
-            ? row.map(tile => tile?.type || 'null')
-            : Array(8).fill('null'),
-        ),
       );
       console.log('=== END PROCESSING ===');
 

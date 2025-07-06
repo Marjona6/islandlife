@@ -79,8 +79,9 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
     [gameState.score, currency.shells, gameState.combos, droppedItems],
   );
 
-  const isLevelComplete = useCallback(() => {
-    if (!currentLevel) return false;
+  // Event-driven level completion check
+  const checkLevelCompletion = useCallback(() => {
+    if (!currentLevel || showVictory || isTransitioning) return;
 
     let isComplete = false;
     switch (currentLevel.objective) {
@@ -98,24 +99,15 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         break;
       case 'drop':
         isComplete = currentProgress.dropped >= currentLevel.target;
-        console.log('=== LEVEL COMPLETION CHECK (DROP) ===');
-        console.log('Current dropped items:', currentProgress.dropped);
-        console.log('Level target:', currentLevel.target);
-        console.log('Is complete:', isComplete);
         break;
       case 'sand-clear':
-        // Check if all sand blockers have been cleared
         isComplete = gameState.sandBlockers.length === 0;
         break;
       default:
         isComplete = false;
     }
 
-    return isComplete;
-  }, [currentLevel, currentProgress, gameState.sandBlockers.length]);
-
-  useEffect(() => {
-    if (isLevelComplete() && !showVictory && !isTransitioning) {
+    if (isComplete) {
       console.log('Level complete detected, starting transition...');
       setIsTransitioning(true);
 
@@ -127,13 +119,34 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
       }, 1000); // 1 second delay
     }
   }, [
-    gameState,
-    currentProgress,
-    showVictory,
     currentLevel,
-    isLevelComplete,
+    currentProgress,
+    gameState.sandBlockers.length,
+    showVictory,
     isTransitioning,
   ]);
+
+  // Legacy function for backward compatibility (used in some places)
+  const isLevelComplete = useCallback(() => {
+    if (!currentLevel) return false;
+
+    switch (currentLevel.objective) {
+      case 'score':
+        return currentProgress.score >= currentLevel.target;
+      case 'collect':
+        return currentProgress.collected >= currentLevel.target;
+      case 'clear':
+        return currentProgress.cleared >= currentLevel.target;
+      case 'combo':
+        return currentProgress.combos >= currentLevel.target;
+      case 'drop':
+        return currentProgress.dropped >= currentLevel.target;
+      case 'sand-clear':
+        return gameState.sandBlockers.length === 0;
+      default:
+        return false;
+    }
+  }, [currentLevel, currentProgress, gameState.sandBlockers.length]);
 
   const handleMove = () => {
     console.log('How to Play button pressed!');
@@ -190,7 +203,16 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
       console.log('New dropped items count:', newCount);
       return newCount;
     });
+
+    // Check for level completion after coconut drop
+    setTimeout(() => checkLevelCompletion(), 0);
   };
+
+  // Callback for GameBoard to trigger level completion checks
+  const handleGameAction = useCallback(() => {
+    // Check for level completion after any game action
+    setTimeout(() => checkLevelCompletion(), 0);
+  }, [checkLevelCompletion]);
 
   const handleNextLevel = () => {
     if (nextLevel) {
@@ -408,6 +430,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
           }
           onMove={handleGameMove}
           onCoconutDrop={handleItemDrop}
+          onGameAction={handleGameAction}
           isTransitioning={isTransitioning}
         />
       </View>
