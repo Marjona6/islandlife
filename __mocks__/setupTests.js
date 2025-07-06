@@ -51,6 +51,7 @@ jest.mock('react-native', () => {
     },
     StyleSheet: {
       create: styles => styles,
+      flatten: jest.fn(style => style),
     },
     Animated: {
       ...RN.Animated,
