@@ -10,6 +10,47 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   multiRemove: jest.fn(() => Promise.resolve()),
 }));
 
+// Mock react-native-animatable
+jest.mock('react-native-animatable', () => {
+  const React = require('react');
+  const {View} = require('react-native');
+
+  const mockComponent = name => {
+    const Component = React.forwardRef((props, ref) => {
+      // Create a mock component that has the animate method
+      const mockRef = {
+        current: {
+          animate: jest.fn(() => Promise.resolve()),
+          ...props,
+        },
+      };
+
+      // If ref is a function, call it with the mock ref
+      if (typeof ref === 'function') {
+        ref(mockRef.current);
+      } else if (ref) {
+        ref.current = mockRef.current;
+      }
+
+      return React.createElement(View, {
+        ...props,
+        ref: mockRef,
+        testID: props.testID || name,
+      });
+    });
+    Component.displayName = name;
+    return Component;
+  };
+
+  return {
+    View: mockComponent('Animatable.View'),
+    Text: mockComponent('Animatable.Text'),
+    Image: mockComponent('Animatable.Image'),
+    createAnimatableComponent: component =>
+      mockComponent(`Animatable.${component.displayName || 'Component'}`),
+  };
+});
+
 // Mock NativeAnimatedHelper to avoid animation issues in tests
 jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
 
@@ -28,13 +69,22 @@ jest.mock('react-native/Libraries/Utilities/DevSettings', () => ({
 
 // Mock React Native components that might be undefined in test environment
 jest.mock('react-native', () => {
+  const React = require('react');
   const RN = jest.requireActual('react-native');
 
   // Create mock components for commonly used RN components
   const mockComponent = name => {
-    const Component = function (props) {
-      return props.children || null;
-    };
+    const Component = React.forwardRef((props, ref) => {
+      return React.createElement(
+        'div',
+        {
+          ...props,
+          ref,
+          'data-testid': props.testID,
+        },
+        props.children,
+      );
+    });
     Component.displayName = name;
     return Component;
   };

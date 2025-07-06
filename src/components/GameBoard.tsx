@@ -911,21 +911,6 @@ const GameBoardInner = (
       }
       console.log('=== END IMPOSSIBLE GAME CHECK ===');
 
-      // No need to update sand blocker state here as it's already updated atomically during processing
-
-      // Notify parent of all collected coconut drops to avoid state conflicts
-      if (onCoconutDrop && pendingCoconutDropsRef.current.length > 0) {
-        console.log(
-          'Calling onCoconutDrop for',
-          pendingCoconutDropsRef.current.length,
-          'coconut drops',
-        );
-        // Call onCoconutDrop with the count of drops to avoid state batching issues
-        onCoconutDrop(pendingCoconutDropsRef.current.length);
-        // Clear the pending drops
-        pendingCoconutDropsRef.current = [];
-      }
-
       isProcessingMatchesRef.current = false;
       console.log('=== PROCESSING COMPLETE ===');
       console.log(
