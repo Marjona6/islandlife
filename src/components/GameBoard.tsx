@@ -146,6 +146,8 @@ export const GameBoard: React.FC<{
   const [coconutsExiting, setCoconutsExiting] = useState<
     Array<{row: number; col: number; id: string}>
   >([]);
+  const [bombNotification, setBombNotification] = useState<string | null>(null);
+  const [shakingTiles, setShakingTiles] = useState<Set<string>>(new Set());
 
   // Game state refs for immediate access during processing
   const currentBoardRef = useRef<any[][]>([]);
@@ -559,12 +561,23 @@ export const GameBoard: React.FC<{
       if (detectBombTrigger(board, row1, col1, row2, col2)) {
         const bombArea = getBombExplosionTiles(row2, col2);
         matches = [bombArea];
+
+        // Show bomb notification and start shaking animation
+        setBombNotification('💥 BOMB EXPLOSION! 💥');
+        const shakingPositions = new Set<string>();
+        bombArea.forEach(({row, col}) => {
+          shakingPositions.add(`${row}-${col}`);
+        });
+        setShakingTiles(shakingPositions);
+
+        // Process the bomb explosion normally
         boardAfterProcessing = removeMatches(board, [bombArea]);
         boardAfterProcessing = dropTiles(
           boardAfterProcessing,
           variant,
           currentSandBlockers || currentSandBlockersRef.current,
         );
+        console.log('BOMB DETECTED! Processing explosion normally');
       } else {
         // Check for rocket trigger
         const rocketResult = detectRocketTrigger(board, row1, col1, row2, col2);
@@ -857,7 +870,13 @@ export const GameBoard: React.FC<{
       }
 
       // Check if game is impossible after each cascade completes
-      const isImpossible = checkIfGameImpossible(currentBoardRef.current);
+      const isImpossible = checkIfGameImpossible(
+        currentBoardRef.current,
+        currentSandBlockers || sandBlockers,
+      );
+      console.log('=== IMPOSSIBLE GAME CHECK ===');
+      console.log('Cascade count:', cascadeCount);
+      console.log('Is impossible:', isImpossible);
       if (isImpossible) {
         console.log('Game is impossible after cascade - rearranging board...');
         const rearrangedBoard = rearrangeBoard(
@@ -866,7 +885,10 @@ export const GameBoard: React.FC<{
         );
         dispatchGame({type: 'UPDATE_BOARD', payload: rearrangedBoard});
         currentBoardRef.current = rearrangedBoard;
+      } else {
+        console.log('Game is still possible - no rearrangement needed');
       }
+      console.log('=== END IMPOSSIBLE GAME CHECK ===');
 
       // No need to update sand blocker state here as it's already updated atomically during processing
 
@@ -1254,6 +1276,13 @@ export const GameBoard: React.FC<{
       <View style={getContainerStyle()}>
         {renderBackground()}
 
+        {/* Bomb Notification */}
+        {bombNotification && (
+          <View style={styles.bombNotification}>
+            <Text style={styles.bombNotificationText}>{bombNotification}</Text>
+          </View>
+        )}
+
         {/* Game board */}
         {(gameState.board && Array.isArray(gameState.board)
           ? gameState.board
@@ -1273,6 +1302,7 @@ export const GameBoard: React.FC<{
                 );
                 const hasSandBlocker = !!sandBlocker;
                 const hasUmbrella = sandBlocker?.hasUmbrella || false;
+                const isShaking = shakingTiles.has(`${rowIndex}-${colIndex}`);
 
                 // Use the original for now, but this will help us debug
                 if (hasSandBlocker) {
@@ -1313,6 +1343,7 @@ export const GameBoard: React.FC<{
                     onCoconutExit={() =>
                       finalizeCoconutExit(rowIndex, colIndex, tile.id)
                     }
+                    isShaking={isShaking}
                   />
                 ) : (
                   <View
@@ -1355,6 +1386,7 @@ export const GameBoard: React.FC<{
                   isMatched={true}
                   isFalling={false}
                   fallDistance={0}
+                  isShaking={shakingTiles.has(`${row}-${col}`)}
                 />
               </View>
             );
@@ -1591,5 +1623,24 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  bombNotification: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 10,
+  },
+  bombNotificationText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  board: {
+    flexDirection: 'row',
   },
 });

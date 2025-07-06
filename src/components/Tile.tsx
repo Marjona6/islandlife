@@ -12,6 +12,7 @@ interface TileProps {
   fallDistance?: number;
   isCoconutExiting?: boolean;
   onCoconutExit?: () => void;
+  isShaking?: boolean;
 }
 
 export const Tile: React.FC<TileProps> = ({
@@ -23,11 +24,13 @@ export const Tile: React.FC<TileProps> = ({
   fallDistance = 0,
   isCoconutExiting = false,
   onCoconutExit,
+  isShaking = false,
 }) => {
   const tileRef = useRef<Animatable.View>(null);
   const hasAnimatedMatch = useRef(false);
   const hasAnimatedFall = useRef(false);
   const hasAnimatedCoconutExit = useRef(false);
+  const hasStartedShaking = useRef(false);
 
   // Handle matched tile animation
   const handleMatch = () => {
@@ -108,15 +111,53 @@ export const Tile: React.FC<TileProps> = ({
     }
   };
 
+  // Handle shaking animation for bomb tiles
+  const handleShaking = () => {
+    if (isShaking && tileRef.current && !hasStartedShaking.current) {
+      hasStartedShaking.current = true;
+      const currentRef = tileRef.current;
+      if (currentRef && currentRef.animate) {
+        // Infinite shaking animation
+        const shakeAnimation = () => {
+          currentRef
+            .animate(
+              {
+                0: {translateX: 0, translateY: 0},
+                0.1: {translateX: -2, translateY: -1},
+                0.2: {translateX: 2, translateY: 1},
+                0.3: {translateX: -2, translateY: -1},
+                0.4: {translateX: 2, translateY: 1},
+                0.5: {translateX: -2, translateY: -1},
+                0.6: {translateX: 2, translateY: 1},
+                0.7: {translateX: -2, translateY: -1},
+                0.8: {translateX: 2, translateY: 1},
+                0.9: {translateX: -2, translateY: -1},
+                1: {translateX: 0, translateY: 0},
+              },
+              200,
+            )
+            .then(() => {
+              if (isShaking) {
+                shakeAnimation(); // Continue shaking
+              }
+            });
+        };
+        shakeAnimation();
+      }
+    }
+  };
+
   // Reset animation flags when props change
   if (!isMatched) hasAnimatedMatch.current = false;
   if (!isFalling) hasAnimatedFall.current = false;
   if (!isCoconutExiting) hasAnimatedCoconutExit.current = false;
+  if (!isShaking) hasStartedShaking.current = false;
 
   // Run animations when props change
   if (isMatched) handleMatch();
   if (isFalling) handleFall();
   if (isCoconutExiting) handleCoconutExit();
+  if (isShaking) handleShaking();
 
   const panResponder = useRef(
     PanResponder.create({

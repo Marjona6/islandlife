@@ -7,7 +7,7 @@ import React, {
   useState,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {GameState, Currency, BeachItem, Tile, TileType} from '../types/game';
+import {Tile, TileType, GameState, Currency, BeachItem} from '../types/game';
 import {createValidBoard, createBoardFromLevel} from '../utils/gameLogic';
 import {
   checkIfGameImpossible,
@@ -15,7 +15,6 @@ import {
 } from '../utils/gameImpossibleLogic';
 
 // Game constants
-const BOARD_SIZE = 8;
 const TARGET_COMBOS = 10;
 
 // Initial state
@@ -128,7 +127,14 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       );
 
       // Check if the board is impossible and rearrange if needed
-      if (checkIfGameImpossible(board)) {
+      const sandBlockersForCheck =
+        action.payload?.sandBlockers?.map(sb => ({
+          row: sb.row,
+          col: sb.col,
+          hasUmbrella: true,
+        })) || [];
+
+      if (checkIfGameImpossible(board, sandBlockersForCheck)) {
         console.log('Initial board is impossible, rearranging...');
         board = rearrangeBoard(board, action.payload?.sandBlockers || []);
       }
@@ -159,7 +165,14 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       );
 
       // Check if the level board is impossible and rearrange if needed
-      if (checkIfGameImpossible(levelBoard)) {
+      const levelSandBlockersForCheck =
+        action.payload.sandBlockers?.map(sb => ({
+          row: sb.row,
+          col: sb.col,
+          hasUmbrella: true,
+        })) || [];
+
+      if (checkIfGameImpossible(levelBoard, levelSandBlockersForCheck)) {
         console.log('Level board is impossible, rearranging...');
         levelBoard = rearrangeBoard(
           levelBoard,
