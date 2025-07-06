@@ -62,7 +62,7 @@
       "id": "level-3",
       "name": "Coconut Drop Challenge",
       "board": [
-        ["🥥", "🥥", "🥥", "🥥", "🥥", "🥥", "🥥", "🥥"],
+        ["🦀", "🌺", "🥥", "🥥", "🥥", "🥥", "🦀", "🌺"],
         ["🌺", "🦀", "🐚", "🐚", "⭐", "🌺", "🦀", "🐚"],
         ["⭐", "🌺", "🦀", "🐚", "🐚", "⭐", "🌺", "🦀"],
         ["🐚", "⭐", "🌺", "🦀", "🐚", "🐚", "⭐", "🌺"],
@@ -75,7 +75,7 @@
       "target": 3,
       "moves": 30,
       "tileTypes": ["🐚", "⭐", "🌺", "🦀"],
-      "mechanics": ["sand", "driftwood"],
+      "mechanics": ["sand"],
       "blockers": [
         {"type": "sand", "row": 7, "col": 2},
         {"type": "sand", "row": 7, "col": 3},
@@ -83,18 +83,6 @@
         {"type": "sand", "row": 7, "col": 5}
       ],
       "specialTiles": [
-        {
-          "type": "coconut",
-          "row": 0,
-          "col": 0,
-          "properties": {"movable": true, "matchable": false}
-        },
-        {
-          "type": "coconut",
-          "row": 0,
-          "col": 1,
-          "properties": {"movable": true, "matchable": false}
-        },
         {
           "type": "coconut",
           "row": 0,
@@ -118,45 +106,9 @@
           "row": 0,
           "col": 5,
           "properties": {"movable": true, "matchable": false}
-        },
-        {
-          "type": "coconut",
-          "row": 0,
-          "col": 6,
-          "properties": {"movable": true, "matchable": false}
-        },
-        {
-          "type": "coconut",
-          "row": 0,
-          "col": 7,
-          "properties": {"movable": true, "matchable": false}
-        },
-        {
-          "type": "power-tile",
-          "row": 1,
-          "col": 3,
-          "properties": {"power": "row-bomb"}
-        },
-        {
-          "type": "power-tile",
-          "row": 2,
-          "col": 1,
-          "properties": {"power": "column-bomb"}
-        },
-        {
-          "type": "driftwood",
-          "row": 3,
-          "col": 2,
-          "properties": {"unbreakable": true}
-        },
-        {
-          "type": "driftwood",
-          "row": 4,
-          "col": 5,
-          "properties": {"unbreakable": true}
         }
       ],
-      "description": "Drop 3 coconuts (🥥) to the bottom of the board! Coconuts can be moved but cannot be matched. Use matches to clear paths and power tiles to help!",
+      "description": "Drop 3 coconuts (🥥) to the bottom of the board! Coconuts can be moved but not matched. Use matches to clear paths!",
       "difficulty": "medium"
     },
     {

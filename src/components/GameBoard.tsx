@@ -497,7 +497,7 @@ export const GameBoard: React.FC<{
         0, // cascadeCount
         [...currentSandBlockersRef.current], // currentSandBlockers
       );
-    }, 150); // Short delay for swap animation
+    }, 75); // Reduced from 150ms to 75ms for faster response
   };
 
   // Check if the game is impossible (no valid moves available)
@@ -739,12 +739,12 @@ export const GameBoard: React.FC<{
       // Clear matched tiles after explosion animation
       setTimeout(() => {
         setMatchedTiles(new Set());
-      }, 500); // Wait for explosion animation to complete
+      }, 250); // Reduced from 500ms to 250ms
 
       // Clear falling animation after it completes
       setTimeout(() => {
         setFallingTiles(new Map());
-      }, 1000);
+      }, 500); // Reduced from 1000ms to 500ms
 
       // Check for game win
       if (gameState.combos + matches.length >= gameState.targetCombos) {
@@ -768,7 +768,7 @@ export const GameBoard: React.FC<{
           cascadeCount + 1,
           finalSandBlockers, // Pass the updated sand blockers to the next cascade
         );
-      }, 1200); // Wait for animations to complete before next round
+      }, 600); // Reduced from 1200ms to 600ms
     } else {
       // No matches found, finish processing
       if (
