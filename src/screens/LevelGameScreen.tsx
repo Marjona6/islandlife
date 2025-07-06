@@ -6,6 +6,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Alert,
+  Modal,
+  Pressable,
 } from 'react-native';
 import {GameBoard} from '../components/GameBoard';
 import VictoryScreen from '../components/VictoryScreen';
@@ -24,62 +26,78 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
   onNavigateToTester,
   initialLevelId = 'level-1',
 }) => {
-  const {gameState, currency, initGame, dispatchGame, dispatchCurrency} =
-    useGame();
+  const {gameState, currency, dispatchGame, dispatchCurrency} = useGame();
   const [currentLevelId, setCurrentLevelId] = useState(initialLevelId);
   const [movesMade, setMovesMade] = useState(0);
   const [showVictory, setShowVictory] = useState(false);
+  const [showLevelIntro, setShowLevelIntro] = useState(true);
+  const [droppedItems, setDroppedItems] = useState(0);
 
   const currentLevel = levelManager.getLevel(currentLevelId);
   const nextLevel = levelManager.getNextLevel(currentLevelId);
   const prevLevel = levelManager.getPreviousLevel(currentLevelId);
 
   useEffect(() => {
-    // Test level manager on first load
     testLevelManager();
+  }, []);
 
-    if (currentLevel) {
-      setMovesMade(0);
-      // Initialize game with level's tile types
-      // Check if level uses sea tiles by looking at the first tile type
-      const isSeaLevel = currentLevel.tileTypes.some(tile =>
-        ['🦑', '🦐', '🐡', '🪝'].includes(tile),
-      );
-
-      // Initialize sand blockers from level config
-      const sandBlockers =
-        currentLevel.blockers
-          ?.filter(b => b.type === 'sand')
-          .map(b => ({row: b.row, col: b.col, hasUmbrella: true})) || [];
-
-      // Initialize board from level configuration
-      dispatchGame({
-        type: 'INIT_BOARD_FROM_LEVEL',
-        payload: {
-          levelBoard: currentLevel.board,
-          variant: isSeaLevel ? 'sea' : 'sand',
-          sandBlockers: sandBlockers.map(sb => ({row: sb.row, col: sb.col})),
-        },
-      });
-
-      if (sandBlockers.length > 0) {
-        console.log(
-          'LevelGameScreen: Initializing sand blockers from level config:',
-          sandBlockers,
-        );
-        // Use dispatchGame to set sand blockers with umbrellas
-        dispatchGame({type: 'SET_SAND_BLOCKERS', payload: sandBlockers});
-      }
+  useEffect(() => {
+    if (!currentLevel) return;
+    setMovesMade(0);
+    setDroppedItems(0);
+    setShowLevelIntro(true);
+    const isSeaLevel = currentLevel.tileTypes.some(tile =>
+      ['🦑', '🦐', '🐡', '🪝'].includes(tile),
+    );
+    const sandBlockers =
+      currentLevel.blockers
+        ?.filter(b => b.type === 'sand')
+        .map(b => ({row: b.row, col: b.col, hasUmbrella: true})) || [];
+    dispatchGame({
+      type: 'INIT_BOARD_FROM_LEVEL',
+      payload: {
+        levelBoard: currentLevel.board,
+        variant: isSeaLevel ? 'sea' : 'sand',
+        sandBlockers: sandBlockers.map(sb => ({row: sb.row, col: sb.col})),
+      },
+    });
+    if (sandBlockers.length > 0) {
+      dispatchGame({type: 'SET_SAND_BLOCKERS', payload: sandBlockers});
     }
-  }, [currentLevelId, currentLevel, currentLevel?.blockers, dispatchGame]);
+  }, [currentLevelId, currentLevel, dispatchGame]);
 
   // Simple progress tracking - just use game state directly
   const currentProgress = {
     score: gameState.score,
-    collected: currency.shells, // Use actual collected shells for collect objectives
-    cleared: Math.floor(gameState.score / 50), // Rough estimate for clear objectives
+    collected: currency.shells,
+    cleared: Math.floor(gameState.score / 50),
     combos: gameState.combos,
+    dropped: droppedItems,
   };
+
+  const isLevelComplete = () => {
+    if (!currentLevel) return false;
+    switch (currentLevel.objective) {
+      case 'score':
+        return currentProgress.score >= currentLevel.target;
+      case 'collect':
+        return currentProgress.collected >= currentLevel.target;
+      case 'clear':
+        return currentProgress.cleared >= currentLevel.target;
+      case 'combo':
+        return currentProgress.combos >= currentLevel.target;
+      case 'drop':
+        return currentProgress.dropped >= currentLevel.target;
+      default:
+        return false;
+    }
+  };
+
+  useEffect(() => {
+    if (isLevelComplete() && !showVictory) {
+      setShowVictory(true);
+    }
+  }, [gameState, currentProgress, showVictory, currentLevel, isLevelComplete]);
 
   const handleMove = () => {
     console.log('How to Play button pressed!');
@@ -119,6 +137,10 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
 
   const handleGameMove = () => {
     setMovesMade(prev => prev + 1);
+  };
+
+  const handleItemDrop = () => {
+    setDroppedItems(prev => prev + 1);
   };
 
   const handleNextLevel = () => {
@@ -199,68 +221,10 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
     }
   };
 
-  const isLevelComplete = () => {
-    if (!currentLevel) return false;
-
-    // For levels with sand blockers, check if all sand blockers are cleared
-    const sandBlockers =
-      currentLevel.blockers?.filter(b => b.type === 'sand') || [];
-    if (sandBlockers.length > 0) {
-      // Get the current sand blockers from the game state
-      const currentSandBlockers = gameState.sandBlockers || [];
-      return currentSandBlockers.length === 0;
-    }
-
-    // For other levels, use the original logic
-    switch (currentLevel.objective) {
-      case 'score':
-        return currentProgress.score >= currentLevel.target;
-      case 'collect':
-        return currentProgress.collected >= currentLevel.target;
-      case 'clear':
-        return currentProgress.cleared >= currentLevel.target;
-      case 'combo':
-        return currentProgress.combos >= currentLevel.target;
-      case 'drop':
-        return currentProgress.collected >= currentLevel.target;
-      default:
-        return false;
-    }
-  };
-
   const isLevelFailed = () => {
     return (
       currentLevel && movesMade >= currentLevel.moves && !isLevelComplete()
     );
-  };
-
-  const getProgressText = () => {
-    if (!currentLevel) return '';
-
-    // For levels with sand blockers, show sand blocker progress
-    const sandBlockers =
-      currentLevel.blockers?.filter(b => b.type === 'sand') || [];
-    if (sandBlockers.length > 0) {
-      const currentSandBlockers = gameState.sandBlockers || [];
-      const cleared = sandBlockers.length - currentSandBlockers.length;
-      return `Sand Blockers: ${cleared}/${sandBlockers.length}`;
-    }
-
-    // For other levels, use the original logic
-    switch (currentLevel.objective) {
-      case 'score':
-        return `Score: ${currentProgress.score}/${currentLevel.target}`;
-      case 'collect':
-        return `Collected: ${currentProgress.collected}/${currentLevel.target}`;
-      case 'clear':
-        return `Cleared: ${currentProgress.cleared}/${currentLevel.target}`;
-      case 'combo':
-        return `Combos: ${currentProgress.combos}/${currentLevel.target}`;
-      case 'drop':
-        return `Dropped: ${currentProgress.collected}/${currentLevel.target}`;
-      default:
-        return '';
-    }
   };
 
   if (!currentLevel) {
@@ -271,31 +235,58 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
     );
   }
 
-  const difficultyScore = getLevelDifficulty(currentLevel);
-
-  // Debug logging for sand blockers (only log once per level change)
-  useEffect(() => {
-    // Log sand blockers when level changes (for debugging)
-    const sandBlockers =
-      currentLevel.blockers
-        ?.filter(b => b.type === 'sand')
-        .map(b => ({row: b.row, col: b.col})) || [];
-    if (sandBlockers.length > 0) {
-      console.log('LevelGameScreen: Sand blockers for level:', sandBlockers);
-    }
-  }, [currentLevelId]);
-
-  // Show victory screen when level is completed
-  useEffect(() => {
-    if (isLevelComplete() && !showVictory) {
-      setShowVictory(true);
-    }
-  }, [gameState.sandBlockers, currentProgress, showVictory]);
-
   return (
     <SafeAreaView style={styles.container}>
+      {/* Level Intro Modal/Card */}
+      <Modal
+        visible={showLevelIntro}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLevelIntro(false)}>
+        <Pressable
+          style={styles.introOverlay}
+          onPress={() => setShowLevelIntro(false)}>
+          <View style={styles.introCard}>
+            <Text style={styles.levelTitle}>{currentLevel.name}</Text>
+            <Text style={styles.levelDescription}>
+              {currentLevel.description}
+            </Text>
+            <Text style={styles.levelObjective}>
+              {(() => {
+                switch (currentLevel.objective) {
+                  case 'score':
+                    return `Score ${currentLevel.target} points`;
+                  case 'collect':
+                    return `Collect ${currentLevel.target} ${currentLevel.tileTypes[0]}`;
+                  case 'clear':
+                    return `Clear ${currentLevel.target} tiles`;
+                  case 'combo':
+                    return `Create ${currentLevel.target} combos`;
+                  case 'drop':
+                    // Determine what to drop based on level mechanics and special tiles
+                    if (currentLevel.mechanics.includes('drop-targets')) {
+                      return `Drop ${currentLevel.target} sea creatures to targets`;
+                    } else {
+                      return `Drop ${currentLevel.target} coconuts`;
+                    }
+                  default:
+                    return '';
+                }
+              })()}
+            </Text>
+            <TouchableOpacity
+              style={styles.letsGoButton}
+              onPress={() => setShowLevelIntro(false)}>
+              <Text style={styles.letsGoButtonText}>Let's go!</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+
       {/* Header */}
-      <View style={styles.header}>
+      <View
+        style={styles.header}
+        pointerEvents={showLevelIntro ? 'none' : 'auto'}>
         <View style={styles.currencyContainer}>
           <View style={styles.currencyItem}>
             <Text style={styles.currencyIcon}>🐚</Text>
@@ -312,45 +303,38 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         </View>
       </View>
 
-      {/* Level Info */}
-      <View style={styles.levelInfo}>
-        <Text style={styles.levelTitle}>{currentLevel.name}</Text>
-        <Text style={styles.levelDescription}>{currentLevel.description}</Text>
-        <View style={styles.levelStats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Difficulty</Text>
-            <Text style={styles.statValue}>{difficultyScore}/5</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Objective</Text>
-            <Text style={styles.statValue}>{currentLevel.objective}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>Moves</Text>
-            <Text style={styles.statValue}>
-              {movesMade}/{currentLevel.moves}
-            </Text>
-          </View>
+      {/* Combined Progress & Moves Card */}
+      <View style={styles.progressMovesCard}>
+        <View style={styles.progressMovesRow}>
+          <Text style={styles.progressText}>
+            {(() => {
+              if (!currentLevel) return '';
+              switch (currentLevel.objective) {
+                case 'score':
+                  return `Score: ${currentProgress.score}/${currentLevel.target}`;
+                case 'collect':
+                  return `Collected: ${currentProgress.collected}/${currentLevel.target}`;
+                case 'clear':
+                  return `Cleared: ${currentProgress.cleared}/${currentLevel.target}`;
+                case 'combo':
+                  return `Combos: ${currentProgress.combos}/${currentLevel.target}`;
+                case 'drop':
+                  return `Dropped: ${currentProgress.dropped}/${currentLevel.target}`;
+                default:
+                  return '';
+              }
+            })()}
+          </Text>
+          <Text style={styles.movesText}>
+            Moves: {movesMade}/{currentLevel.moves}
+          </Text>
         </View>
       </View>
 
-      {/* Progress */}
-      <View style={styles.progressContainer}>
-        <Text style={styles.progressText}>{getProgressText()}</Text>
-        {isLevelComplete() && (
-          <View style={styles.statusContainer}>
-            <Text style={styles.completeText}>🎉 Level Complete!</Text>
-          </View>
-        )}
-        {isLevelFailed() && (
-          <View style={styles.statusContainer}>
-            <Text style={styles.failedText}>❌ Out of Moves!</Text>
-          </View>
-        )}
-      </View>
-
       {/* Game Board */}
-      <View style={styles.boardContainer}>
+      <View
+        style={styles.boardContainer}
+        pointerEvents={showLevelIntro ? 'none' : 'auto'}>
         <GameBoard
           variant={
             currentLevel.tileTypes.some(tile =>
@@ -359,13 +343,20 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
               ? 'sea'
               : 'sand'
           }
-          sandBlockers={[]} // Pass empty array since we use state for rendering
+          sandBlockers={
+            currentLevel.blockers
+              ?.filter(b => b.type === 'sand')
+              .map(b => ({row: b.row, col: b.col})) || []
+          }
           onMove={handleGameMove}
+          onCoconutDrop={handleItemDrop}
         />
       </View>
 
       {/* Controls */}
-      <View style={styles.controls}>
+      <View
+        style={styles.controls}
+        pointerEvents={showLevelIntro ? 'none' : 'auto'}>
         <View style={styles.buttonRow}>
           <TouchableOpacity
             style={[styles.button, styles.secondaryButton]}
@@ -507,7 +498,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   progressText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
   },
@@ -610,6 +601,52 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
     marginTop: 50,
+  },
+  introOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  introCard: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    width: '80%',
+    maxWidth: 400,
+  },
+  letsGoButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  letsGoButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  progressMovesCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    padding: 10,
+    borderRadius: 10,
+    margin: 10,
+  },
+  progressMovesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  movesText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  levelObjective: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 10,
   },
 });
 

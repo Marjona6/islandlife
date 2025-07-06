@@ -129,7 +129,8 @@ export const GameBoard: React.FC<{
   variant?: 'sand' | 'sea';
   sandBlockers?: Array<{row: number; col: number}>;
   onMove?: () => void; // Callback when a valid move is made
-}> = ({variant = 'sand', sandBlockers = [], onMove}) => {
+  onCoconutDrop?: () => void; // Callback when a drop item is dropped (kept for backward compatibility)
+}> = ({variant = 'sand', sandBlockers = [], onMove, onCoconutDrop}) => {
   // All hooks must be at the top, before any return
   const {gameState, dispatchGame, dispatchCurrency, isInitialized} = useGame();
   const [isProcessingMove, setIsProcessingMove] = useState(false);
@@ -266,16 +267,21 @@ export const GameBoard: React.FC<{
     if (board && Array.isArray(board) && board[7] && Array.isArray(board[7])) {
       for (let col = 0; col < 8; col++) {
         const tile = board[7][col];
-        if (tile && tile.type === '🥥' && !isCoconutExiting(7, col, tile.id)) {
+        // Check for any drop items (coconuts or other special tiles that should be dropped)
+        if (tile && tile.isSpecial && !isCoconutExiting(7, col, tile.id)) {
           exiting.push({row: 7, col, id: tile.id});
         }
       }
     }
     if (exiting.length > 0) {
       setCoconutsExiting(prev => [...prev, ...exiting]);
-      // Process coconut exits immediately without delay
-      exiting.forEach(coconut => {
-        finalizeCoconutExit(coconut.row, coconut.col, coconut.id);
+      // Process item exits immediately without delay
+      exiting.forEach(item => {
+        finalizeCoconutExit(item.row, item.col, item.id);
+        // Notify parent component that an item was dropped
+        if (onCoconutDrop) {
+          onCoconutDrop();
+        }
       });
     }
   }, [
@@ -284,6 +290,7 @@ export const GameBoard: React.FC<{
     fallingTiles,
     finalizeCoconutExit,
     isCoconutExiting,
+    onCoconutDrop,
   ]);
 
   // Now it's safe to return early

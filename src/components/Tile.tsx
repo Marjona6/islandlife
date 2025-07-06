@@ -1,7 +1,7 @@
 import React, {useRef} from 'react';
 import {Text, StyleSheet, PanResponder} from 'react-native';
 import * as Animatable from 'react-native-animatable';
-import {Tile as TileType, isSpecialTile} from '../types/game';
+import {Tile as TileType} from '../types/game';
 
 interface TileProps {
   tile: TileType;
@@ -78,11 +78,11 @@ export const Tile: React.FC<TileProps> = ({
     }
   };
 
-  // Handle coconut exit animation
+  // Handle item exit animation
   const handleCoconutExit = () => {
     if (
       isCoconutExiting &&
-      tile.type === '🥥' &&
+      tile.isSpecial &&
       tileRef.current &&
       !hasAnimatedCoconutExit.current
     ) {

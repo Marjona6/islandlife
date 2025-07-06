@@ -72,7 +72,7 @@
         ["🐚", "⭐", "🌺", "🐚", "🦀", "🐚", "⭐", "🌺"]
       ],
       "objective": "drop",
-      "target": 3,
+      "target": 4,
       "moves": 30,
       "tileTypes": ["🐚", "⭐", "🌺", "🦀"],
       "mechanics": ["sand"],
@@ -108,7 +108,7 @@
           "properties": {"movable": true, "matchable": false}
         }
       ],
-      "description": "Drop 3 coconuts (🥥) to the bottom of the board! Coconuts can be moved but not matched. Use matches to clear paths!",
+      "description": "Drop 4 coconuts (🥥) to the bottom of the board! Coconuts can be moved but not matched. Use matches to clear paths!",
       "difficulty": "medium"
     },
     {
