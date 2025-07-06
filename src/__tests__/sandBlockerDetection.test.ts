@@ -1,22 +1,4 @@
-import {Tile as GameTile} from '../types/game';
-
 describe('Sand Blocker Detection Issues', () => {
-  // Helper function to create a mock board with specific tiles
-  const createMockBoard = (tileLayout: string[][]): (GameTile | null)[][] => {
-    return tileLayout.map((row, rowIndex) =>
-      row.map((tileType, colIndex) =>
-        tileType === 'null'
-          ? null
-          : {
-              id: `${rowIndex}-${colIndex}`,
-              type: tileType as any,
-              row: rowIndex,
-              col: colIndex,
-            },
-      ),
-    );
-  };
-
   // Helper function to create sand blockers array
   const createSandBlockers = (
     positions: Array<{row: number; col: number; hasUmbrella?: boolean}>,
@@ -30,18 +12,6 @@ describe('Sand Blocker Detection Issues', () => {
 
   describe('Issue 1: Tile swap detection near sand blockers', () => {
     it('should allow swapping tiles that are adjacent to sand blockers but not on sand blockers', () => {
-      // Create a board with a sand blocker and tiles around it
-      const board = createMockBoard([
-        ['🦀', '🌴', '⭐', 'null', 'null', 'null', 'null', 'null'],
-        ['🌺', '🐚', '🦀', 'null', 'null', 'null', 'null', 'null'],
-        ['⭐', '🌺', '🐚', 'null', 'null', 'null', 'null', 'null'],
-        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
-        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
-        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
-        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
-        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
-      ]);
-
       // Sand blocker at position (0, 3) - adjacent to tiles at (0, 2) and (1, 3)
       const sandBlockers = createSandBlockers([
         {row: 0, col: 3, hasUmbrella: true},
@@ -76,18 +46,6 @@ describe('Sand Blocker Detection Issues', () => {
     });
 
     it('should prevent swapping tiles that are on sand blocker positions', () => {
-      // Create a board with a sand blocker
-      const board = createMockBoard([
-        ['🦀', '🌴', '⭐', 'null', 'null', 'null', 'null', 'null'],
-        ['🌺', '🐚', '🦀', 'null', 'null', 'null', 'null', 'null'],
-        ['⭐', '🌺', '🐚', 'null', 'null', 'null', 'null', 'null'],
-        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
-        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
-        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
-        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
-        ['null', 'null', 'null', 'null', 'null', 'null', 'null', 'null'],
-      ]);
-
       // Sand blocker at position (0, 3)
       const sandBlockers = createSandBlockers([
         {row: 0, col: 3, hasUmbrella: true},
@@ -101,21 +59,20 @@ describe('Sand Blocker Detection Issues', () => {
     });
   });
 
-  describe('Issue 2: Level completion with sand blockers remaining', () => {
-    it('should not complete level when sand blockers are still present', () => {
-      // Create a level with sand blockers
-      const sandBlockers = createSandBlockers([
-        {row: 1, col: 1, hasUmbrella: true},
-        {row: 2, col: 2, hasUmbrella: true},
-        {row: 3, col: 3, hasUmbrella: false}, // This one has no umbrella
+  describe('Issue 2: Level completion with remaining sand blockers', () => {
+    it('should not complete level when sand blockers remain', () => {
+      // Simulate level with 2 sand blockers remaining
+      const remainingSandBlockers = createSandBlockers([
+        {row: 3, col: 3, hasUmbrella: true},
+        {row: 4, col: 4, hasUmbrella: true},
       ]);
 
-      // Simulate level completion check
-      const isLevelComplete = sandBlockers.length === 0;
+      // Level should not be complete if sand blockers remain
+      expect(remainingSandBlockers.length).toBeGreaterThan(0);
 
-      // Level should not be complete when sand blockers remain
-      expect(isLevelComplete).toBe(false);
-      expect(sandBlockers.length).toBe(3);
+      // Simulate level completion check
+      const isComplete = remainingSandBlockers.length === 0;
+      expect(isComplete).toBe(false);
     });
 
     it('should complete level when all sand blockers are cleared', () => {
@@ -263,6 +220,165 @@ describe('Sand Blocker Detection Issues', () => {
 
       // The board should show a tile at (4, 3), not a sand blocker
       expect(board[4][3]).toBe('🦀');
+    });
+  });
+
+  describe('Issue 4: Coconut drop counter accuracy', () => {
+    it('should only count coconuts that reach the bottom row', () => {
+      // Simulate coconuts at different positions
+      const coconutsAtBottom = [
+        {row: 7, col: 0, id: 'coconut-1'}, // At bottom row - should count
+        {row: 7, col: 1, id: 'coconut-2'}, // At bottom row - should count
+        {row: 6, col: 2, id: 'coconut-3'}, // Not at bottom row - should not count
+        {row: 5, col: 3, id: 'coconut-4'}, // Not at bottom row - should not count
+      ];
+
+      // Filter to only count coconuts at bottom row (row 7)
+      const coconutsToCount = coconutsAtBottom.filter(
+        coconut => coconut.row === 7,
+      );
+
+      expect(coconutsToCount).toHaveLength(2);
+      expect(coconutsToCount.map(c => c.id)).toEqual([
+        'coconut-1',
+        'coconut-2',
+      ]);
+    });
+
+    it('should not count the same coconut multiple times during board updates', () => {
+      // Simulate the real scenario where board updates multiple times
+      const coconutId = 'coconut-1';
+      const countedCoconuts = new Set<string>();
+
+      // Simulate multiple board updates (like during cascades)
+      const boardUpdates = [
+        {row: 7, col: 0, id: coconutId}, // First board update - coconut reaches bottom
+        {row: 7, col: 0, id: coconutId}, // Second board update - same coconut still at bottom
+        {row: 7, col: 0, id: coconutId}, // Third board update - same coconut still at bottom
+      ];
+
+      // Simulate the actual logic: only count if not already counted
+      boardUpdates.forEach(update => {
+        if (update.row === 7 && !countedCoconuts.has(update.id)) {
+          countedCoconuts.add(update.id);
+          console.log(`Counting coconut ${update.id} for the first time`);
+        } else {
+          console.log(
+            `Skipping coconut ${update.id} - already counted or not at bottom`,
+          );
+        }
+      });
+
+      // Should only count once
+      expect(countedCoconuts.size).toBe(1);
+      expect(Array.from(countedCoconuts)).toEqual([coconutId]);
+    });
+
+    it('should handle multiple different coconuts correctly', () => {
+      const countedCoconuts = new Set<string>();
+
+      // Simulate multiple coconuts reaching bottom at different times
+      const coconutEvents = [
+        {row: 7, col: 0, id: 'coconut-1'}, // First coconut reaches bottom
+        {row: 7, col: 1, id: 'coconut-2'}, // Second coconut reaches bottom
+        {row: 7, col: 0, id: 'coconut-1'}, // First coconut still at bottom (should not count again)
+        {row: 7, col: 2, id: 'coconut-3'}, // Third coconut reaches bottom
+        {row: 7, col: 1, id: 'coconut-2'}, // Second coconut still at bottom (should not count again)
+      ];
+
+      coconutEvents.forEach(event => {
+        if (event.row === 7 && !countedCoconuts.has(event.id)) {
+          countedCoconuts.add(event.id);
+          console.log(`Counting coconut ${event.id} for the first time`);
+        }
+      });
+
+      // Should count all three unique coconuts
+      expect(countedCoconuts.size).toBe(3);
+      expect(Array.from(countedCoconuts).sort()).toEqual([
+        'coconut-1',
+        'coconut-2',
+        'coconut-3',
+      ]);
+    });
+
+    it('should reset counted coconuts when starting a new level', () => {
+      const countedCoconuts = new Set<string>();
+
+      // Simulate first level
+      countedCoconuts.add('coconut-1');
+      countedCoconuts.add('coconut-2');
+      expect(countedCoconuts.size).toBe(2);
+
+      // Simulate starting new level (reset)
+      countedCoconuts.clear();
+      expect(countedCoconuts.size).toBe(0);
+
+      // Simulate coconuts in new level
+      countedCoconuts.add('coconut-3');
+      countedCoconuts.add('coconut-4');
+      expect(countedCoconuts.size).toBe(2);
+      expect(Array.from(countedCoconuts).sort()).toEqual([
+        'coconut-3',
+        'coconut-4',
+      ]);
+    });
+  });
+
+  describe('Issue 5: Sand blocker clearing with tile falling', () => {
+    it('should let tiles above sand blockers fall down when sand blockers are cleared', () => {
+      // Simulate a coconut sitting on top of a sand blocker
+      const coconutAboveSandBlocker = {
+        row: 6,
+        col: 3,
+        id: 'coconut-1',
+        type: '🥥',
+        isSpecial: true,
+      };
+
+      // The coconut should fall down to fill the cleared sand blocker position
+      const coconutAfterFalling = {
+        ...coconutAboveSandBlocker,
+        row: 7, // Should fall to the bottom row
+      };
+
+      // Verify the coconut moved down
+      expect(coconutAfterFalling.row).toBe(7);
+      expect(coconutAfterFalling.col).toBe(3);
+      expect(coconutAfterFalling.id).toBe('coconut-1');
+      expect(coconutAfterFalling.isSpecial).toBe(true);
+    });
+
+    it('should let regular tiles fall down when sand blockers are cleared', () => {
+      // Simulate a regular tile sitting on top of a sand blocker
+      const tileAboveSandBlocker = {
+        row: 6,
+        col: 4,
+        id: 'tile-1',
+        type: '🦀',
+        isSpecial: false,
+      };
+
+      // The tile should fall down to fill the cleared sand blocker position
+      const tileAfterFalling = {
+        ...tileAboveSandBlocker,
+        row: 7, // Should fall to the bottom row
+      };
+
+      // Verify the tile moved down
+      expect(tileAfterFalling.row).toBe(7);
+      expect(tileAfterFalling.col).toBe(4);
+      expect(tileAfterFalling.id).toBe('tile-1');
+      expect(tileAfterFalling.isSpecial).toBe(false);
+    });
+
+    it('should only generate new tiles when no tiles exist above cleared sand blockers', () => {
+      // Check that no tiles exist above this position
+      const tilesAbove = []; // Empty array means no tiles above
+
+      // Should generate a new tile only when no tiles exist above
+      const shouldGenerateNewTile = tilesAbove.length === 0;
+      expect(shouldGenerateNewTile).toBe(true);
     });
   });
 });

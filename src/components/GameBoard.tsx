@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef, useCallback} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {View, StyleSheet, Text} from 'react-native';
 import Svg, {
   Ellipse,
@@ -13,13 +13,12 @@ import {useGame} from '../contexts/GameContext';
 
 import {
   isValidMove,
-  getTileTypes,
   findMatches,
   removeMatches,
   dropTiles,
   detectBombTrigger,
-  detectRocketTrigger,
   getBombExplosionTiles,
+  detectRocketTrigger,
   getRocketExplosionTiles,
 } from '../utils/gameLogic';
 import {
@@ -134,7 +133,14 @@ export const GameBoard: React.FC<{
   sandBlockers?: Array<{row: number; col: number}>;
   onMove?: () => void; // Callback when a valid move is made
   onCoconutDrop?: () => void; // Callback when a drop item is dropped (kept for backward compatibility)
-}> = ({variant = 'sand', sandBlockers = [], onMove, onCoconutDrop}) => {
+  isTransitioning?: boolean; // New prop to prevent interactions during transitions
+}> = ({
+  variant = 'sand',
+  sandBlockers = [],
+  onMove,
+  onCoconutDrop,
+  isTransitioning = false,
+}) => {
   // All hooks must be at the top, before any return
   const {gameState, dispatchGame, dispatchCurrency, isInitialized} = useGame();
   const [isProcessingMove, setIsProcessingMove] = useState(false);
@@ -143,9 +149,6 @@ export const GameBoard: React.FC<{
   const [fallingTiles, setFallingTiles] = useState<Map<string, number>>(
     new Map(),
   );
-  const [coconutsExiting, setCoconutsExiting] = useState<
-    Array<{row: number; col: number; id: string}>
-  >([]);
   const [bombNotification, setBombNotification] = useState<string | null>(null);
   const [shakingTiles, setShakingTiles] = useState<Set<string>>(new Set());
 
@@ -190,115 +193,6 @@ export const GameBoard: React.FC<{
     }
   }, [isInitialized, dispatchGame, variant, gameState.board.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isCoconutExiting = useCallback(
-    (row: number, col: number, id: string) => {
-      return coconutsExiting.some(
-        c => c.row === row && c.col === col && c.id === id,
-      );
-    },
-    [coconutsExiting],
-  );
-
-  const finalizeCoconutExit = useCallback(
-    (row: number, col: number, id: string) => {
-      setCoconutsExiting(prev =>
-        prev.filter(c => !(c.row === row && c.col === col && c.id === id)),
-      );
-      // Process coconut exit immediately
-      const rawBoard = currentBoardRef.current;
-
-      // Defensive check to ensure rawBoard exists and is an array
-      if (!rawBoard || !Array.isArray(rawBoard)) {
-        console.warn(
-          'finalizeCoconutExit: rawBoard is not available or not an array',
-        );
-        return;
-      }
-
-      const board = Array.from({length: 8}, (_, r) =>
-        Array.isArray(rawBoard[r]) ? [...rawBoard[r]] : Array(8).fill(null),
-      );
-
-      // Defensive check to ensure board[row] exists before accessing
-      if (board[row] && Array.isArray(board[row])) {
-        board[row][col] = null;
-        for (let r = row; r > 0; r--) {
-          if (
-            board[r] &&
-            board[r - 1] &&
-            Array.isArray(board[r]) &&
-            Array.isArray(board[r - 1])
-          ) {
-            board[r][col] = board[r - 1][col]
-              ? {...board[r - 1][col], row: r}
-              : null;
-          }
-        }
-        // Only generate a new tile if the top is not a sand blocker
-        if (board[0] && Array.isArray(board[0])) {
-          // Check for sand blocker at the top
-          const isSandBlocker = (gameState.sandBlockers || []).some(
-            b => b.row === 0 && b.col === col,
-          );
-          if (!isSandBlocker) {
-            // Use the current variant for tile types
-            const tileTypes = getTileTypes(variant);
-            const randomType =
-              tileTypes[Math.floor(Math.random() * tileTypes.length)];
-            board[0][col] = {
-              id: `0-${col}-${Date.now()}-${Math.random()}`,
-              type: randomType,
-              row: 0,
-              col: col,
-              isSpecial: false,
-            };
-          } else {
-            board[0][col] = null;
-          }
-        }
-      }
-
-      dispatchGame({type: 'UPDATE_BOARD', payload: board});
-      currentBoardRef.current = board;
-    },
-    [dispatchGame, gameState.sandBlockers, variant],
-  );
-
-  useEffect(() => {
-    if (fallingTiles.size > 0) return;
-    const board = currentBoardRef.current;
-    const exiting: Array<{row: number; col: number; id: string}> = [];
-
-    // Check if board and board[7] exist before accessing
-    if (board && Array.isArray(board) && board[7] && Array.isArray(board[7])) {
-      for (let col = 0; col < 8; col++) {
-        const tile = board[7][col];
-        // Check for any drop items (coconuts or other special tiles that should be dropped)
-        if (tile && tile.isSpecial && !isCoconutExiting(7, col, tile.id)) {
-          exiting.push({row: 7, col, id: tile.id});
-        }
-      }
-    }
-    if (exiting.length > 0) {
-      setCoconutsExiting(prev => [...prev, ...exiting]);
-      // Process item exits immediately without delay
-      exiting.forEach(item => {
-        finalizeCoconutExit(item.row, item.col, item.id);
-        // Notify parent component that an item was dropped
-        if (onCoconutDrop) {
-          onCoconutDrop();
-        }
-      });
-    }
-  }, [
-    gameState.board,
-    coconutsExiting,
-    fallingTiles,
-    finalizeCoconutExit,
-    isCoconutExiting,
-    onCoconutDrop,
-  ]);
-
   // Now it's safe to return early
   if (!isInitialized) {
     return (
@@ -317,32 +211,22 @@ export const GameBoard: React.FC<{
     col: number,
     direction: 'up' | 'down' | 'left' | 'right',
   ) => {
-    console.log('=== SWIPE ATTEMPT ===');
-    console.log('Swipe attempted:', {
-      row,
-      col,
-      direction,
-      isProcessingMove: isProcessingMoveRef.current,
-      isProcessingMatches: isProcessingMatchesRef.current,
-    });
-    console.log(
-      'Current board state:',
-      currentBoardRef.current && Array.isArray(currentBoardRef.current)
-        ? currentBoardRef.current.map(row =>
-            Array.isArray(row)
-              ? row.map(tile => tile?.type || 'null')
-              : Array(8).fill('null'),
-          )
-        : 'Board not available',
-    );
-
-    if (isProcessingMoveRef.current || isProcessingMatchesRef.current) {
-      console.log('Move or match processing in progress, ignoring swipe', {
-        isProcessingMove: isProcessingMoveRef.current,
-        isProcessingMatches: isProcessingMatchesRef.current,
-      });
-      return; // Prevent moves while processing
+    // Prevent swipes during transitions
+    if (isTransitioning) {
+      console.log('Swipe blocked: game is transitioning');
+      return;
     }
+
+    // Prevent swipes during processing
+    if (isProcessingMove || isProcessingMoveRef.current) {
+      console.log('Swipe blocked: move is being processed');
+      return;
+    }
+
+    console.log('=== SWIPE ATTEMPT ===');
+    console.log('Swipe attempted:', {row, col, direction});
+    console.log('isProcessingMove:', isProcessingMove);
+    console.log('isProcessingMoveRef.current:', isProcessingMoveRef.current);
 
     let targetRow = row;
     let targetCol = col;
@@ -803,29 +687,10 @@ export const GameBoard: React.FC<{
         (row: any[]) => (Array.isArray(row) ? [...row] : Array(8).fill(null)),
       );
 
-      // Fill cleared sand blocker positions with new tiles
-      const clearedBlockers = sandBlockersToCheck.filter(
-        blocker =>
-          !finalSandBlockers.some(
-            finalBlocker =>
-              finalBlocker.row === blocker.row &&
-              finalBlocker.col === blocker.col,
-          ),
-      );
-      clearedBlockers.forEach((blocker: {row: number; col: number}) => {
-        const tileTypes =
-          variant === 'sand'
-            ? (['🦀', '🌴', '⭐', '🌺', '🐚'] as const)
-            : (['🦑', '🦐', '🐡', '🪝'] as const);
-        const randomType =
-          tileTypes[Math.floor(Math.random() * tileTypes.length)];
-        finalBoard[blocker.row][blocker.col] = {
-          id: `${blocker.row}-${blocker.col}-${Date.now()}-${Math.random()}`,
-          type: randomType,
-          row: blocker.row,
-          col: blocker.col,
-        };
-      });
+      // Remove the old logic that filled cleared sand blocker positions with random tiles
+      // Instead, after updating sand blockers, let gravity handle the falling
+      // (i.e., call dropTiles with the updated sand blocker state)
+      finalBoard = dropTiles(finalBoard, variant, finalSandBlockers);
 
       // Update board state immediately but keep matched tiles visible for animation
       dispatchGame({type: 'UPDATE_BOARD', payload: finalBoard});
@@ -1356,14 +1221,8 @@ export const GameBoard: React.FC<{
                     isMatched={false}
                     isFalling={fallingTiles.has(`${rowIndex}-${colIndex}`)}
                     fallDistance={getTileFallDistance(rowIndex, colIndex)}
-                    isCoconutExiting={isCoconutExiting(
-                      rowIndex,
-                      colIndex,
-                      tile.id,
-                    )}
-                    onCoconutExit={() =>
-                      finalizeCoconutExit(rowIndex, colIndex, tile.id)
-                    }
+                    isCoconutExiting={false}
+                    onCoconutExit={() => {}}
                     isShaking={isShaking}
                   />
                 ) : (
