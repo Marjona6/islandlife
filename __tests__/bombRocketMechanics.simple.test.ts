@@ -119,19 +119,29 @@ describe('Bomb and Rocket Mechanics (Simple)', () => {
 
   it('🚀 triggers horizontal rocket and correct explosion area', () => {
     // Set up a board where swapping creates a horizontal match of 4 🐚 at row 2
-    // Row 2: 🦀🐚🐚🌺🐚⭐🌴🦀, swap (3,2) with (4,2) to create four 🐚 in a row
+    // Row 2: 🦀��🐚🐚🐚⭐🌴🦀, swap (1,2) with (4,2) to create four 🐚 in a row at positions 1-4
     const board = createBoardFromRows([
       '🦀🌴⭐🌺🐚🦀🌴⭐',
       '🌺🐚🦀🌴⭐🌺🐚🦀',
-      '🦀🐚🐚🌺🐚⭐🌴🦀', // row 2: swap (3,2) with (4,2) to get 🦀🐚🐚🐚🌺⭐🌴🦀
+      '🦀🐚🐚🐚🐚⭐🌴🦀', // row 2
       '🌴⭐🌺🐚🦀🌴⭐🌺',
       '🐚🦀🌴⭐🌺🐚🦀🌴',
       '🌺🐚🦀🌴⭐🌺🐚🦀',
       '⭐🌺🐚🦀🌴⭐🌺🐚',
       '🌴⭐🌺🐚🦀🌴⭐🌺',
     ]);
-    // User swaps (3,2) with (4,2) to create 4 🐚 in a row at positions 1-4
-    const result = simulateUserSwap(board, {x: 3, y: 2}, {x: 4, y: 2});
+    // Print row 2 before swap
+    console.log(
+      'Row 2 before swap:',
+      board[2].map(tile => tile.type),
+    );
+    // User swaps (1,2) with (4,2) to create 4 🐚 in a row at positions 1-4
+    const result = simulateUserSwap(board, {x: 1, y: 2}, {x: 4, y: 2});
+    // Print row 2 after swap
+    console.log(
+      'Row 2 after swap:',
+      result.newBoard[2].map(tile => tile.type),
+    );
     expect(result.wasRocketTriggered).toBe(true);
     // Should explode the entire column (col 4)
     expect(result.rocketExplosionTiles).toEqual([
