@@ -113,73 +113,23 @@
     },
     {
       "id": "level-4",
-      "name": "Deep Sea Drop",
+      "name": "Bomb & Rocket Showcase",
       "board": [
-        ["🦑", "🦐", "🐡", "🪝", "🦑", "🦐", "🐡", "🪝"],
-        ["🦐", "🐡", "🪝", "🦑", "🦐", "🐡", "🪝", "🦑"],
-        ["🐡", "🪝", "🦑", "🦐", "🐡", "🪝", "🦑", "🦐"],
-        ["🪝", "🦑", "🦐", "🐡", "🪝", "🦑", "🦐", "🐡"],
-        ["🦑", "🦐", "🐡", "🪝", "🦑", "🦐", "🐡", "🪝"],
-        ["🦐", "🐡", "🪝", "🦑", "🦐", "🐡", "🪝", "🦑"],
-        ["🐡", "🪝", "🦑", "🦐", "🐡", "🪝", "🦑", "🦐"],
-        ["🪝", "🦑", "🦐", "🐡", "🪝", "🦑", "🦐", "🐡"]
+        ["🦀", "🦀", "🦀", "🌺", "⭐", "⭐", "⭐", "🌴"],
+        ["🌺", "🐚", "🌴", "⭐", "🦀", "🐚", "🌺", "⭐"],
+        ["⭐", "🌺", "🦀", "🐚", "🌴", "⭐", "🦀", "🌺"],
+        ["🌴", "⭐", "🌺", "🦀", "🐚", "🌺", "⭐", "🦀"],
+        ["🦀", "🌴", "⭐", "🌺", "🦀", "🐚", "🌺", "⭐"],
+        ["🌺", "🦀", "🌴", "⭐", "🌺", "🦀", "🐚", "🌴"],
+        ["⭐", "🌺", "🦀", "🌴", "⭐", "🌺", "🦀", "🐚"],
+        ["🌴", "⭐", "🌺", "🦀", "🌴", "⭐", "🌺", "🦀"]
       ],
-      "objective": "drop",
-      "target": 8,
-      "moves": 35,
-      "tileTypes": ["🦑", "🦐", "🐡", "🪝"],
-      "mechanics": ["drop-targets"],
-      "specialTiles": [
-        {
-          "type": "collector",
-          "row": 7,
-          "col": 0,
-          "properties": {"targetType": "🦑"}
-        },
-        {
-          "type": "collector",
-          "row": 7,
-          "col": 1,
-          "properties": {"targetType": "🦐"}
-        },
-        {
-          "type": "collector",
-          "row": 7,
-          "col": 2,
-          "properties": {"targetType": "🐡"}
-        },
-        {
-          "type": "collector",
-          "row": 7,
-          "col": 3,
-          "properties": {"targetType": "🪝"}
-        },
-        {
-          "type": "collector",
-          "row": 7,
-          "col": 4,
-          "properties": {"targetType": "🦑"}
-        },
-        {
-          "type": "collector",
-          "row": 7,
-          "col": 5,
-          "properties": {"targetType": "🦐"}
-        },
-        {
-          "type": "collector",
-          "row": 7,
-          "col": 6,
-          "properties": {"targetType": "🐡"}
-        },
-        {
-          "type": "collector",
-          "row": 7,
-          "col": 7,
-          "properties": {"targetType": "🪝"}
-        }
-      ],
-      "description": "Drop the correct sea creatures to their targets!",
+      "objective": "score",
+      "target": 5000,
+      "moves": 25,
+      "tileTypes": ["🦀", "🐚", "🌺", "⭐", "🌴"],
+      "mechanics": ["bombs", "rockets"],
+      "description": "Create bombs (5x5 explosions) and rockets (row/column explosions) to score big points! Look for moves that create 4-in-a-row (rockets) or T/L shapes (bombs).",
       "difficulty": "medium"
     },
     {

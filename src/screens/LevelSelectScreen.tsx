@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {levelManager} from '../utils/levelManager';
+import {gameModeService} from '../services/gameMode';
 
 // const {width} = Dimensions.get('window'); // Not currently used
 
@@ -23,57 +24,45 @@ export const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({
 }) => {
   // const [selectedWorld, setSelectedWorld] = useState(1); // Not currently used
 
-  // Force clear and reload levels to ensure fresh data
-  levelManager.constructor.clearInstance();
-  levelManager.reloadLevels();
+  const [allLevels, setAllLevels] = useState<any[]>([]);
+  const [unlockedLevels, setUnlockedLevels] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const allLevels = levelManager.getAllLevels();
+  useEffect(() => {
+    loadLevels();
+  }, []);
 
-  // Debug logging to see what levels are actually loaded
-  console.log('=== LevelSelectScreen Debug ===');
-  console.log('Total levels loaded:', allLevels.length);
-  allLevels.forEach((level, index) => {
-    console.log(`${index + 1}. ${level.id}: ${level.name}`);
-  });
+  const loadLevels = async () => {
+    try {
+      // Force clear and reload levels to ensure fresh data
+      levelManager.reloadLevels();
 
-  // Get detailed debug info
-  const debugInfo = levelManager.getDebugInfo();
-  console.log('=== LevelManager Debug Info ===');
-  console.log('Debug info:', JSON.stringify(debugInfo, null, 2));
-  console.log('=== End Debug ===');
+      const levels = levelManager.getAllLevels();
+      setAllLevels(levels);
 
-  // Group levels by world (assuming 5 levels per world for now)
-  const levelsPerWorld = 5;
-  const worlds = [];
-  for (let i = 0; i < allLevels.length; i += levelsPerWorld) {
-    worlds.push(allLevels.slice(i, i + levelsPerWorld));
-  }
-
-  const worldNames = [
-    'Tropical Beach',
-    'Coral Reef',
-    'Deep Ocean',
-    'Mystic Island',
-  ];
-  const worldColors = [
-    ['#FFD700', '#FFA500'], // Gold to Orange
-    ['#00CED1', '#4169E1'], // Cyan to Blue
-    ['#9932CC', '#4B0082'], // Purple to Indigo
-    ['#32CD32', '#228B22'], // Green to Forest Green
-  ];
-
-  const getLevelStatus = (level: any, levelIndex: number) => {
-    // Mock data - in real app this would come from saved progress
-    if (levelIndex === 0) return 'completed'; // First level always completed
-    if (levelIndex === 1) return 'completed';
-    if (levelIndex === 2) return 'current';
-    return 'locked';
+      // Get unlocked levels based on game mode
+      const unlocked = await gameModeService.getUnlockedLevels();
+      setUnlockedLevels(unlocked);
+    } catch (error) {
+      console.error('Error loading levels:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const getStarRating = (levelIndex: number) => {
+  const getLevelStatus = (levelId: string) => {
+    if (gameModeService.isDevMode()) {
+      // In DEV mode, all levels are unlocked
+      return 'unlocked';
+    }
+
+    // In PROD mode, check if level is unlocked
+    return unlockedLevels.includes(levelId) ? 'unlocked' : 'locked';
+  };
+
+  const getStarRating = (_levelId: string) => {
     // Mock data - in real app this would come from saved progress
-    if (levelIndex === 0) return 3;
-    if (levelIndex === 1) return 2;
+    // For now, return 0 for all levels
     return 0;
   };
 
@@ -96,21 +85,14 @@ export const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({
     levelIndex: number,
     _worldIndex: number,
   ) => {
-    const status = getLevelStatus(level, levelIndex);
-    const starRating = getStarRating(levelIndex);
+    const status = getLevelStatus(level.id);
+    const starRating = getStarRating(level.id);
     const isLocked = status === 'locked';
-    const isCurrent = status === 'current';
-    const isCompleted = status === 'completed';
 
     return (
       <TouchableOpacity
         key={level.id}
-        style={[
-          styles.levelNode,
-          isLocked && styles.levelNodeLocked,
-          isCurrent && styles.levelNodeCurrent,
-          isCompleted && styles.levelNodeCompleted,
-        ]}
+        style={[styles.levelNode, isLocked && styles.levelNodeLocked]}
         onPress={() => !isLocked && onNavigateToLevel(level.id)}
         disabled={isLocked}>
         <View style={styles.levelNodeContent}>
@@ -118,12 +100,32 @@ export const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({
             style={[styles.levelNumber, isLocked && styles.levelNumberLocked]}>
             {levelIndex + 1}
           </Text>
-          {isCompleted && renderStars(starRating)}
+          {starRating > 0 && renderStars(starRating)}
           {isLocked && <Text style={styles.lockIcon}>🔒</Text>}
         </View>
       </TouchableOpacity>
     );
   };
+
+  // Group levels by world (assuming 5 levels per world for now)
+  const levelsPerWorld = 5;
+  const worlds = [];
+  for (let i = 0; i < allLevels.length; i += levelsPerWorld) {
+    worlds.push(allLevels.slice(i, i + levelsPerWorld));
+  }
+
+  const worldNames = [
+    'Tropical Beach',
+    'Coral Reef',
+    'Deep Ocean',
+    'Mystic Island',
+  ];
+  const worldColors = [
+    ['#FFD700', '#FFA500'], // Gold to Orange
+    ['#00CED1', '#4169E1'], // Cyan to Blue
+    ['#9932CC', '#4B0082'], // Purple to Indigo
+    ['#32CD32', '#228B22'], // Green to Forest Green
+  ];
 
   const renderWorld = (worldLevels: any[], worldIndex: number) => {
     const worldName = worldNames[worldIndex] || `World ${worldIndex + 1}`;
@@ -159,6 +161,22 @@ export const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({
       </View>
     );
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient
+          colors={['#4A90E2', '#7B68EE', '#9370DB']}
+          style={styles.backgroundGradient}
+          start={{x: 0, y: 0}}
+          end={{x: 1, y: 1}}
+        />
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading levels...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -290,14 +308,6 @@ const styles = StyleSheet.create({
   levelNodeLocked: {
     backgroundColor: 'rgba(128, 128, 128, 0.6)',
   },
-  levelNodeCurrent: {
-    backgroundColor: '#FFD700',
-    shadowColor: '#FFD700',
-    shadowOpacity: 0.4,
-  },
-  levelNodeCompleted: {
-    backgroundColor: '#4CAF50',
-  },
   levelNodeContent: {
     alignItems: 'center',
   },
@@ -338,5 +348,15 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 50,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
   },
 });

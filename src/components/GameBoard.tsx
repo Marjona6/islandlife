@@ -177,6 +177,9 @@ const GameBoardInner = (
     new Map(),
   );
   const [bombNotification, setBombNotification] = useState<string | null>(null);
+  const [rocketNotification, setRocketNotification] = useState<string | null>(
+    null,
+  );
   const [shakingTiles, setShakingTiles] = useState<Set<string>>(new Set());
 
   // Game state refs for immediate access during processing
@@ -518,6 +521,12 @@ const GameBoardInner = (
           currentSandBlockers || currentSandBlockersRef.current,
         );
         console.log('BOMB DETECTED! Processing explosion normally');
+
+        // Clear bomb notification after 2 seconds
+        setTimeout(() => {
+          setBombNotification(null);
+          setShakingTiles(new Set()); // Clear shaking tiles
+        }, 2000);
       } else {
         // Check for rocket trigger
         const rocketResult = detectRocketTrigger(board, row1, col1, row2, col2);
@@ -534,6 +543,17 @@ const GameBoardInner = (
             variant,
             currentSandBlockers || currentSandBlockersRef.current,
           );
+
+          // Show rocket notification
+          const direction = rocketResult.isHorizontal
+            ? 'HORIZONTAL'
+            : 'VERTICAL';
+          setRocketNotification(`🚀 ${direction} ROCKET! 🚀`);
+
+          // Clear rocket notification after 2 seconds
+          setTimeout(() => {
+            setRocketNotification(null);
+          }, 2000);
         } else {
           // No bomb or rocket, just process normal matches
           matches = findMatches(board);
@@ -1297,6 +1317,15 @@ const GameBoardInner = (
           </View>
         )}
 
+        {/* Rocket Notification */}
+        {rocketNotification && (
+          <View style={styles.rocketNotification}>
+            <Text style={styles.rocketNotificationText}>
+              {rocketNotification}
+            </Text>
+          </View>
+        )}
+
         {/* Game board */}
         {(gameState.board && Array.isArray(gameState.board)
           ? gameState.board
@@ -1648,6 +1677,22 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   bombNotificationText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  rocketNotification: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 10,
+  },
+  rocketNotificationText: {
     fontSize: 24,
     fontWeight: 'bold',
     color: 'white',

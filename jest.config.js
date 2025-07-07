@@ -5,7 +5,11 @@ module.exports = {
       '<rootDir>/__mocks__/fileMock.js',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-animatable|react-native-linear-gradient)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|react-native-animatable|react-native-linear-gradient|@react-native-firebase)/)',
   ],
   setupFilesAfterEnv: ['<rootDir>/__mocks__/setupTests.js'],
+  // Add timeout configuration to prevent tests from running indefinitely
+  testTimeout: 10000, // 10 seconds per test
+  maxWorkers: 1, // Run tests sequentially to avoid conflicts
+  bail: 1, // Stop on first failure
 };

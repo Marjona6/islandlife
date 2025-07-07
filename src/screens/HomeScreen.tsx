@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,14 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import {useGame} from '../contexts/GameContext';
+import {gameModeService} from '../services/gameMode';
+import {userProgressService} from '../services/userProgress';
 
 const {width} = Dimensions.get('window');
 
 interface HomeScreenProps {
   onNavigateToLevels: () => void;
+  onNavigateToLevel: (levelId: string) => void;
   onNavigateToSettings: () => void;
   onNavigateToShop: () => void;
   onNavigateToDailyRewards: () => void;
@@ -22,11 +25,76 @@ interface HomeScreenProps {
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   onNavigateToLevels,
+  onNavigateToLevel,
   onNavigateToSettings,
   onNavigateToShop,
   onNavigateToDailyRewards,
 }) => {
   const {currency} = useGame();
+  const [nextLevel, setNextLevel] = useState<string>('level-1');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    initializeGameMode();
+  }, []);
+
+  const initializeGameMode = async () => {
+    try {
+      await gameModeService.initialize();
+      await userProgressService.initialize();
+
+      if (gameModeService.isProdMode()) {
+        const next = await gameModeService.getNextLevel();
+        setNextLevel(next);
+      }
+    } catch (error) {
+      console.error('Error initializing game mode:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePlayButton = () => {
+    if (gameModeService.isProdMode()) {
+      // In PROD mode, go directly to the next level
+      onNavigateToLevel(nextLevel);
+    } else {
+      // In DEV mode, show level selection
+      onNavigateToLevels();
+    }
+  };
+
+  const getPlayButtonText = () => {
+    if (gameModeService.isProdMode()) {
+      return 'PLAY';
+    } else {
+      return 'SELECT LEVEL';
+    }
+  };
+
+  const getPlayButtonSubtext = () => {
+    if (gameModeService.isProdMode()) {
+      return 'Continue Adventure';
+    } else {
+      return 'Choose Your Level';
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LinearGradient
+          colors={['#4A90E2', '#7B68EE', '#9370DB']}
+          style={styles.backgroundGradient}
+          start={{x: 0, y: 0}}
+          end={{x: 1, y: 1}}
+        />
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -63,16 +131,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </View>
 
         {/* Main Play Button */}
-        <TouchableOpacity
-          style={styles.playButton}
-          onPress={onNavigateToLevels}>
+        <TouchableOpacity style={styles.playButton} onPress={handlePlayButton}>
           <LinearGradient
             colors={['#FFD700', '#FFA500']}
             style={styles.playButtonGradient}
             start={{x: 0, y: 0}}
             end={{x: 1, y: 1}}>
-            <Text style={styles.playButtonText}>PLAY</Text>
-            <Text style={styles.playButtonSubtext}>Continue Adventure</Text>
+            <Text style={styles.playButtonText}>{getPlayButtonText()}</Text>
+            <Text style={styles.playButtonSubtext}>
+              {getPlayButtonSubtext()}
+            </Text>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -292,5 +360,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
   },
 });
