@@ -88,36 +88,30 @@ function simulateUserSwap(
 
 describe('Bomb and Rocket Mechanics (Simple)', () => {
   it('🔍 DEBUG: Simple rocket test', () => {
-    // Very simple test: 3x3 board with 3 🐚 in a row, swap to create 4
-    const board = createBoardFromRows(['🐚🐚🐚', '🌺🌺🌺', '⭐⭐⭐']);
+    // 8x8 board, row 0: 🐚🐚🐚🦀🐚🦀🦀🦀
+    // Swap (3,0) with (4,0) to create 4 🐚 in a row at positions 0-3
+    const board = createBoardFromRows([
+      '🐚🐚🐚🦀🐚🦀🦀🦀',
+      '🌺🌺🌺🦀🦀🦀🦀🦀',
+      '⭐⭐⭐🦀🦀🦀🦀🦀',
+      '🦀🦀🦀🦀🦀🦀🦀🦀',
+      '🌴🌴🌴🌴🌴🌴🌴🌴',
+      '🐚🐚🐚🐚🐚🐚🐚🐚',
+      '🌺🌺🌺🌺🌺🌺🌺🌺',
+      '⭐⭐⭐⭐⭐⭐⭐⭐',
+    ]);
 
     console.log(
       'Before swap - Row 0:',
       board[0].map(tile => tile.type),
     );
-    console.log(
-      'Before swap - Row 1:',
-      board[1].map(tile => tile.type),
-    );
-    console.log(
-      'Before swap - Row 2:',
-      board[2].map(tile => tile.type),
-    );
 
-    // Swap (0,0) with (0,3) to create 4 🐚 in a row
-    const result = simulateUserSwap(board, {x: 0, y: 0}, {x: 3, y: 0});
+    // Swap (3,0) with (4,0) to create 4 🐚 in a row at positions 0-3
+    const result = simulateUserSwap(board, {x: 3, y: 0}, {x: 4, y: 0});
 
     console.log(
       'After swap - Row 0:',
       result.newBoard[0].map(tile => tile.type),
-    );
-    console.log(
-      'After swap - Row 1:',
-      result.newBoard[1].map(tile => tile.type),
-    );
-    console.log(
-      'After swap - Row 2:',
-      result.newBoard[2].map(tile => tile.type),
     );
     console.log('Simple rocket test result:', result.wasRocketTriggered);
     expect(result.wasRocketTriggered).toBe(true);
@@ -129,24 +123,15 @@ describe('Bomb and Rocket Mechanics (Simple)', () => {
     const board = createBoardFromRows([
       '🦀🌴⭐🌺🐚🦀🌴⭐',
       '🌺🐚🦀🌴⭐🌺🐚🦀',
-      '🦀🐚🐚🌺🐚⭐🌴🦀', // row 2
+      '🦀🐚🐚🌺🐚⭐🌴🦀', // row 2: swap (3,2) with (4,2) to get 🦀🐚🐚🐚🌺⭐🌴🦀
       '🌴⭐🌺🐚🦀🌴⭐🌺',
       '🐚🦀🌴⭐🌺🐚🦀🌴',
       '🌺🐚🦀🌴⭐🌺🐚🦀',
       '⭐🌺🐚🦀🌴⭐🌺🐚',
-      '🌴⭐🌺🐚��🌴⭐🌺',
+      '🌴⭐🌺🐚🦀🌴⭐🌺',
     ]);
-    console.log(
-      'Before swap - Row 2:',
-      board[2].map(tile => tile.type),
-    );
-    // User swaps (3,2) with (4,2) to create 4 🐚 in a row
+    // User swaps (3,2) with (4,2) to create 4 🐚 in a row at positions 1-4
     const result = simulateUserSwap(board, {x: 3, y: 2}, {x: 4, y: 2});
-    console.log(
-      'After swap - Row 2:',
-      result.newBoard[2].map(tile => tile.type),
-    );
-    console.log('Rocket triggered:', result.wasRocketTriggered);
     expect(result.wasRocketTriggered).toBe(true);
     // Should explode the entire column (col 4)
     expect(result.rocketExplosionTiles).toEqual([
@@ -164,19 +149,18 @@ describe('Bomb and Rocket Mechanics (Simple)', () => {
 
   it('🚀 triggers vertical rocket and correct explosion area', () => {
     // Set up a board where swapping creates a vertical match of 4 🦀 at col 2
-    // Start with 3 🦀 at positions (1,2), (2,2), (3,2) and a 🦀 at (5,2)
-    // Swap (3,2) with (4,2) to create 4 🦀 in a column
+    // Column 2: 🦀, 🦀, 🦀, 🌺, 🦀, so swap (2,3) with (2,4) to get four 🦀 in a column at col 2, rows 1-4
     const board = createBoardFromRows([
       '🦀🌴🦀🌺🐚🦀🌴⭐',
       '🌺🐚🦀🌴⭐🌺🐚🦀',
       '⭐🌺🦀🐚🌴⭐🌺🐚',
-      '🌴⭐🦀🐚🦀🌴⭐🌺',
-      '🐚🦀⭐🌺🐚🦀🌴', // row 4: ⭐ at (4,2)
+      '🌴⭐🦀🌺🦀🌴⭐🌺', // (2,3) is 🌺, (2,4) is 🦀
+      '🐚🦀🦀⭐🌺🐚🦀🌴',
       '🌺🐚🦀🌴⭐🌺🐚🦀',
       '⭐🌺🐚🦀🌴⭐🌺🐚',
       '🌴⭐🌺🐚🦀🌴⭐🌺',
     ]);
-    // User swaps (3,2) with (4,2) to create 4 🦀 in a column
+    // User swaps (2,3) with (2,4) to create 4 🦀 in a column at col 2, rows 1-4
     const result = simulateUserSwap(board, {x: 2, y: 3}, {x: 2, y: 4});
     expect(result.wasRocketTriggered).toBe(true);
     // Should explode the entire row (row 4)

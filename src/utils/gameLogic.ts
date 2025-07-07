@@ -674,11 +674,17 @@ export const detectRocketTrigger = (
 
   // Helper to check for a window of 4 matching tiles including the axis
   function checkWindow(deltaRow: number, deltaCol: number): boolean {
+    // Check all possible 4-tile windows that could include the axis
     for (let offset = -3; offset <= 0; offset++) {
       let match = true;
+      let axisInWindow = false;
+
+      // Check if all 4 tiles in this window match and axis is included
       for (let i = 0; i < 4; i++) {
         const r = axisRow + (offset + i) * deltaRow;
         const c = axisCol + (offset + i) * deltaCol;
+
+        // Check bounds
         if (
           r < 0 ||
           r >= testBoard.length ||
@@ -690,16 +696,16 @@ export const detectRocketTrigger = (
           match = false;
           break;
         }
-      }
-      // Axis must be within this window
-      if (match) {
-        for (let i = 0; i < 4; i++) {
-          const r = axisRow + (offset + i) * deltaRow;
-          const c = axisCol + (offset + i) * deltaCol;
-          if (r === axisRow && c === axisCol) {
-            return true;
-          }
+
+        // Check if this position is the axis
+        if (r === axisRow && c === axisCol) {
+          axisInWindow = true;
         }
+      }
+
+      // If we found a valid 4-tile match that includes the axis, we have a rocket
+      if (match && axisInWindow) {
+        return true;
       }
     }
     return false;
