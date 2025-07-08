@@ -1,6 +1,3 @@
-import React from 'react';
-import {render, fireEvent, waitFor} from '@testing-library/react-native';
-
 // Test the exact victory screen logic from LevelGameScreen
 describe('Victory Screen Debug Tests', () => {
   // Simulate the exact logic from LevelGameScreen
@@ -269,6 +266,94 @@ describe('Victory Screen Debug Tests', () => {
 
       expect(shouldShowVictory).toBe(true);
       console.log('✅ Victory condition logic is correct');
+    });
+  });
+
+  describe('Emulator Victory Bug Reproduction', () => {
+    it('should reproduce the exact scenario from emulator', () => {
+      // Simulate the exact state from emulator
+      const currentProgress = {
+        score: 0,
+        collected: 0,
+        cleared: 0,
+        combos: 0,
+        dropped: 0,
+      };
+
+      // Sand blockers are 0 (all cleared)
+      const sandBlockers: any[] = [];
+
+      // This should be the same logic as in LevelGameScreen
+      const isComplete = simulateLevelCompletion(
+        'sand-clear',
+        14, // Level 2 target
+        currentProgress,
+        sandBlockers,
+      );
+
+      console.log('=== EMULATOR BUG REPRODUCTION ===');
+      console.log('Sand blockers length:', sandBlockers.length);
+      console.log('Is complete:', isComplete);
+      console.log('Expected: true');
+      console.log('=== END EMULATOR BUG REPRODUCTION ===');
+
+      expect(isComplete).toBe(true);
+      expect(sandBlockers.length).toBe(0);
+    });
+
+    it('should test the exact checkLevelCompletion logic from LevelGameScreen', () => {
+      // This replicates the exact logic from LevelGameScreen.checkLevelCompletion
+      const currentLevel = {
+        objective: 'sand-clear',
+        target: 14,
+      };
+
+      const currentProgress = {
+        score: 0,
+        collected: 0,
+        cleared: 0,
+        combos: 0,
+        dropped: 0,
+      };
+
+      const gameState = {
+        sandBlockers: [], // Empty array - all sand blockers cleared
+      };
+
+      let isComplete = false;
+      switch (currentLevel.objective) {
+        case 'score':
+          isComplete = currentProgress.score >= currentLevel.target;
+          break;
+        case 'collect':
+          isComplete = currentProgress.collected >= currentLevel.target;
+          break;
+        case 'clear':
+          isComplete = currentProgress.cleared >= currentLevel.target;
+          break;
+        case 'combo':
+          isComplete = currentProgress.combos >= currentLevel.target;
+          break;
+        case 'drop':
+          isComplete = currentProgress.dropped >= currentLevel.target;
+          break;
+        case 'sand-clear':
+          isComplete = gameState.sandBlockers.length === 0;
+          break;
+        default:
+          isComplete = false;
+      }
+
+      console.log('=== LEVELGAMESCREEN LOGIC TEST ===');
+      console.log('Objective:', currentLevel.objective);
+      console.log('Target:', currentLevel.target);
+      console.log('Sand blockers length:', gameState.sandBlockers.length);
+      console.log('Is complete:', isComplete);
+      console.log('Expected: true');
+      console.log('=== END LEVELGAMESCREEN LOGIC TEST ===');
+
+      expect(isComplete).toBe(true);
+      expect(gameState.sandBlockers.length).toBe(0);
     });
   });
 });

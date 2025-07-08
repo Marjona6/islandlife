@@ -7,11 +7,16 @@ class GameModeService {
 
   // Initialize the service and determine the mode
   async initialize(): Promise<void> {
-    // Check environment variable or use default
-    // In React Native, we'll use a different approach for environment variables
-    // For now, we'll use a simple check - you can modify this based on your setup
-    this.mode = this.getGameMode();
-    // console.log('Game mode initialized:', this.mode); // Removed for test compatibility
+    try {
+      // Check environment variable or use default
+      // In React Native, we'll use a different approach for environment variables
+      // For now, we'll use a simple check - you can modify this based on your setup
+      this.mode = this.getGameMode();
+      // console.log('Game mode initialized:', this.mode); // Removed for test compatibility
+    } catch (error) {
+      console.error('Error initializing game mode:', error);
+      // Don't throw - allow app to continue without Firebase
+    }
   }
 
   // Get the current game mode

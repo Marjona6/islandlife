@@ -1,5 +1,30 @@
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+// Lazy Firebase imports to avoid initialization errors
+let auth: any = null;
+let firestore: any = null;
+
+const getAuth = () => {
+  if (!auth) {
+    try {
+      auth = require('@react-native-firebase/auth').default;
+    } catch (error) {
+      console.warn('Firebase Auth not available:', error);
+      return null;
+    }
+  }
+  return auth;
+};
+
+const getFirestore = () => {
+  if (!firestore) {
+    try {
+      firestore = require('@react-native-firebase/firestore').default;
+    } catch (error) {
+      console.warn('Firestore not available:', error);
+      return null;
+    }
+  }
+  return firestore;
+};
 
 export interface UserProgress {
   userId: string;
@@ -22,40 +47,65 @@ export interface AuthUser {
 
 class UserProgressService {
   private currentUser: AuthUser | null = null;
+  private isInitialized = false;
 
   // Initialize the service
   async initialize(): Promise<void> {
-    // Check if we already have a current user
-    const currentUser = auth().currentUser;
-    if (currentUser) {
-      this.currentUser = {
-        uid: currentUser.uid,
-        email: currentUser.email || undefined,
-        isAnonymous: currentUser.isAnonymous,
-        displayName: currentUser.displayName || undefined,
-      };
-      return;
-    }
+    if (this.isInitialized) return;
 
-    // Listen for auth state changes (only set up once)
-    auth().onAuthStateChanged(async user => {
-      if (user) {
-        this.currentUser = {
-          uid: user.uid,
-          email: user.email || undefined,
-          isAnonymous: user.isAnonymous,
-          displayName: user.displayName || undefined,
-        };
-      } else {
-        this.currentUser = null;
-      }
-    });
-
-    // Try to sign in anonymously if no user (only once)
     try {
-      await auth().signInAnonymously();
+      // Check if Firebase is available
+      const authInstance = getAuth();
+      const firestoreInstance = getFirestore();
+
+      if (!authInstance || !firestoreInstance) {
+        console.warn(
+          'Firebase not available, skipping user progress initialization',
+        );
+        this.isInitialized = true;
+        return;
+      }
+
+      // Check if we already have a current user
+      const currentUser = authInstance().currentUser;
+      if (currentUser) {
+        this.currentUser = {
+          uid: currentUser.uid,
+          email: currentUser.email || undefined,
+          isAnonymous: currentUser.isAnonymous,
+          displayName: currentUser.displayName || undefined,
+        };
+        this.isInitialized = true;
+        return;
+      }
+
+      // Listen for auth state changes (only set up once)
+      authInstance().onAuthStateChanged(async (user: any) => {
+        if (user) {
+          this.currentUser = {
+            uid: user.uid,
+            email: user.email || undefined,
+            isAnonymous: user.isAnonymous,
+            displayName: user.displayName || undefined,
+          };
+        } else {
+          this.currentUser = null;
+        }
+      });
+
+      // Try to sign in anonymously if no user (only once)
+      try {
+        await authInstance().signInAnonymously();
+      } catch (error) {
+        console.error('Failed to sign in anonymously:', error);
+        // Don't throw - allow app to continue without Firebase
+      }
+
+      this.isInitialized = true;
     } catch (error) {
-      console.error('Failed to sign in anonymously:', error);
+      console.error('Error initializing user progress service:', error);
+      // Don't throw - allow app to continue without Firebase
+      this.isInitialized = true;
     }
   }
 
@@ -67,7 +117,12 @@ class UserProgressService {
   // Sign in with email and password
   async signInWithEmail(email: string, password: string): Promise<AuthUser> {
     try {
-      const userCredential = await auth().signInWithEmailAndPassword(
+      const authInstance = getAuth();
+      if (!authInstance) {
+        throw new Error('Firebase Auth not available');
+      }
+
+      const userCredential = await authInstance().signInWithEmailAndPassword(
         email,
         password,
       );
@@ -93,10 +148,13 @@ class UserProgressService {
     password: string,
   ): Promise<AuthUser> {
     try {
-      const userCredential = await auth().createUserWithEmailAndPassword(
-        email,
-        password,
-      );
+      const authInstance = getAuth();
+      if (!authInstance) {
+        throw new Error('Firebase Auth not available');
+      }
+
+      const userCredential =
+        await authInstance().createUserWithEmailAndPassword(email, password);
       const user = userCredential.user;
 
       this.currentUser = {
@@ -119,12 +177,20 @@ class UserProgressService {
   // Link anonymous account with email
   async linkWithEmail(email: string, password: string): Promise<AuthUser> {
     try {
-      const currentUser = auth().currentUser;
+      const authInstance = getAuth();
+      if (!authInstance) {
+        throw new Error('Firebase Auth not available');
+      }
+
+      const currentUser = authInstance().currentUser;
       if (!currentUser || !currentUser.isAnonymous) {
         throw new Error('No anonymous user to link');
       }
 
-      const credential = auth.EmailAuthProvider.credential(email, password);
+      const credential = authInstance.EmailAuthProvider.credential(
+        email,
+        password,
+      );
       const userCredential = await currentUser.linkWithCredential(credential);
       const user = userCredential.user;
 
@@ -145,11 +211,18 @@ class UserProgressService {
   // Sign out
   async signOut(): Promise<void> {
     try {
-      await auth().signOut();
+      const authInstance = getAuth();
+      if (!authInstance) {
+        console.warn('Firebase Auth not available, skipping sign out');
+        this.currentUser = null;
+        return;
+      }
+
+      await authInstance().signOut();
       this.currentUser = null;
     } catch (error) {
       console.error('Sign out error:', error);
-      throw error;
+      // Don't throw - allow app to continue without Firebase
     }
   }
 
@@ -157,22 +230,35 @@ class UserProgressService {
   private async createUserProgress(): Promise<void> {
     if (!this.currentUser) return;
 
-    const initialProgress: UserProgress = {
-      userId: this.currentUser.uid,
-      completedLevels: [],
-      currency: {
-        shells: 0,
-        gems: 0,
-      },
-      lastPlayed: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    try {
+      const firestoreInstance = getFirestore();
+      if (!firestoreInstance) {
+        console.warn(
+          'Firestore not available, skipping user progress creation',
+        );
+        return;
+      }
 
-    await firestore()
-      .collection('userProgress')
-      .doc(this.currentUser.uid)
-      .set(initialProgress);
+      const initialProgress: UserProgress = {
+        userId: this.currentUser.uid,
+        completedLevels: [],
+        currency: {
+          shells: 0,
+          gems: 0,
+        },
+        lastPlayed: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      await firestoreInstance()
+        .collection('userProgress')
+        .doc(this.currentUser.uid)
+        .set(initialProgress);
+    } catch (error) {
+      console.error('Error creating user progress:', error);
+      // Don't throw - allow app to continue without Firebase
+    }
   }
 
   // Get user progress
@@ -180,7 +266,13 @@ class UserProgressService {
     if (!this.currentUser) return null;
 
     try {
-      const doc = await firestore()
+      const firestoreInstance = getFirestore();
+      if (!firestoreInstance) {
+        console.warn('Firestore not available, returning null progress');
+        return null;
+      }
+
+      const doc = await firestoreInstance()
         .collection('userProgress')
         .doc(this.currentUser.uid)
         .get();
@@ -209,18 +301,24 @@ class UserProgressService {
     if (!this.currentUser) return;
 
     try {
+      const firestoreInstance = getFirestore();
+      if (!firestoreInstance) {
+        console.warn('Firestore not available, skipping user progress update');
+        return;
+      }
+
       const updateData = {
         ...updates,
         updatedAt: new Date(),
       };
 
-      await firestore()
+      await firestoreInstance()
         .collection('userProgress')
         .doc(this.currentUser.uid)
         .update(updateData);
     } catch (error) {
       console.error('Update user progress error:', error);
-      throw error;
+      // Don't throw - allow app to continue without Firebase
     }
   }
 
@@ -243,7 +341,7 @@ class UserProgressService {
       });
     } catch (error) {
       console.error('Complete level error:', error);
-      throw error;
+      // Don't throw - allow app to continue without Firebase
     }
   }
 
@@ -273,7 +371,7 @@ class UserProgressService {
       });
     } catch (error) {
       console.error('Update currency error:', error);
-      throw error;
+      // Don't throw - allow app to continue without Firebase
     }
   }
 

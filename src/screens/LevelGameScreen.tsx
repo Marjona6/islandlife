@@ -81,7 +81,22 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
 
   // Event-driven level completion check
   const checkLevelCompletion = useCallback(() => {
-    if (!currentLevel || showVictory || isTransitioning) return;
+    console.log('🔍 checkLevelCompletion called:', {
+      hasCurrentLevel: !!currentLevel,
+      showVictory,
+      isTransitioning,
+      objective: currentLevel?.objective,
+      sandBlockersLength: gameState.sandBlockers.length,
+    });
+
+    if (!currentLevel || showVictory || isTransitioning) {
+      console.log('🔍 checkLevelCompletion early return:', {
+        noCurrentLevel: !currentLevel,
+        showVictory,
+        isTransitioning,
+      });
+      return;
+    }
 
     let isComplete = false;
     switch (currentLevel.objective) {
@@ -116,6 +131,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         isTransitioning,
         objective: currentLevel.objective,
         target: currentLevel.target,
+        currentProgress,
       });
     }
 
@@ -129,6 +145,12 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         setShowVictory(true);
         setIsTransitioning(false);
       }, 2000); // Increased to 2 seconds for emulator
+    } else {
+      console.log('🔍 Level not complete yet:', {
+        objective: currentLevel.objective,
+        isComplete,
+        sandBlockersLength: gameState.sandBlockers.length,
+      });
     }
   }, [
     currentLevel,
@@ -137,6 +159,25 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
     showVictory,
     isTransitioning,
   ]);
+
+  // Monitor sand blockers state changes and check for victory
+  useEffect(() => {
+    console.log('🏖️ Sand blockers state changed:', {
+      length: gameState.sandBlockers.length,
+      blockers: gameState.sandBlockers,
+    });
+
+    // Immediate victory check when sand blockers change
+    if (
+      currentLevel?.objective === 'sand-clear' &&
+      gameState.sandBlockers.length === 0
+    ) {
+      console.log(
+        '🏆 Immediate victory check triggered by sand blockers change',
+      );
+      setTimeout(() => checkLevelCompletion(), 100);
+    }
+  }, [gameState.sandBlockers, currentLevel, checkLevelCompletion]);
 
   // Legacy function for backward compatibility (used in some places)
   const isLevelComplete = useCallback(() => {
@@ -236,8 +277,12 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
 
   // Callback for GameBoard to trigger level completion checks
   const handleGameAction = useCallback(() => {
+    console.log('🎮 handleGameAction called');
     // Check for level completion after any game action
-    setTimeout(() => checkLevelCompletion(), 0);
+    setTimeout(() => {
+      console.log('🎮 handleGameAction timeout - calling checkLevelCompletion');
+      checkLevelCompletion();
+    }, 0);
   }, [checkLevelCompletion]);
 
   const handleNextLevel = () => {
@@ -502,6 +547,16 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
             onPress={onNavigateToTester}>
             <Text style={styles.buttonText}>Level Tester</Text>
           </TouchableOpacity>
+          {__DEV__ && (
+            <TouchableOpacity
+              style={[styles.button, {backgroundColor: '#FF5722'}]}
+              onPress={() => {
+                console.log('🔧 Manual victory check triggered');
+                checkLevelCompletion();
+              }}>
+              <Text style={styles.buttonText}>Debug Victory</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -531,6 +586,16 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
           </Text>
           <Text style={{color: 'white', fontSize: 12}}>
             Sand Blockers: {gameState.sandBlockers.length}
+          </Text>
+          <Text style={{color: 'white', fontSize: 12}}>
+            Should Win:{' '}
+            {currentLevel?.objective === 'sand-clear' &&
+            gameState.sandBlockers.length === 0
+              ? 'YES'
+              : 'NO'}
+          </Text>
+          <Text style={{color: 'white', fontSize: 12}}>
+            Objective: {currentLevel?.objective}
           </Text>
         </View>
       )}

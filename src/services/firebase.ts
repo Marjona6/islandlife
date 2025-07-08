@@ -1,5 +1,30 @@
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+// Lazy Firebase imports to avoid initialization errors
+let auth: any = null;
+let firestore: any = null;
+
+const getAuth = () => {
+  if (!auth) {
+    try {
+      auth = require('@react-native-firebase/auth').default;
+    } catch (error) {
+      console.warn('Firebase Auth not available:', error);
+      return null;
+    }
+  }
+  return auth;
+};
+
+const getFirestore = () => {
+  if (!firestore) {
+    try {
+      firestore = require('@react-native-firebase/firestore').default;
+    } catch (error) {
+      console.warn('Firestore not available:', error);
+      return null;
+    }
+  }
+  return firestore;
+};
 
 // Firebase configuration
 export const firebaseConfig = {
@@ -19,5 +44,6 @@ export const initializeFirebase = () => {
   }
 };
 
-// Export Firebase services
-export {auth, firestore};
+// Export Firebase services with lazy loading
+export const getFirebaseAuth = getAuth;
+export const getFirebaseFirestore = getFirestore;

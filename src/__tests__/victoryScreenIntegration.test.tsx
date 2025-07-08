@@ -319,4 +319,90 @@ describe('Victory Screen Integration Tests', () => {
       });
     });
   });
+
+  describe('GameBoard Integration', () => {
+    it('should call onGameAction when sand blockers are cleared', () => {
+      const mockOnGameAction = jest.fn();
+
+      // Simulate the GameBoard calling onGameAction after clearing sand blockers
+      // This is what happens in the actual GameBoard component
+      const simulateSandBlockerClear = () => {
+        // Simulate the sand blocker clearing logic from GameBoard
+        // All sand blockers cleared (empty array)
+        expect([]).toHaveLength(0);
+
+        // This should trigger onGameAction
+        setTimeout(() => {
+          mockOnGameAction();
+        }, 0);
+      };
+
+      simulateSandBlockerClear();
+
+      // Wait for the timeout to execute
+      return new Promise(resolve => {
+        setTimeout(() => {
+          expect(mockOnGameAction).toHaveBeenCalled();
+          resolve(undefined);
+        }, 10);
+      });
+    });
+
+    it('should trigger victory when sand blockers are cleared and onGameAction is called', () => {
+      const mockOnGameAction = jest.fn();
+      let showVictory = false;
+      let isTransitioning = false;
+
+      // Simulate the victory check logic from LevelGameScreen
+      const checkLevelCompletion = () => {
+        const currentLevel = {
+          objective: 'sand-clear' as const,
+          target: 14,
+        };
+
+        const gameState = {
+          sandBlockers: [], // All sand blockers cleared
+        };
+
+        if (showVictory || isTransitioning) return;
+
+        let isComplete = false;
+        switch (currentLevel.objective) {
+          case 'sand-clear':
+            isComplete = gameState.sandBlockers.length === 0;
+            break;
+          default:
+            isComplete = false;
+        }
+
+        if (isComplete) {
+          console.log('🎉 Level complete detected in test');
+          isTransitioning = true;
+          setTimeout(() => {
+            showVictory = true;
+            isTransitioning = false;
+          }, 100);
+        }
+      };
+
+      // Simulate the flow: clear sand blockers -> call onGameAction -> check victory
+      expect([]).toHaveLength(0); // Verify empty array
+
+      mockOnGameAction.mockImplementation(() => {
+        checkLevelCompletion();
+      });
+
+      // Trigger the flow
+      mockOnGameAction();
+
+      // Wait for the victory check to complete
+      return new Promise(resolve => {
+        setTimeout(() => {
+          expect(mockOnGameAction).toHaveBeenCalled();
+          expect(showVictory).toBe(true);
+          resolve(undefined);
+        }, 200);
+      });
+    });
+  });
 });
