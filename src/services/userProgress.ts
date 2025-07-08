@@ -1,11 +1,14 @@
-// Lazy Firebase imports to avoid initialization errors
+// Modern Firebase imports
+import {getAuth} from '@react-native-firebase/auth';
+import {getFirestore} from '@react-native-firebase/firestore';
+
 let auth: any = null;
 let firestore: any = null;
 
-const getAuth = () => {
+const getAuthInstance = () => {
   if (!auth) {
     try {
-      auth = require('@react-native-firebase/auth').default;
+      auth = getAuth();
     } catch (error) {
       console.warn('Firebase Auth not available:', error);
       return null;
@@ -14,10 +17,10 @@ const getAuth = () => {
   return auth;
 };
 
-const getFirestore = () => {
+const getFirestoreInstance = () => {
   if (!firestore) {
     try {
-      firestore = require('@react-native-firebase/firestore').default;
+      firestore = getFirestore();
     } catch (error) {
       console.warn('Firestore not available:', error);
       return null;
@@ -54,9 +57,16 @@ class UserProgressService {
     if (this.isInitialized) return;
 
     try {
+      // Ensure Firebase is initialized first
+      const {initializeFirebase} = require('./firebase');
+      initializeFirebase();
+
+      // Wait a moment for Firebase to be ready
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Check if Firebase is available
-      const authInstance = getAuth();
-      const firestoreInstance = getFirestore();
+      const authInstance = getAuthInstance();
+      const firestoreInstance = getFirestoreInstance();
 
       if (!authInstance || !firestoreInstance) {
         console.warn(
@@ -67,7 +77,7 @@ class UserProgressService {
       }
 
       // Check if we already have a current user
-      const currentUser = authInstance().currentUser;
+      const currentUser = authInstance.currentUser;
       if (currentUser) {
         this.currentUser = {
           uid: currentUser.uid,
@@ -80,7 +90,7 @@ class UserProgressService {
       }
 
       // Listen for auth state changes (only set up once)
-      authInstance().onAuthStateChanged(async (user: any) => {
+      authInstance.onAuthStateChanged(async (user: any) => {
         if (user) {
           this.currentUser = {
             uid: user.uid,
@@ -98,7 +108,7 @@ class UserProgressService {
       try {
         const {gameModeService} = require('./gameMode');
         if (gameModeService.isProdMode()) {
-          await authInstance().signInAnonymously();
+          await authInstance.signInAnonymously();
         }
       } catch (error) {
         console.error('Failed to sign in anonymously:', error);
@@ -121,12 +131,12 @@ class UserProgressService {
   // Sign in with email and password
   async signInWithEmail(email: string, password: string): Promise<AuthUser> {
     try {
-      const authInstance = getAuth();
+      const authInstance = getAuthInstance();
       if (!authInstance) {
         throw new Error('Firebase Auth not available');
       }
 
-      const userCredential = await authInstance().signInWithEmailAndPassword(
+      const userCredential = await authInstance.signInWithEmailAndPassword(
         email,
         password,
       );
@@ -152,13 +162,15 @@ class UserProgressService {
     password: string,
   ): Promise<AuthUser> {
     try {
-      const authInstance = getAuth();
+      const authInstance = getAuthInstance();
       if (!authInstance) {
         throw new Error('Firebase Auth not available');
       }
 
-      const userCredential =
-        await authInstance().createUserWithEmailAndPassword(email, password);
+      const userCredential = await authInstance.createUserWithEmailAndPassword(
+        email,
+        password,
+      );
       const user = userCredential.user;
 
       this.currentUser = {

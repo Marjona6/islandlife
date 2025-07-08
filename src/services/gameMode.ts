@@ -35,8 +35,8 @@ class GameModeService {
       );
     }
 
-    // Default to PROD mode for safety
-    return 'PROD';
+    // Default to DEV mode to avoid Firebase Auth issues
+    return 'DEV';
   }
 
   // Check if we're in DEV mode
