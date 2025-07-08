@@ -9,9 +9,14 @@ export const firebaseConfig = {
 
 // Initialize Firebase services
 export const initializeFirebase = () => {
-  // Firebase is auto-initialized when the app starts
-  // We just need to ensure our services are ready
-  // console.log('Firebase initialized'); // Removed for test compatibility
+  try {
+    // Firebase is auto-initialized when the app starts
+    // We just need to ensure our services are ready
+    console.log('Firebase initialized successfully');
+  } catch (error) {
+    console.error('Error initializing Firebase:', error);
+    // Don't throw - allow app to continue without Firebase in development
+  }
 };
 
 // Export Firebase services

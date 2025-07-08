@@ -12,7 +12,7 @@ import {
 import {GameBoard} from '../components/GameBoard';
 import {VictoryScreen} from '../components/VictoryScreen';
 import {useGame} from '../contexts/GameContext';
-import {levelManager, getLevelDifficulty} from '../utils/levelManager';
+import {levelManager} from '../utils/levelManager';
 import {testLevelManager} from '../utils/testLevelManager';
 
 interface LevelGameScreenProps {
@@ -107,16 +107,28 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         isComplete = false;
     }
 
+    // Add debug logging for emulator troubleshooting
+    if (currentLevel.objective === 'sand-clear') {
+      console.log('🔍 Victory Check Debug:', {
+        sandBlockersLength: gameState.sandBlockers.length,
+        isComplete,
+        showVictory,
+        isTransitioning,
+        objective: currentLevel.objective,
+        target: currentLevel.target,
+      });
+    }
+
     if (isComplete) {
-      console.log('Level complete detected, starting transition...');
+      console.log('🎉 Level complete detected, starting transition...');
       setIsTransitioning(true);
 
-      // Add a delay to ensure all animations and cascades complete
+      // Increase delay for emulator compatibility
       setTimeout(() => {
-        console.log('Transition complete, showing victory screen');
+        console.log('🎊 Transition complete, showing victory screen');
         setShowVictory(true);
         setIsTransitioning(false);
-      }, 1000); // 1 second delay
+      }, 2000); // Increased to 2 seconds for emulator
     }
   }, [
     currentLevel,
@@ -499,6 +511,29 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         onContinue={handleVictoryContinue}
         onRestart={handleVictoryRestart}
       />
+
+      {/* Debug Victory Screen State */}
+      {__DEV__ && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 100,
+            right: 10,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            padding: 10,
+            borderRadius: 5,
+          }}>
+          <Text style={{color: 'white', fontSize: 12}}>
+            Victory: {showVictory ? 'YES' : 'NO'}
+          </Text>
+          <Text style={{color: 'white', fontSize: 12}}>
+            Transition: {isTransitioning ? 'YES' : 'NO'}
+          </Text>
+          <Text style={{color: 'white', fontSize: 12}}>
+            Sand Blockers: {gameState.sandBlockers.length}
+          </Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };

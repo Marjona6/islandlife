@@ -159,6 +159,11 @@ jest.mock('react-native', () => {
 
   return {
     ...RN,
+    // Suppress deprecated PropTypes warnings
+    ColorPropType: () => {},
+    EdgeInsetsPropType: () => {},
+    PointPropType: () => {},
+    ViewPropTypes: {},
     // Ensure these components are properly mocked
     View: mockComponent('View'),
     Text: mockComponent('Text'),

@@ -11,6 +11,7 @@ import {it} from '@jest/globals';
 
 // Note: test renderer must be required after react-native.
 import renderer from 'react-test-renderer';
+import {act} from 'react-test-renderer';
 
 // Mock the services to prevent infinite loops
 jest.mock('../src/services/firebase', () => ({
@@ -38,7 +39,10 @@ jest.mock('../src/services/userProgress', () => ({
   },
 }));
 
-it('renders correctly', () => {
-  const tree = renderer.create(<App />);
+it('renders correctly', async () => {
+  let tree: any;
+  await act(async () => {
+    tree = renderer.create(<App />);
+  });
   expect(tree).toBeTruthy();
 });
