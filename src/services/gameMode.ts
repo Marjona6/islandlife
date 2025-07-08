@@ -9,8 +9,6 @@ class GameModeService {
   async initialize(): Promise<void> {
     try {
       // Check environment variable or use default
-      // In React Native, we'll use a different approach for environment variables
-      // For now, we'll use a simple check - you can modify this based on your setup
       this.mode = this.getGameMode();
       // console.log('Game mode initialized:', this.mode); // Removed for test compatibility
     } catch (error) {
@@ -21,14 +19,23 @@ class GameModeService {
 
   // Get the current game mode
   getGameMode(): GameMode {
-    // You can implement different ways to determine the mode:
-    // 1. Environment variable (requires additional setup)
-    // 2. Build configuration
-    // 3. Remote config
-    // 4. Simple flag in code
+    try {
+      // Try to read from environment variable first
+      const Config = require('react-native-config').default;
+      const envMode = Config.GAME_MODE;
 
-    // For now, we'll use a simple approach - you can modify this
-    // In development, you might want to set this to 'DEV'
+      if (envMode === 'DEV' || envMode === 'PROD') {
+        return envMode;
+      }
+    } catch (error) {
+      // If react-native-config is not available or env var is not set, fall back to default
+      console.warn(
+        'Could not read GAME_MODE from environment, using default:',
+        error,
+      );
+    }
+
+    // Default to PROD mode for safety
     return 'PROD';
   }
 

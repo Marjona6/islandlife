@@ -93,9 +93,13 @@ class UserProgressService {
         }
       });
 
-      // Try to sign in anonymously if no user (only once)
+      // In PROD mode, always try to sign in anonymously if no user
+      // In DEV mode, we don't need authentication
       try {
-        await authInstance().signInAnonymously();
+        const {gameModeService} = require('./gameMode');
+        if (gameModeService.isProdMode()) {
+          await authInstance().signInAnonymously();
+        }
       } catch (error) {
         console.error('Failed to sign in anonymously:', error);
         // Don't throw - allow app to continue without Firebase
