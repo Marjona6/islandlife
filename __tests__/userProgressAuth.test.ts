@@ -14,6 +14,12 @@ jest.mock('@react-native-firebase/auth', () => ({
       },
     }),
     onAuthStateChanged: jest.fn(),
+    signInWithEmailAndPassword: jest.fn(),
+    createUserWithEmailAndPassword: jest.fn(),
+    signOut: jest.fn(),
+    EmailAuthProvider: {
+      credential: jest.fn(),
+    },
   })),
 }));
 

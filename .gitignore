@@ -66,3 +66,7 @@ yarn-error.log
 /coverage
 
 .env
+
+# Firebase configuration files (contain sensitive project info)
+android/app/google-services.json
+ios/islandlife/GoogleService-Info.plist

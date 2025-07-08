@@ -196,6 +196,75 @@ To switch between modes:
 3. **No Progress Tracking**: Levels can be played in any order
 4. **No Authentication**: No Firebase authentication required
 
+## Firebase Initialization
+
+### Automatic Initialization
+
+Firebase is automatically initialized when the app starts:
+
+```typescript
+// In App.tsx
+useEffect(() => {
+  initializeServices();
+}, []);
+
+const initializeServices = async () => {
+  // Initialize Firebase first
+  initializeFirebase();
+
+  // Then initialize other services
+  await gameModeService.initialize();
+  await userProgressService.initialize();
+};
+```
+
+### Smart Initialization Logic
+
+The Firebase service includes smart initialization that:
+
+1. **Checks if Firebase is already initialized** using `firebase.app()`
+2. **Only initializes if needed** using `firebase.initializeApp()`
+3. **Handles errors gracefully** without crashing the app
+4. **Prevents multiple initializations** with a flag
+
+```typescript
+const initializeFirebaseApp = () => {
+  if (isInitialized) return;
+
+  try {
+    const firebaseApp = require('@react-native-firebase/app').default;
+
+    // Check if Firebase is already initialized
+    try {
+      firebaseApp.app();
+      console.log('Firebase already initialized');
+    } catch (error) {
+      // Firebase not initialized, initialize it
+      firebaseApp.initializeApp();
+      console.log('Firebase initialized successfully');
+    }
+
+    isInitialized = true;
+  } catch (error) {
+    console.error('Error initializing Firebase:', error);
+  }
+};
+```
+
+### Testing Firebase Initialization
+
+Tests verify that Firebase initialization works correctly:
+
+```bash
+npm test -- __tests__/firebaseInit.test.ts
+```
+
+The tests cover:
+
+- Initialization when Firebase is not initialized
+- Skipping initialization when already initialized
+- Error handling during initialization
+
 ## Error Handling
 
 The implementation includes robust error handling:
