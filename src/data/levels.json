@@ -134,7 +134,7 @@
     },
     {
       "id": "level-5",
-      "name": "Explosive Combos",
+      "name": "Buried Treasure",
       "board": [
         ["🦀", "🌴", "⭐", "🌺", "🐚", "🦀", "🌴", "⭐"],
         ["🌺", "🐚", "🦀", "🌴", "⭐", "🌺", "🐚", "🦀"],
@@ -145,21 +145,113 @@
         ["⭐", "🌺", "🐚", "🦀", "🌴", "⭐", "🌺", "🐚"],
         ["🌴", "⭐", "🌺", "🐚", "🦀", "🌴", "⭐", "🌺"]
       ],
-      "objective": "combo",
-      "target": 5,
-      "moves": 40,
-      "tileTypes": ["🦀", "🌴", "⭐", "🌺", "🐚"],
-      "mechanics": ["bombs", "locked"],
-      "specialTiles": [
-        {"type": "bomb", "row": 1, "col": 1, "properties": {"radius": 2}},
-        {"type": "bomb", "row": 6, "col": 6, "properties": {"radius": 2}},
-        {"type": "locked", "row": 3, "col": 3},
-        {"type": "locked", "row": 3, "col": 4},
-        {"type": "locked", "row": 4, "col": 3},
-        {"type": "locked", "row": 4, "col": 4}
+      "objective": "buried-treasure",
+      "target": 8,
+      "moves": 35,
+      "tileTypes": ["🦀", "🌴", "⭐", "🌺", "🐚", "💎", "🪙", "🏺", "💍"],
+      "mechanics": ["sand", "treasure"],
+      "blockers": [
+        {
+          "type": "sand",
+          "row": 1,
+          "col": 1,
+          "sandLevel": 1,
+          "hasTreasure": true
+        },
+        {
+          "type": "sand",
+          "row": 1,
+          "col": 2,
+          "sandLevel": 1,
+          "hasTreasure": false
+        },
+        {
+          "type": "sand",
+          "row": 1,
+          "col": 5,
+          "sandLevel": 2,
+          "hasTreasure": true
+        },
+        {
+          "type": "sand",
+          "row": 1,
+          "col": 6,
+          "sandLevel": 1,
+          "hasTreasure": true
+        },
+        {
+          "type": "sand",
+          "row": 2,
+          "col": 1,
+          "sandLevel": 1,
+          "hasTreasure": false
+        },
+        {
+          "type": "sand",
+          "row": 2,
+          "col": 6,
+          "sandLevel": 2,
+          "hasTreasure": true
+        },
+        {
+          "type": "sand",
+          "row": 3,
+          "col": 3,
+          "sandLevel": 1,
+          "hasTreasure": true
+        },
+        {
+          "type": "sand",
+          "row": 3,
+          "col": 4,
+          "sandLevel": 1,
+          "hasTreasure": false
+        },
+        {
+          "type": "sand",
+          "row": 4,
+          "col": 3,
+          "sandLevel": 1,
+          "hasTreasure": false
+        },
+        {
+          "type": "sand",
+          "row": 4,
+          "col": 4,
+          "sandLevel": 2,
+          "hasTreasure": true
+        },
+        {
+          "type": "sand",
+          "row": 5,
+          "col": 1,
+          "sandLevel": 1,
+          "hasTreasure": true
+        },
+        {
+          "type": "sand",
+          "row": 5,
+          "col": 6,
+          "sandLevel": 1,
+          "hasTreasure": false
+        },
+        {
+          "type": "sand",
+          "row": 6,
+          "col": 1,
+          "sandLevel": 2,
+          "hasTreasure": true
+        },
+        {
+          "type": "sand",
+          "row": 6,
+          "col": 6,
+          "sandLevel": 1,
+          "hasTreasure": true
+        }
       ],
-      "description": "Create 5 combos using bombs to unlock tiles!",
-      "difficulty": "hard"
+      "description": "Dig through the sand to find 8 hidden treasures! Some sand tiles require multiple matches to clear. Look for the sparkles!",
+      "difficulty": "medium"
     },
     {
       "id": "level-6",

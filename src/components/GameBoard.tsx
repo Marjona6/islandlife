@@ -16,6 +16,7 @@ import Svg, {
 } from 'react-native-svg';
 import {Tile} from './Tile';
 import {useGame} from '../contexts/GameContext';
+import {TileType} from '../types/game';
 
 import {
   isValidMove,
@@ -155,6 +156,8 @@ type GameBoardHandle = {
       row: number;
       col: number;
       hasUmbrella: boolean;
+      sandLevel?: number;
+      hasTreasure?: boolean;
     }>,
   ) => void;
 };
@@ -188,7 +191,13 @@ const GameBoardInner = (
   const isProcessingMatchesRef = useRef(false);
   // Add ref to track current sand blocker state during processing
   const currentSandBlockersRef = useRef<
-    Array<{row: number; col: number; hasUmbrella: boolean}>
+    Array<{
+      row: number;
+      col: number;
+      hasUmbrella: boolean;
+      sandLevel?: number;
+      hasTreasure?: boolean;
+    }>
   >([]);
   // Add ref to collect coconut drops during processing to avoid state conflicts
   const pendingCoconutDropsRef = useRef<
@@ -471,6 +480,8 @@ const GameBoardInner = (
       row: number;
       col: number;
       hasUmbrella: boolean;
+      sandLevel?: number;
+      hasTreasure?: boolean;
     }>,
   ) => {
     // Defensive logging
@@ -642,6 +653,11 @@ const GameBoardInner = (
 
       // Process adjacent sand blockers and calculate final state
       let finalSandBlockers = [...sandBlockersToCheck];
+      const revealedTreasures: Array<{
+        row: number;
+        col: number;
+        treasureType: TileType;
+      }> = [];
 
       adjacentBlockers.forEach((matchCount, blockerKey) => {
         const [row, col] = blockerKey.split(',').map(Number);
@@ -660,10 +676,15 @@ const GameBoardInner = (
 
         const sandBlocker = finalSandBlockers[blockerIndex];
         const hasUmbrella = sandBlocker.hasUmbrella;
+        const sandLevel = sandBlocker.sandLevel || 1;
+        const hasTreasure = sandBlocker.hasTreasure || false;
 
         console.log(
-          `Sand blocker at ${blocker.row},${blocker.col} - has umbrella: ${hasUmbrella}`,
+          `Sand blocker at ${blocker.row},${blocker.col} - has umbrella: ${hasUmbrella}, sand level: ${sandLevel}, has treasure: ${hasTreasure}`,
         );
+
+        // Handle sand levels: level 1 requires 1 match, level 2 requires 2 matches
+        const requiredMatches = sandLevel;
 
         if (hasUmbrella && matchCount === 1) {
           // First match: remove umbrella
@@ -675,13 +696,30 @@ const GameBoardInner = (
             hasUmbrella: false,
           };
         } else if (
-          (hasUmbrella && matchCount >= 2) ||
-          (!hasUmbrella && matchCount >= 1)
+          (hasUmbrella && matchCount >= requiredMatches) ||
+          (!hasUmbrella && matchCount >= requiredMatches)
         ) {
-          // Multiple matches on umbrella sand blocker OR any match on non-umbrella sand blocker: clear completely
+          // Required matches reached: clear the sand blocker
           console.log(
-            `Clearing sand blocker at ${blocker.row},${blocker.col} due to ${matchCount} adjacent matches`,
+            `Clearing sand blocker at ${blocker.row},${blocker.col} due to ${matchCount} adjacent matches (required: ${requiredMatches})`,
           );
+
+          // If this sand blocker has treasure, reveal it
+          if (hasTreasure) {
+            const treasureTypes = ['💎', '🪙', '🏺', '💍'];
+            const randomTreasure = treasureTypes[
+              Math.floor(Math.random() * treasureTypes.length)
+            ] as TileType;
+            revealedTreasures.push({
+              row: blocker.row,
+              col: blocker.col,
+              treasureType: randomTreasure,
+            });
+            console.log(
+              `Revealing treasure ${randomTreasure} at ${blocker.row},${blocker.col}`,
+            );
+          }
+
           finalSandBlockers = finalSandBlockers.filter(
             b => !(b.row === blocker.row && b.col === blocker.col),
           );
@@ -698,6 +736,14 @@ const GameBoardInner = (
       currentSandBlockersRef.current = finalSandBlockers;
 
       console.log('Final sand blockers:', finalSandBlockers);
+
+      // Reveal treasures if any were uncovered
+      revealedTreasures.forEach(treasure => {
+        dispatchGame({
+          type: 'REVEAL_TREASURE',
+          payload: treasure,
+        });
+      });
 
       // Trigger level completion check for sand-clear objectives
       if (onGameAction) {
@@ -720,6 +766,7 @@ const GameBoardInner = (
 
       // Calculate score and count collected tiles
       let collectedTiles = 0;
+      let collectedTreasure = 0;
       let matchScore = 0;
 
       matches.forEach(match => {
@@ -735,11 +782,20 @@ const GameBoardInner = (
           if (tileType === '🐚') {
             collectedTiles++;
           }
+          // Count treasure tiles for buried treasure objectives
+          if (tileType && ['💎', '🪙', '🏺', '💍'].includes(tileType)) {
+            collectedTreasure++;
+          }
         });
       });
 
       // Add score to game state
       dispatchGame({type: 'ADD_SCORE', payload: matchScore});
+
+      // Add collected treasure to game state
+      if (collectedTreasure > 0) {
+        dispatchGame({type: 'COLLECT_TREASURE', payload: collectedTreasure});
+      }
 
       // Trigger level completion check for score objectives
       if (onGameAction) {

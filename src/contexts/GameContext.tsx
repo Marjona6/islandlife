@@ -26,6 +26,8 @@ const initialGameState: GameState = {
   isGameWon: false,
   isGameOver: false,
   sandBlockers: [],
+  treasureCollected: 0,
+  totalTreasure: 0,
 };
 
 const initialCurrency: Currency = {
@@ -79,6 +81,13 @@ type GameAction =
         levelBoard: (TileType | string | null)[][];
         variant: 'sand' | 'sea';
         sandBlockers?: Array<{row: number; col: number}>;
+        totalTreasure?: number;
+        specialTiles?: Array<{
+          type: string;
+          row: number;
+          col: number;
+          properties?: Record<string, any>;
+        }>;
       };
     }
   | {
@@ -102,6 +111,12 @@ type GameAction =
         sandBlockers: Array<{row: number; col: number}>;
         umbrellas: Array<{row: number; col: number}>;
       };
+    }
+  | {type: 'COLLECT_TREASURE'; payload: number}
+  | {type: 'SET_TOTAL_TREASURE'; payload: number}
+  | {
+      type: 'REVEAL_TREASURE';
+      payload: {row: number; col: number; treasureType: TileType};
     };
 
 type CurrencyAction =
@@ -162,6 +177,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
           row: sb.row,
           col: sb.col,
         })) || [],
+        action.payload.specialTiles,
       );
 
       // Check if the level board is impossible and rearrange if needed
@@ -280,6 +296,36 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return {
         ...state,
         sandBlockers: newSandBlockers,
+      };
+
+    case 'COLLECT_TREASURE':
+      return {
+        ...state,
+        treasureCollected: state.treasureCollected + action.payload,
+      };
+
+    case 'SET_TOTAL_TREASURE':
+      return {
+        ...state,
+        totalTreasure: action.payload,
+      };
+
+    case 'REVEAL_TREASURE':
+      return {
+        ...state,
+        board: state.board.map(row =>
+          row.map(tile =>
+            tile &&
+            tile.row === action.payload.row &&
+            tile.col === action.payload.col
+              ? {
+                  ...tile,
+                  type: action.payload.treasureType,
+                  isRevealed: true,
+                }
+              : tile,
+          ),
+        ),
       };
 
     default:

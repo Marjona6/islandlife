@@ -50,20 +50,40 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
     const isSeaLevel = currentLevel.tileTypes.some(tile =>
       ['🦑', '🦐', '🐡', '🪝'].includes(tile),
     );
+
+    // Handle sand blockers with treasure properties
     const sandBlockers =
       currentLevel.blockers
         ?.filter(b => b.type === 'sand')
-        .map(b => ({row: b.row, col: b.col, hasUmbrella: true})) || [];
+        .map(b => ({
+          row: b.row,
+          col: b.col,
+          hasUmbrella: true,
+          sandLevel: b.sandLevel || 1,
+          hasTreasure: b.hasTreasure || false,
+        })) || [];
+
     dispatchGame({
       type: 'INIT_BOARD_FROM_LEVEL',
       payload: {
         levelBoard: currentLevel.board,
         variant: isSeaLevel ? 'sea' : 'sand',
         sandBlockers: sandBlockers.map(sb => ({row: sb.row, col: sb.col})),
+        totalTreasure:
+          currentLevel.objective === 'buried-treasure'
+            ? currentLevel.target
+            : 0,
+        specialTiles: currentLevel.specialTiles,
       },
     });
+
     if (sandBlockers.length > 0) {
       dispatchGame({type: 'SET_SAND_BLOCKERS', payload: sandBlockers});
+    }
+
+    // Set total treasure count for buried treasure levels
+    if (currentLevel.objective === 'buried-treasure') {
+      dispatchGame({type: 'SET_TOTAL_TREASURE', payload: currentLevel.target});
     }
   }, [currentLevelId, currentLevel, dispatchGame]);
 
@@ -118,6 +138,9 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
       case 'sand-clear':
         isComplete = gameState.sandBlockers.length === 0;
         break;
+      case 'buried-treasure':
+        isComplete = gameState.treasureCollected >= currentLevel.target;
+        break;
       default:
         isComplete = false;
     }
@@ -132,6 +155,18 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         objective: currentLevel.objective,
         target: currentLevel.target,
         currentProgress,
+      });
+    }
+
+    // Add debug logging for buried treasure
+    if (currentLevel.objective === 'buried-treasure') {
+      console.log('💎 Buried Treasure Victory Check Debug:', {
+        treasureCollected: gameState.treasureCollected,
+        totalTreasure: gameState.totalTreasure,
+        target: currentLevel.target,
+        isComplete,
+        showVictory,
+        isTransitioning,
       });
     }
 
@@ -156,6 +191,8 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
     currentLevel,
     currentProgress,
     gameState.sandBlockers.length,
+    gameState.treasureCollected,
+    gameState.totalTreasure,
     showVictory,
     isTransitioning,
   ]);
@@ -231,6 +268,11 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
           instructions += `🎯 Objective: Clear all sand blockers\n`;
           instructions +=
             '💡 Tip: Create matches adjacent to sand blockers to clear them!';
+          break;
+        case 'buried-treasure':
+          instructions += `🎯 Objective: Collect ${currentLevel.target} hidden treasures\n`;
+          instructions +=
+            '💡 Tip: Create matches adjacent to sand tiles to dig up treasures! Some sand tiles require multiple matches to clear.';
           break;
         default:
           instructions += '💡 Tip: Create matches to progress!';
@@ -418,6 +460,8 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
                     }
                   case 'sand-clear':
                     return `Clear all sand blockers`;
+                  case 'buried-treasure':
+                    return `Collect ${currentLevel.target} hidden treasures`;
                   default:
                     return '';
                 }
@@ -471,6 +515,8 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
                   return `Dropped: ${currentProgress.dropped}/${currentLevel.target}`;
                 case 'sand-clear':
                   return `Sand blockers: ${gameState.sandBlockers.length} remaining`;
+                case 'buried-treasure':
+                  return `Treasures: ${gameState.treasureCollected}/${currentLevel.target}`;
                 default:
                   return '';
               }

@@ -80,6 +80,53 @@ export const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({
     );
   };
 
+  // DEV Mode: Simple vertical list layout
+  const renderDevLevelList = () => {
+    return (
+      <View style={styles.devLevelList}>
+        {allLevels.map((level, index) => {
+          const status = getLevelStatus(level.id);
+          const starRating = getStarRating(level.id);
+          const isLocked = status === 'locked';
+
+          return (
+            <TouchableOpacity
+              key={level.id}
+              style={[styles.devLevelRow, isLocked && styles.devLevelRowLocked]}
+              onPress={() => !isLocked && onNavigateToLevel(level.id)}
+              disabled={isLocked}>
+              <View style={styles.devLevelContent}>
+                <View style={styles.devLevelLeft}>
+                  <Text
+                    style={[
+                      styles.devLevelNumber,
+                      isLocked && styles.devLevelNumberLocked,
+                    ]}>
+                    {index + 1}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.devLevelName,
+                      isLocked && styles.devLevelNameLocked,
+                    ]}>
+                    {level.name}
+                  </Text>
+                </View>
+                <View style={styles.devLevelRight}>
+                  {starRating > 0 && renderStars(starRating)}
+                  {isLocked && <Text style={styles.lockIcon}>🔒</Text>}
+                  <Text style={styles.devLevelObjective}>
+                    {level.objective} • {level.target}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
+  };
+
   const renderLevelNode = (
     level: any,
     levelIndex: number,
@@ -193,15 +240,23 @@ export const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({
         <TouchableOpacity style={styles.backButton} onPress={onNavigateBack}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Choose Level</Text>
+        <Text style={styles.headerTitle}>
+          {gameModeService.isDevMode()
+            ? 'DEV Mode - Choose Level'
+            : 'Choose Level'}
+        </Text>
         <View style={styles.headerSpacer} />
       </View>
 
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {worlds.map((worldLevels, worldIndex) =>
-          renderWorld(worldLevels, worldIndex),
-        )}
+        {gameModeService.isDevMode()
+          ? // DEV Mode: Simple vertical list
+            renderDevLevelList()
+          : // PROD Mode: World-based layout
+            worlds.map((worldLevels, worldIndex) =>
+              renderWorld(worldLevels, worldIndex),
+            )}
 
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
@@ -257,6 +312,63 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
+  // DEV Mode Styles
+  devLevelList: {
+    paddingVertical: 10,
+  },
+  devLevelRow: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 15,
+    marginBottom: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  devLevelRowLocked: {
+    backgroundColor: 'rgba(128, 128, 128, 0.6)',
+  },
+  devLevelContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  devLevelLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  devLevelRight: {
+    alignItems: 'flex-end',
+  },
+  devLevelNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginRight: 15,
+    minWidth: 30,
+  },
+  devLevelNumberLocked: {
+    color: '#999',
+  },
+  devLevelName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    flex: 1,
+  },
+  devLevelNameLocked: {
+    color: '#999',
+  },
+  devLevelObjective: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+  },
+  // PROD Mode Styles
   worldContainer: {
     marginBottom: 30,
   },

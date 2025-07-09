@@ -518,6 +518,12 @@ export const createBoardFromLevel = (
   levelBoard: (TileType | string | null)[][],
   variant: 'sand' | 'sea' = 'sand',
   sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}> = [],
+  specialTiles?: Array<{
+    type: string;
+    row: number;
+    col: number;
+    properties?: Record<string, any>;
+  }>,
 ): Tile[][] => {
   const board: Tile[][] = Array(BOARD_SIZE)
     .fill(null)
@@ -537,6 +543,33 @@ export const createBoardFromLevel = (
         };
       }
     }
+  }
+
+  // Second pass: Process special tiles from level configuration
+  if (specialTiles) {
+    specialTiles.forEach(specialTile => {
+      const {row, col, properties} = specialTile;
+      if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE) {
+        // If there's already a tile at this position, update its properties
+        if (board[row][col]) {
+          board[row][col] = {
+            ...board[row][col]!,
+            isSpecial: true,
+            ...properties,
+          };
+        } else {
+          // Create a new special tile
+          board[row][col] = {
+            id: `${row}-${col}-${Date.now()}-${Math.random()}`,
+            type: '🥥' as TileType, // Default to coconut for special tiles
+            row,
+            col,
+            isSpecial: true,
+            ...properties,
+          };
+        }
+      }
+    });
   }
 
   // Second pass: Ensure no matches exist in the initial board

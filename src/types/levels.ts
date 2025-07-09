@@ -1,4 +1,10 @@
-import {TileType, SAND_TILE_EMOJIS, SEA_TILE_EMOJIS} from './game';
+import {
+  TileType,
+  SAND_TILE_EMOJIS,
+  SEA_TILE_EMOJIS,
+  SPECIAL_TILE_EMOJIS,
+  TREASURE_TILE_EMOJIS,
+} from './game';
 
 // Level configuration types
 export type ObjectiveType =
@@ -7,7 +13,8 @@ export type ObjectiveType =
   | 'clear'
   | 'drop'
   | 'combo'
-  | 'sand-clear';
+  | 'sand-clear'
+  | 'buried-treasure';
 export type MechanicType =
   | 'sand'
   | 'drop-targets'
@@ -19,7 +26,8 @@ export type MechanicType =
   | 'net'
   | 'coral'
   | 'rock'
-  | 'driftwood';
+  | 'driftwood'
+  | 'treasure';
 export type BlockerType = 'sand' | 'net' | 'ice' | 'rock' | 'coral';
 export type SpecialTileType =
   | 'power-tile'
@@ -28,7 +36,8 @@ export type SpecialTileType =
   | 'rainbow'
   | 'collector'
   | 'driftwood'
-  | 'coconut';
+  | 'coconut'
+  | 'treasure';
 
 export interface LevelConfig {
   id: string;
@@ -43,6 +52,8 @@ export interface LevelConfig {
     type: BlockerType;
     row: number;
     col: number;
+    sandLevel?: number; // Number of sand layers (1 or 2)
+    hasTreasure?: boolean; // Whether this sand tile conceals treasure
   }>;
   specialTiles?: Array<{
     type: SpecialTileType;
@@ -74,7 +85,19 @@ export const getLevelsByDifficulty = (
 
 // Helper function to check if a tile is a valid TileType
 const isValidTileType = (tile: string): tile is TileType => {
-  return [...SAND_TILE_EMOJIS, ...SEA_TILE_EMOJIS].includes(tile as TileType);
+  return [
+    ...SAND_TILE_EMOJIS,
+    ...SEA_TILE_EMOJIS,
+    ...SPECIAL_TILE_EMOJIS,
+    ...TREASURE_TILE_EMOJIS,
+  ].includes(tile as TileType);
+};
+
+// Helper function to check if a tile is a special tile (should not be in tileTypes)
+const isSpecialTile = (tile: string): boolean => {
+  return [...SPECIAL_TILE_EMOJIS, ...TREASURE_TILE_EMOJIS].includes(
+    tile as any,
+  );
 };
 
 // Helper function to validate level configuration
@@ -109,10 +132,16 @@ export const validateLevelConfig = (config: LevelConfig): boolean => {
     }
   } else {
     // For other objectives, check if all regular tile types in board are included in tileTypes array
+    // Exclude special tiles (coconuts, treasure, etc.) from this check
     const boardTileTypes = new Set<TileType>();
     config.board.forEach(row => {
       row.forEach(tile => {
-        if (tile && typeof tile === 'string' && isValidTileType(tile)) {
+        if (
+          tile &&
+          typeof tile === 'string' &&
+          isValidTileType(tile) &&
+          !isSpecialTile(tile)
+        ) {
           boardTileTypes.add(tile);
         }
       });
