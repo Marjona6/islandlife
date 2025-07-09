@@ -75,7 +75,7 @@ jest.mock('@react-native-firebase/firestore', () => {
 });
 
 jest.mock('@react-native-firebase/app', () => ({
-  // Add any app-level mocks if needed
+  getApp: jest.fn(() => ({})),
 }));
 
 // Mock react-native-animatable
