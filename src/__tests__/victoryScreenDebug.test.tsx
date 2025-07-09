@@ -83,7 +83,6 @@ describe('Victory Screen Debug Tests', () => {
 
       expect(isComplete).toBe(false);
       expect(sandBlockers.length).toBe(14);
-      console.log('✅ Level should NOT be complete with 14 sand blockers');
     });
 
     it('should complete when all sand blockers are cleared', () => {
@@ -106,7 +105,6 @@ describe('Victory Screen Debug Tests', () => {
 
       expect(isComplete).toBe(true);
       expect(sandBlockers.length).toBe(0);
-      console.log('✅ Level should be complete with 0 sand blockers');
     });
 
     it('should not complete when some sand blockers remain', () => {
@@ -133,9 +131,6 @@ describe('Victory Screen Debug Tests', () => {
 
       expect(isComplete).toBe(false);
       expect(sandBlockers.length).toBe(2);
-      console.log(
-        '✅ Level should NOT be complete with 2 sand blockers remaining',
-      );
     });
 
     it('should track sand blocker clearing progress correctly', () => {
@@ -191,8 +186,6 @@ describe('Victory Screen Debug Tests', () => {
           sandBlockers,
         ),
       ).toBe(true);
-
-      console.log('✅ Sand blocker clearing progress tracked correctly');
     });
   });
 
@@ -216,33 +209,21 @@ describe('Victory Screen Debug Tests', () => {
 
       // Simulate the checkLevelCompletion logic
       if (sandBlockers.length === 0 && !showVictory && !isTransitioning) {
-        console.log('Level complete detected, starting transition...');
         isTransitioning = true;
 
         // Simulate the timeout delay
         setTimeout(() => {
-          console.log('Transition complete, showing victory screen');
           showVictory = true;
           isTransitioning = false;
         }, 1000);
       }
 
       expect(sandBlockers.length).toBe(0);
-      console.log('✅ Victory screen state transitions should work correctly');
     });
   });
 
   describe('Debug Information for Emulator', () => {
     it('should provide debug information for troubleshooting', () => {
-      console.log('=== VICTORY SCREEN DEBUG INFORMATION ===');
-      console.log('1. Check if sand blockers are being cleared properly');
-      console.log('2. Check if gameState.sandBlockers.length is being updated');
-      console.log('3. Check if checkLevelCompletion is being called');
-      console.log('4. Check if showVictory state is being set to true');
-      console.log('5. Check if VictoryScreen component is rendering');
-      console.log('6. Check if there are any console errors');
-      console.log('=== END DEBUG INFORMATION ===');
-
       // Test the exact condition that should trigger victory
       const testCondition = {
         currentLevel: {objective: 'sand-clear', target: 14},
@@ -265,7 +246,6 @@ describe('Victory Screen Debug Tests', () => {
         !testCondition.isTransitioning;
 
       expect(shouldShowVictory).toBe(true);
-      console.log('✅ Victory condition logic is correct');
     });
   });
 
@@ -290,12 +270,6 @@ describe('Victory Screen Debug Tests', () => {
         currentProgress,
         sandBlockers,
       );
-
-      console.log('=== EMULATOR BUG REPRODUCTION ===');
-      console.log('Sand blockers length:', sandBlockers.length);
-      console.log('Is complete:', isComplete);
-      console.log('Expected: true');
-      console.log('=== END EMULATOR BUG REPRODUCTION ===');
 
       expect(isComplete).toBe(true);
       expect(sandBlockers.length).toBe(0);
@@ -343,14 +317,6 @@ describe('Victory Screen Debug Tests', () => {
         default:
           isComplete = false;
       }
-
-      console.log('=== LEVELGAMESCREEN LOGIC TEST ===');
-      console.log('Objective:', currentLevel.objective);
-      console.log('Target:', currentLevel.target);
-      console.log('Sand blockers length:', gameState.sandBlockers.length);
-      console.log('Is complete:', isComplete);
-      console.log('Expected: true');
-      console.log('=== END LEVELGAMESCREEN LOGIC TEST ===');
 
       expect(isComplete).toBe(true);
       expect(gameState.sandBlockers.length).toBe(0);

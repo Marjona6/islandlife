@@ -142,6 +142,7 @@ type GameBoardProps = {
   onCoconutDrop?: (count: number) => void;
   onGameAction?: () => void;
   isTransitioning?: boolean;
+  testID?: string;
 };
 
 type GameBoardHandle = {
@@ -170,6 +171,7 @@ const GameBoardInner = (
     onCoconutDrop,
     onGameAction,
     isTransitioning = false,
+    testID,
   }: GameBoardProps,
   ref: React.Ref<GameBoardHandle>,
 ) => {
@@ -184,6 +186,7 @@ const GameBoardInner = (
     null,
   );
   const [shakingTiles, setShakingTiles] = useState<Set<string>>(new Set());
+  const [cascadeLevel, setCascadeLevel] = useState<number>(0);
 
   // Game state refs for immediate access during processing
   const currentBoardRef = useRef<any[][]>([]);
@@ -241,7 +244,7 @@ const GameBoardInner = (
   // Now it's safe to return early
   if (!isInitialized) {
     return (
-      <View style={styles.container}>
+      <View style={styles.container} testID={testID}>
         <Text style={styles.loadingText}>Loading game...</Text>
       </View>
     );
@@ -498,6 +501,9 @@ const GameBoardInner = (
     if (cascadeCount === 0) {
       isProcessingMoveRef.current = false;
       console.log('Set isProcessingMove to false (swap complete)');
+      setCascadeLevel(0); // Reset cascade level for new move
+    } else {
+      setCascadeLevel(cascadeCount); // Update cascade level for staggered animations
     }
 
     // Check for rocket/bomb mechanics on first cascade only
@@ -858,6 +864,8 @@ const GameBoardInner = (
       // Add collected tiles to currency if any were collected
       if (collectedTiles > 0) {
         dispatchCurrency({type: 'ADD_SHELLS', payload: collectedTiles});
+        // Also dispatch to game state for level-specific tracking
+        dispatchGame({type: 'ADD_COLLECTED_TILES', payload: collectedTiles});
         // Trigger level completion check for collect objectives
         if (onGameAction) {
           setTimeout(() => onGameAction(), 0);
@@ -867,7 +875,7 @@ const GameBoardInner = (
       // Clear matched tiles after explosion animation
       // Use longer animation for bomb/rocket explosions
       const isSpecialExplosion = matches.some(match => match.length >= 8); // Rocket (8) or Bomb (25)
-      const explosionDuration = isSpecialExplosion ? 800 : 250; // Longer for special explosions
+      const explosionDuration = isSpecialExplosion ? 600 : 200; // Faster animations
 
       setTimeout(() => {
         setMatchedTiles(new Set());
@@ -876,7 +884,7 @@ const GameBoardInner = (
       // Clear falling animation after it completes
       setTimeout(() => {
         setFallingTiles(new Map());
-      }, 500); // Keep original timing
+      }, 400); // Faster falling animation
 
       // Check for game win
       if (gameState.combos + matches.length >= gameState.targetCombos) {
@@ -900,7 +908,7 @@ const GameBoardInner = (
           cascadeCount + 1,
           finalSandBlockers, // Pass the updated sand blockers to the next cascade
         );
-      }, 600); // Keep original timing
+      }, 400); // Faster cascade timing for better responsiveness
     } else {
       // No matches found, finish processing
       if (
@@ -1345,7 +1353,7 @@ const GameBoardInner = (
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID={testID}>
       {/* Holes at the top where new tiles drop from */}
       <View style={styles.holesRow}>
         {Array.from({length: 8}, (_, colIndex) => (
@@ -1437,6 +1445,7 @@ const GameBoardInner = (
                     isCoconutExiting={false}
                     onCoconutExit={() => {}}
                     isShaking={isShaking}
+                    cascadeLevel={cascadeLevel}
                   />
                 ) : (
                   <View
@@ -1480,6 +1489,7 @@ const GameBoardInner = (
                   isFalling={false}
                   fallDistance={0}
                   isShaking={shakingTiles.has(`${row}-${col}`)}
+                  cascadeLevel={cascadeLevel}
                 />
               </View>
             );

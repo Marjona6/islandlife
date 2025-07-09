@@ -91,12 +91,12 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
   const currentProgress = useMemo(
     () => ({
       score: gameState.score,
-      collected: currency.shells,
+      collected: gameState.collectedTiles, // Use level-specific collection instead of global currency
       cleared: Math.floor(gameState.score / 50),
       combos: gameState.combos,
       dropped: droppedItems,
     }),
-    [gameState.score, currency.shells, gameState.combos, droppedItems],
+    [gameState.score, gameState.collectedTiles, gameState.combos, droppedItems],
   );
 
   // Event-driven level completion check
@@ -107,13 +107,16 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
       isTransitioning,
       objective: currentLevel?.objective,
       sandBlockersLength: gameState.sandBlockers.length,
+      movesMade,
     });
 
-    if (!currentLevel || showVictory || isTransitioning) {
+    // Don't check for victory until user has made at least one move
+    if (!currentLevel || showVictory || isTransitioning || movesMade === 0) {
       console.log('🔍 checkLevelCompletion early return:', {
         noCurrentLevel: !currentLevel,
         showVictory,
         isTransitioning,
+        noMovesMade: movesMade === 0,
       });
       return;
     }
@@ -155,6 +158,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         objective: currentLevel.objective,
         target: currentLevel.target,
         currentProgress,
+        movesMade,
       });
     }
 
@@ -167,6 +171,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         isComplete,
         showVictory,
         isTransitioning,
+        movesMade,
       });
     }
 
@@ -185,6 +190,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         objective: currentLevel.objective,
         isComplete,
         sandBlockersLength: gameState.sandBlockers.length,
+        movesMade,
       });
     }
   }, [
@@ -195,6 +201,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
     gameState.totalTreasure,
     showVictory,
     isTransitioning,
+    movesMade,
   ]);
 
   // Monitor sand blockers state changes and check for victory
@@ -202,19 +209,21 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
     console.log('🏖️ Sand blockers state changed:', {
       length: gameState.sandBlockers.length,
       blockers: gameState.sandBlockers,
+      movesMade,
     });
 
-    // Immediate victory check when sand blockers change
+    // Only check for victory if user has made at least one move
     if (
       currentLevel?.objective === 'sand-clear' &&
-      gameState.sandBlockers.length === 0
+      gameState.sandBlockers.length === 0 &&
+      movesMade > 0
     ) {
       console.log(
         '🏆 Immediate victory check triggered by sand blockers change',
       );
       setTimeout(() => checkLevelCompletion(), 100);
     }
-  }, [gameState.sandBlockers, currentLevel, checkLevelCompletion]);
+  }, [gameState.sandBlockers, currentLevel, checkLevelCompletion, movesMade]);
 
   // Legacy function for backward compatibility (used in some places)
   const isLevelComplete = useCallback(() => {
@@ -533,6 +542,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         style={styles.boardContainer}
         pointerEvents={showLevelIntro || isTransitioning ? 'none' : 'auto'}>
         <GameBoard
+          testID="game-board"
           variant={
             currentLevel.tileTypes.some(tile =>
               ['🦑', '🦐', '🐡', '🪝'].includes(tile),

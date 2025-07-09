@@ -60,6 +60,7 @@ export interface GameState {
   }>;
   treasureCollected: number; // Track collected treasure
   totalTreasure: number; // Total treasure to collect
+  collectedTiles: number; // Track collected tiles for current level
 }
 
 export interface Currency {

@@ -28,6 +28,7 @@ const initialGameState: GameState = {
   sandBlockers: [],
   treasureCollected: 0,
   totalTreasure: 0,
+  collectedTiles: 0,
 };
 
 const initialCurrency: Currency = {
@@ -114,6 +115,7 @@ type GameAction =
     }
   | {type: 'COLLECT_TREASURE'; payload: number}
   | {type: 'SET_TOTAL_TREASURE'; payload: number}
+  | {type: 'ADD_COLLECTED_TILES'; payload: number}
   | {
       type: 'REVEAL_TREASURE';
       payload: {row: number; col: number; treasureType: TileType};
@@ -308,6 +310,12 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       return {
         ...state,
         totalTreasure: action.payload,
+      };
+
+    case 'ADD_COLLECTED_TILES':
+      return {
+        ...state,
+        collectedTiles: state.collectedTiles + action.payload,
       };
 
     case 'REVEAL_TREASURE':
