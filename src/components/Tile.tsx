@@ -307,13 +307,15 @@ const styles = StyleSheet.create({
   tile: {
     width: 40,
     height: 40,
-    backgroundColor: 'transparent',
+    backgroundColor: 'transparent', // No background
     justifyContent: 'center',
     alignItems: 'center',
   },
   tileText: {
     fontSize: 24,
     textAlign: 'center',
+    opacity: 1, // Ensure full opacity
+    color: '#000', // Pure black for maximum contrast
   },
   matchedTile: {
     zIndex: 10,
