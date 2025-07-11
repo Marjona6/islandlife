@@ -1,0 +1,168 @@
+import { StyleSheet } from 'react-native';
+
+export const createStyles = (width: number) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    backgroundGradient: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+    },
+    currencyBar: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 15,
+      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+      marginHorizontal: 20,
+      marginTop: 10,
+      borderRadius: 25,
+    },
+    currencyItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    currencyIcon: {
+      fontSize: 20,
+    },
+    currencyText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: 'white',
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 20,
+    },
+    titleContainer: {
+      alignItems: 'center',
+      marginTop: 40,
+      marginBottom: 50,
+    },
+    gameTitle: {
+      fontSize: 48,
+      fontWeight: 'bold',
+      color: 'white',
+      textShadowColor: 'rgba(0, 0, 0, 0.3)',
+      textShadowOffset: { width: 2, height: 2 },
+      textShadowRadius: 4,
+    },
+    gameSubtitle: {
+      fontSize: 18,
+      color: 'rgba(255, 255, 255, 0.8)',
+      marginTop: 5,
+    },
+    playButton: {
+      marginBottom: 40,
+      borderRadius: 30,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.3,
+      shadowRadius: 16,
+      elevation: 8,
+    },
+    playButtonGradient: {
+      paddingVertical: 25,
+      paddingHorizontal: 40,
+      borderRadius: 30,
+      alignItems: 'center',
+    },
+    playButtonText: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: 'white',
+      textShadowColor: 'rgba(0, 0, 0, 0.3)',
+      textShadowOffset: { width: 1, height: 1 },
+      textShadowRadius: 2,
+    },
+    playButtonSubtext: {
+      fontSize: 14,
+      color: 'rgba(255, 255, 255, 0.9)',
+      marginTop: 5,
+    },
+    navigationGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      marginBottom: 40,
+    },
+    navCard: {
+      width: (width - 60) / 2,
+      height: 120,
+      marginBottom: 20,
+      borderRadius: 20,
+      overflow: 'hidden',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    navCardGradient: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 15,
+    },
+    navIcon: {
+      fontSize: 32,
+      marginBottom: 8,
+    },
+    navTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: 'white',
+      textAlign: 'center',
+    },
+    navSubtitle: {
+      fontSize: 12,
+      color: 'rgba(255, 255, 255, 0.8)',
+      textAlign: 'center',
+      marginTop: 2,
+    },
+    progressSection: {
+      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+      borderRadius: 20,
+      padding: 20,
+      marginBottom: 30,
+    },
+    progressTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: 'white',
+      marginBottom: 15,
+      textAlign: 'center',
+    },
+    progressBar: {
+      height: 8,
+      backgroundColor: 'rgba(255, 255, 255, 0.3)',
+      borderRadius: 4,
+      marginBottom: 10,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      borderRadius: 4,
+    },
+    progressText: {
+      fontSize: 14,
+      color: 'rgba(255, 255, 255, 0.9)',
+      textAlign: 'center',
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: 'white',
+    },
+  });

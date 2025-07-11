@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import { GameProvider } from './src/contexts/GameContext';
-import { GameScreen } from './src/screens/GameScreen';
+import { GameScreen } from './src/screens/GameScreen/GameScreen';
 import { LevelGameScreen } from './src/screens/LevelGameScreen';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { LevelSelectScreen } from './src/screens/LevelSelectScreen';
