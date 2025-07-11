@@ -19,29 +19,30 @@ export const areAdjacent = (
   return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
 };
 
-// Find all matches in the board
+// Find all matches in the board (optimized)
 export const findMatches = (
   board: Tile[][],
 ): Array<Array<{ row: number; col: number }>> => {
   const matches: Array<Array<{ row: number; col: number }>> = [];
 
-  // console.log(
-  //   'Finding matches in board:',
-  //   board.map(row => row.map(tile => tile?.type || 'null')),
-  // );
-
-  // Check horizontal matches
+  // Check horizontal matches with optimized bounds checking
   for (let row = 0; row < BOARD_SIZE; row++) {
     let col = 0;
     while (col < BOARD_SIZE - 2) {
+      // Cache tile access to avoid repeated board lookups
       const tile1 = board[row][col];
+      if (!tile1 || tile1.isSpecial) {
+        col++;
+        continue;
+      }
+
       const tile2 = board[row][col + 1];
       const tile3 = board[row][col + 2];
+
+      // Combined validation for better performance
       if (
-        tile1 &&
         tile2 &&
         tile3 &&
-        !tile1.isSpecial && // Don't match special tiles
         !tile2.isSpecial &&
         !tile3.isSpecial &&
         tile1.type === tile2.type &&
@@ -53,11 +54,13 @@ export const findMatches = (
           { row, col: col + 1 },
           { row, col: col + 2 },
         ];
+
+        // Extend match to the right
         let i = col + 3;
         while (
           i < BOARD_SIZE &&
           board[row][i] &&
-          !board[row][i].isSpecial && // Don't match special tiles
+          !board[row][i].isSpecial &&
           board[row][i].type === tile1.type
         ) {
           match.push({ row, col: i });
@@ -71,18 +74,24 @@ export const findMatches = (
     }
   }
 
-  // Check vertical matches
+  // Check vertical matches with optimized bounds checking
   for (let col = 0; col < BOARD_SIZE; col++) {
     let row = 0;
     while (row < BOARD_SIZE - 2) {
+      // Cache tile access to avoid repeated board lookups
       const tile1 = board[row][col];
+      if (!tile1 || tile1.isSpecial) {
+        row++;
+        continue;
+      }
+
       const tile2 = board[row + 1][col];
       const tile3 = board[row + 2][col];
+
+      // Combined validation for better performance
       if (
-        tile1 &&
         tile2 &&
         tile3 &&
-        !tile1.isSpecial && // Don't match special tiles
         !tile2.isSpecial &&
         !tile3.isSpecial &&
         tile1.type === tile2.type &&
@@ -94,11 +103,13 @@ export const findMatches = (
           { row: row + 1, col },
           { row: row + 2, col },
         ];
+
+        // Extend match downward
         let i = row + 3;
         while (
           i < BOARD_SIZE &&
           board[i][col] &&
-          !board[i][col].isSpecial && // Don't match special tiles
+          !board[i][col].isSpecial &&
           board[i][col].type === tile1.type
         ) {
           match.push({ row: i, col });
@@ -112,7 +123,6 @@ export const findMatches = (
     }
   }
 
-  // console.log('All matches found:', matches);
   return matches;
 };
 
