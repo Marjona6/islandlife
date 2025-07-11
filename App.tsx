@@ -8,7 +8,7 @@ import { SafeAreaView, StyleSheet } from 'react-native';
 import { GameProvider } from './src/contexts/GameContext';
 import { GameScreen } from './src/screens/GameScreen/GameScreen';
 import { LevelGameScreen } from './src/screens/LevelGameScreen';
-import { HomeScreen } from './src/screens/HomeScreen';
+import { HomeScreen } from './src/screens/HomeScreen/HomeScreen';
 import { LevelSelectScreen } from './src/screens/LevelSelectScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { BeachScreen } from './src/screens/BeachScreen';
