@@ -459,27 +459,8 @@ const GameBoardInner = (
         }
       });
 
-      // Update game state with final sand blocker state
-      dispatchGame({
-        type: 'SET_SAND_BLOCKERS',
-        payload: finalSandBlockers,
-      });
-
       // Update refs immediately for next cascade
       currentSandBlockersRef.current = finalSandBlockers;
-
-      // Reveal treasures if any were uncovered
-      revealedTreasures.forEach(treasure => {
-        dispatchGame({
-          type: 'REVEAL_TREASURE',
-          payload: treasure,
-        });
-      });
-
-      // Trigger level completion check for sand-clear objectives
-      if (onGameAction) {
-        setTimeout(() => onGameAction(), 0);
-      }
 
       // Use the updated board from processing (which includes rocket/bomb effects)
       // Calculate which tiles need to fall for animation
@@ -512,19 +493,6 @@ const GameBoardInner = (
           }
         });
       });
-
-      // Add score to game state
-      dispatchGame({ type: 'ADD_SCORE', payload: matchScore });
-
-      // Add collected treasure to game state
-      if (collectedTreasure > 0) {
-        dispatchGame({ type: 'COLLECT_TREASURE', payload: collectedTreasure });
-      }
-
-      // Trigger level completion check for score objectives
-      if (onGameAction) {
-        setTimeout(() => onGameAction(), 0);
-      }
 
       // Create updated board with cleared sand blocker positions filled
       let finalBoard = (boardAfterProcessing || Array(8).fill(null)).map(
@@ -560,25 +528,35 @@ const GameBoardInner = (
         finalBoard = dropTiles(finalBoard, variant, finalSandBlockers);
       }
 
-      // Update board state immediately but keep matched tiles visible for animation
-      dispatchGame({ type: 'UPDATE_BOARD', payload: finalBoard });
-      currentBoardRef.current = finalBoard;
-      dispatchGame({ type: 'INCREMENT_COMBOS' });
+      // Batch all state updates into a single dispatch
+      dispatchGame({
+        type: 'PROCESS_CASCADE_RESULTS',
+        payload: {
+          newBoard: finalBoard,
+          score: matchScore,
+          treasure: collectedTreasure,
+          combos: 1,
+          sandBlockers: finalSandBlockers,
+          collectedTiles: collectedTiles,
+          revealedTreasures:
+            revealedTreasures.length > 0 ? revealedTreasures : undefined,
+        },
+      });
 
-      // Trigger level completion check for combo objectives
-      if (onGameAction) {
-        setTimeout(() => onGameAction(), 0);
+      // Update board ref immediately for next cascade
+      currentBoardRef.current = finalBoard;
+
+      // Batch currency updates if any collected tiles
+      if (collectedTiles > 0) {
+        dispatchCurrency({
+          type: 'ADD_CASCADE_CURRENCY',
+          payload: { shells: collectedTiles, keys: 0 },
+        });
       }
 
-      // Add collected tiles to currency if any were collected
-      if (collectedTiles > 0) {
-        dispatchCurrency({ type: 'ADD_SHELLS', payload: collectedTiles });
-        // Also dispatch to game state for level-specific tracking
-        dispatchGame({ type: 'ADD_COLLECTED_TILES', payload: collectedTiles });
-        // Trigger level completion check for collect objectives
-        if (onGameAction) {
-          setTimeout(() => onGameAction(), 0);
-        }
+      // Trigger level completion checks
+      if (onGameAction) {
+        setTimeout(() => onGameAction(), 0);
       }
 
       // Clear matched tiles after explosion animation

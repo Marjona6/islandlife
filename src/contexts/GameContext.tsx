@@ -119,13 +119,30 @@ type GameAction =
   | {
       type: 'REVEAL_TREASURE';
       payload: { row: number; col: number; treasureType: TileType };
+    }
+  | {
+      type: 'PROCESS_CASCADE_RESULTS';
+      payload: {
+        newBoard: Tile[][];
+        score: number;
+        treasure: number;
+        combos: number;
+        sandBlockers: Array<{ row: number; col: number; hasUmbrella: boolean }>;
+        collectedTiles: number;
+        revealedTreasures?: Array<{
+          row: number;
+          col: number;
+          treasureType: TileType;
+        }>;
+      };
     };
 
 type CurrencyAction =
   | { type: 'ADD_SHELLS'; payload: number }
   | { type: 'ADD_KEYS'; payload: number }
   | { type: 'SPEND_KEYS'; payload: number }
-  | { type: 'LOAD_CURRENCY'; payload: Currency };
+  | { type: 'LOAD_CURRENCY'; payload: Currency }
+  | { type: 'ADD_CASCADE_CURRENCY'; payload: { shells: number; keys: number } };
 
 type BeachAction =
   | { type: 'PURCHASE_ITEM'; payload: string }
@@ -336,6 +353,43 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         ),
       };
 
+    case 'PROCESS_CASCADE_RESULTS':
+      let cascadeBoard = action.payload.newBoard;
+
+      // Apply treasure reveals if any
+      if (action.payload.revealedTreasures) {
+        cascadeBoard = cascadeBoard.map(row =>
+          row.map(tile =>
+            tile &&
+            action.payload.revealedTreasures!.some(
+              treasure =>
+                treasure.row === tile.row && treasure.col === tile.col,
+            )
+              ? {
+                  ...tile,
+                  type: action.payload.revealedTreasures!.find(
+                    treasure =>
+                      treasure.row === tile.row && treasure.col === tile.col,
+                  )!.treasureType,
+                  isRevealed: true,
+                }
+              : tile,
+          ),
+        );
+      }
+
+      const cascadeCombos = state.combos + action.payload.combos;
+      return {
+        ...state,
+        board: cascadeBoard,
+        score: state.score + action.payload.score,
+        combos: cascadeCombos,
+        isGameWon: cascadeCombos >= TARGET_COMBOS,
+        sandBlockers: action.payload.sandBlockers,
+        treasureCollected: state.treasureCollected + action.payload.treasure,
+        collectedTiles: state.collectedTiles + action.payload.collectedTiles,
+      };
+
     default:
       return state;
   }
@@ -351,6 +405,12 @@ const currencyReducer = (state: Currency, action: CurrencyAction): Currency => {
       return { ...state, keys: Math.max(0, state.keys - action.payload) };
     case 'LOAD_CURRENCY':
       return action.payload;
+    case 'ADD_CASCADE_CURRENCY':
+      return {
+        ...state,
+        shells: state.shells + action.payload.shells,
+        keys: state.keys + action.payload.keys,
+      };
     default:
       return state;
   }
