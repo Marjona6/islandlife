@@ -6,7 +6,7 @@ import Svg, {
   Stop,
   Path,
 } from 'react-native-svg';
-import { styles } from '../../../styles/styles';
+import { styles } from '../styles';
 
 export const renderBackground = (variant: string) => {
   if (variant === 'sand') {

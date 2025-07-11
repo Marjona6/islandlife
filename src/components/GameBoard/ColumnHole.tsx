@@ -1,24 +1,7 @@
-import React, {
-  FC,
-  useState,
-  useEffect,
-  useRef,
-  useImperativeHandle,
-  forwardRef,
-} from 'react';
-import { View, StyleSheet, Text } from 'react-native';
-import Svg, {
-  Ellipse,
-  Defs,
-  RadialGradient,
-  Stop,
-  LinearGradient as SvgLinearGradient,
-  Path,
-} from 'react-native-svg';
-import { Tile } from '../Tile/Tile';
-import { useGame } from '../../contexts/GameContext';
-import { TileType } from '../../types/game';
-import { styles } from '../../styles/styles';
+import React, { FC } from 'react';
+import { View } from 'react-native';
+import Svg, { Ellipse, Defs, RadialGradient, Stop } from 'react-native-svg';
+import { styles } from './styles';
 
 export const ColumnHole: FC<{ _colIndex: number; _isActive: boolean }> = ({
   _colIndex,

@@ -1,6 +1,6 @@
 import { FC } from 'react';
 import { View } from 'react-native';
-import { styles } from '../../styles/styles';
+import { styles } from './styles';
 
 export const FallingParticles: FC<{ _colIndex: number; isActive: boolean }> = ({
   _colIndex,

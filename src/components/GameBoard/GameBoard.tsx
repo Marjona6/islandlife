@@ -25,12 +25,12 @@ import {
   checkIfGameImpossible,
   rearrangeBoard,
 } from '../../utils/gameImpossibleLogic';
-import { styles } from '../../styles/styles';
 import { GameBoardHandle, GameBoardProps } from './types';
 import { ColumnHole } from './ColumnHole';
 import { FallingParticles } from './FallingParticles';
 import { renderBackground } from './utils/renderBackground';
 import { getContainerStyle } from './utils/getContainerStyle';
+import { styles } from './styles';
 
 const GameBoardInner = (
   {
