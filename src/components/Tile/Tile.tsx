@@ -26,7 +26,6 @@ export const Tile: React.FC<TileProps> = ({
   fallDistance = 0,
   isCoconutExiting = false,
   onCoconutExit,
-  isShaking = false,
   cascadeLevel = 0,
 }) => {
   const tileRef = useRef<Animatable.View>(null);
@@ -34,7 +33,6 @@ export const Tile: React.FC<TileProps> = ({
   const hasAnimatedMatch = useRef(false);
   const hasAnimatedFall = useRef(false);
   const hasAnimatedCoconutExit = useRef(false);
-  const hasStartedShaking = useRef(false);
   const hasAnimatedParticles = useRef(false);
 
   // Enhanced match animation with particles
@@ -159,42 +157,6 @@ export const Tile: React.FC<TileProps> = ({
     }
   }, [isCoconutExiting, tile.isSpecial, onCoconutExit]);
 
-  // Enhanced shaking animation for bomb tiles
-  const handleShaking = useCallback(() => {
-    if (isShaking && tileRef.current && !hasStartedShaking.current) {
-      hasStartedShaking.current = true;
-      const currentRef = tileRef.current;
-      if (currentRef && currentRef.animate) {
-        // Enhanced infinite shaking
-        const shakeAnimation = () => {
-          currentRef
-            .animate(
-              {
-                0: { translateX: 0, translateY: 0 },
-                0.1: { translateX: -3, translateY: -2 },
-                0.2: { translateX: 3, translateY: 2 },
-                0.3: { translateX: -3, translateY: -2 },
-                0.4: { translateX: 3, translateY: 2 },
-                0.5: { translateX: -2, translateY: -1 },
-                0.6: { translateX: 2, translateY: 1 },
-                0.7: { translateX: -2, translateY: -1 },
-                0.8: { translateX: 2, translateY: 1 },
-                0.9: { translateX: -1, translateY: 0 },
-                1: { translateX: 0, translateY: 0 },
-              },
-              150, // Faster shaking
-            )
-            .then(() => {
-              if (isShaking) {
-                shakeAnimation(); // Continue shaking
-              }
-            });
-        };
-        shakeAnimation();
-      }
-    }
-  }, [isShaking]);
-
   // Use useEffect to handle animations after render
   useEffect(() => {
     // Reset animation flags when props change
@@ -204,25 +166,21 @@ export const Tile: React.FC<TileProps> = ({
     }
     if (!isFalling) hasAnimatedFall.current = false;
     if (!isCoconutExiting) hasAnimatedCoconutExit.current = false;
-    if (!isShaking) hasStartedShaking.current = false;
 
     // Run animations when props change
     if (isMatched) handleMatch();
     if (isFalling) handleFall();
     if (isCoconutExiting) handleCoconutExit();
-    if (isShaking) handleShaking();
   }, [
     isMatched,
     isFalling,
     fallDistance,
     isCoconutExiting,
-    isShaking,
     tile.isSpecial,
     cascadeLevel,
     handleMatch,
     handleFall,
     handleCoconutExit,
-    handleShaking,
   ]);
 
   // Render particle effects
@@ -265,7 +223,6 @@ export const Tile: React.FC<TileProps> = ({
           isMatched && styles.matchedTile,
           isFalling && styles.fallingTile,
           isCoconutExiting && styles.exitingTile,
-          isShaking && styles.shakingTile,
         ]}
         {...PanResponder.create({
           onStartShouldSetPanResponder: () => true,
