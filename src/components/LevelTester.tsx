@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,10 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import {levelManager, getLevelDifficulty} from '../utils/levelManager';
-import {testSpecificLevel} from '../utils/testLevels';
-import {testLevelManager} from '../utils/testLevelManager';
-import {testLevelOrdering} from '../utils/testLevels';
+import { levelManager, getLevelDifficulty } from '../utils/levelManager';
+import { testSpecificLevel } from '../utils/testLevels';
+import { testLevelManager } from '../utils/testLevelManager';
+import { testLevelOrdering } from '../utils/testLevels';
 
 interface LevelTesterProps {
   onLevelSelect?: (levelId: string) => void;

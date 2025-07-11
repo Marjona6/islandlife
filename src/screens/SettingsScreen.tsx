@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,8 @@ import {
   ScrollView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {userProgressService, AuthUser} from '../services/userProgress';
-import {gameModeService} from '../services/gameMode';
+import { userProgressService, AuthUser } from '../services/userProgress';
+import { gameModeService } from '../services/gameMode';
 
 interface SettingsScreenProps {
   onNavigateBack: () => void;
@@ -72,7 +72,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const handleSignOut = async () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      {text: 'Cancel', style: 'cancel'},
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Sign Out',
         style: 'destructive',
@@ -225,8 +225,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       <LinearGradient
         colors={['#4A90E2', '#7B68EE', '#9370DB']}
         style={styles.backgroundGradient}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       />
 
       {/* Header */}

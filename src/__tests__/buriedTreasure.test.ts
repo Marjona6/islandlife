@@ -1,4 +1,4 @@
-import {TileType} from '../types/game';
+import { TileType } from '../types/game';
 
 describe('Buried Treasure Mechanics', () => {
   // Test treasure tile types
@@ -48,8 +48,8 @@ describe('Buried Treasure Mechanics', () => {
 
   // Test sand level mechanics
   it('should handle different sand levels correctly', () => {
-    const sandLevel1 = {sandLevel: 1, requiredMatches: 1};
-    const sandLevel2 = {sandLevel: 2, requiredMatches: 2};
+    const sandLevel1 = { sandLevel: 1, requiredMatches: 1 };
+    const sandLevel2 = { sandLevel: 2, requiredMatches: 2 };
 
     expect(sandLevel1.requiredMatches).toBe(1);
     expect(sandLevel2.requiredMatches).toBe(2);
@@ -58,10 +58,10 @@ describe('Buried Treasure Mechanics', () => {
   // Test treasure collection logic
   it('should count treasure tiles correctly', () => {
     const matchedTiles = [
-      {type: '🦀' as TileType},
-      {type: '💎' as TileType},
-      {type: '🪙' as TileType},
-      {type: '🌺' as TileType},
+      { type: '🦀' as TileType },
+      { type: '💎' as TileType },
+      { type: '🪙' as TileType },
+      { type: '🌺' as TileType },
     ];
 
     const treasureCount = matchedTiles.filter(tile =>

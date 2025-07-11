@@ -82,9 +82,15 @@ npm test -- --testPathPattern=buriedTreasure.test.ts
   "moves": 35,
   "difficulty": "medium",
   "blockers": [
-    {"type": "sand", "row": 1, "col": 1, "sandLevel": 1, "hasTreasure": true},
-    {"type": "sand", "row": 1, "col": 2, "sandLevel": 1, "hasTreasure": false},
-    {"type": "sand", "row": 1, "col": 5, "sandLevel": 2, "hasTreasure": true}
+    { "type": "sand", "row": 1, "col": 1, "sandLevel": 1, "hasTreasure": true },
+    {
+      "type": "sand",
+      "row": 1,
+      "col": 2,
+      "sandLevel": 1,
+      "hasTreasure": false
+    },
+    { "type": "sand", "row": 1, "col": 5, "sandLevel": 2, "hasTreasure": true }
     // ... 11 more sand blockers
   ]
 }

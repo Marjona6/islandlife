@@ -1,7 +1,7 @@
 // Modern Firebase imports using modular API
-import {getApp} from '@react-native-firebase/app';
-import {getAuth} from '@react-native-firebase/auth';
-import {getFirestore} from '@react-native-firebase/firestore';
+import { getApp } from '@react-native-firebase/app';
+import { getAuth } from '@react-native-firebase/auth';
+import { getFirestore } from '@react-native-firebase/firestore';
 
 let app: any = null;
 let auth: any = null;
@@ -75,4 +75,4 @@ export const initializeFirebase = () => {
 };
 
 // Export Firebase services with modern API
-export {getFirebaseAuth, getFirebaseFirestore, getFirebaseApp};
+export { getFirebaseAuth, getFirebaseFirestore, getFirebaseApp };

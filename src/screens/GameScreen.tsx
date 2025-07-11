@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,21 +7,21 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import {GameBoard} from '../components/GameBoard';
-import {useGame} from '../contexts/GameContext';
+import { GameBoard } from '../components/GameBoard/GameBoard';
+import { useGame } from '../contexts/GameContext';
 
 interface GameScreenProps {
   // onNavigateToBeach: () => void; // Beach decorating temporarily disabled
 }
 
 export const GameScreen: React.FC<GameScreenProps> = ({}) => {
-  const {gameState, currency, initGame} = useGame();
+  const { gameState, currency, initGame } = useGame();
   const [variant] = useState<'sand' | 'sea'>('sand');
 
   const handleNewGame = () => {
     Alert.alert('New Game', 'Start a new level?', [
-      {text: 'Cancel', style: 'cancel'},
-      {text: 'Start', onPress: () => initGame(variant)},
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Start', onPress: () => initGame(variant) },
     ]);
   };
 

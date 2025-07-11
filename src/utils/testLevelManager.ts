@@ -1,4 +1,4 @@
-import {levelManager} from './levelManager';
+import { levelManager } from './levelManager';
 
 // Test script to verify level manager is working with JSON file
 export const testLevelManager = () => {

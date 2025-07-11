@@ -1,6 +1,6 @@
 import React from 'react';
-import {render, fireEvent, waitFor} from '@testing-library/react-native';
-import {VictoryScreen} from '../components/VictoryScreen';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { VictoryScreen } from '../components/VictoryScreen';
 
 // Mock Animated module
 jest.mock('react-native', () => {
@@ -36,7 +36,7 @@ describe('Victory Screen Integration Tests', () => {
 
   describe('Victory Screen Component', () => {
     it('should render victory screen when visible', async () => {
-      const {getByText} = render(
+      const { getByText } = render(
         <VictoryScreen
           isVisible={true}
           onContinue={mockOnContinue}
@@ -53,7 +53,7 @@ describe('Victory Screen Integration Tests', () => {
     });
 
     it('should not render when not visible', () => {
-      const {queryByText} = render(
+      const { queryByText } = render(
         <VictoryScreen
           isVisible={false}
           onContinue={mockOnContinue}
@@ -66,7 +66,7 @@ describe('Victory Screen Integration Tests', () => {
     });
 
     it('should call onContinue when continue button is pressed', async () => {
-      const {getByText} = render(
+      const { getByText } = render(
         <VictoryScreen
           isVisible={true}
           onContinue={mockOnContinue}
@@ -83,7 +83,7 @@ describe('Victory Screen Integration Tests', () => {
     });
 
     it('should call onRestart when play again button is pressed', async () => {
-      const {getByText} = render(
+      const { getByText } = render(
         <VictoryScreen
           isVisible={true}
           onContinue={mockOnContinue}
@@ -164,7 +164,7 @@ describe('Victory Screen Integration Tests', () => {
             cleared: 0,
             combos: 0,
             dropped: 0,
-            sandBlockers: [{row: 1, col: 1}],
+            sandBlockers: [{ row: 1, col: 1 }],
           },
           false,
         );
@@ -179,7 +179,7 @@ describe('Victory Screen Integration Tests', () => {
           cleared: 0,
           combos: 0,
           dropped: 0,
-          sandBlockers: Array.from({length: 14}, (_, i) => ({
+          sandBlockers: Array.from({ length: 14 }, (_, i) => ({
             row: Math.floor(i / 8),
             col: i % 8,
           })),

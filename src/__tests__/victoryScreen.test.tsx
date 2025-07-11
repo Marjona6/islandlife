@@ -1,6 +1,6 @@
 import React from 'react';
-import {render, fireEvent} from '@testing-library/react-native';
-import {VictoryScreen} from '../components/VictoryScreen';
+import { render, fireEvent } from '@testing-library/react-native';
+import { VictoryScreen } from '../components/VictoryScreen';
 
 // Mock Animated module
 jest.mock('react-native', () => {
@@ -36,7 +36,7 @@ describe('Victory Screen Component', () => {
 
   describe('Victory Screen Visibility', () => {
     it('should not render when isVisible is false', () => {
-      const {queryByText} = render(
+      const { queryByText } = render(
         <VictoryScreen
           isVisible={false}
           onContinue={mockOnContinue}
@@ -48,7 +48,7 @@ describe('Victory Screen Component', () => {
     });
 
     it('should render when isVisible is true', () => {
-      const {getByText} = render(
+      const { getByText } = render(
         <VictoryScreen
           isVisible={true}
           onContinue={mockOnContinue}
@@ -62,7 +62,7 @@ describe('Victory Screen Component', () => {
 
   describe('Victory Screen Interactions', () => {
     it('should call onContinue when continue button is pressed', () => {
-      const {getByText} = render(
+      const { getByText } = render(
         <VictoryScreen
           isVisible={true}
           onContinue={mockOnContinue}
@@ -75,7 +75,7 @@ describe('Victory Screen Component', () => {
     });
 
     it('should call onRestart when restart button is pressed', () => {
-      const {getByText} = render(
+      const { getByText } = render(
         <VictoryScreen
           isVisible={true}
           onContinue={mockOnContinue}
@@ -90,7 +90,7 @@ describe('Victory Screen Component', () => {
 
   describe('Victory Screen Content', () => {
     it('should display victory text', () => {
-      const {getByText} = render(
+      const { getByText } = render(
         <VictoryScreen
           isVisible={true}
           onContinue={mockOnContinue}
@@ -103,7 +103,7 @@ describe('Victory Screen Component', () => {
     });
 
     it('should display correct button text', () => {
-      const {getByText} = render(
+      const { getByText } = render(
         <VictoryScreen
           isVisible={true}
           onContinue={mockOnContinue}
@@ -254,7 +254,7 @@ describe('Level Completion Logic', () => {
           cleared: 0,
           combos: 0,
           dropped: 0,
-          sandBlockers: [{row: 1, col: 1}],
+          sandBlockers: [{ row: 1, col: 1 }],
         },
         false,
       );

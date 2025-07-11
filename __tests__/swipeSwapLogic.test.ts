@@ -1,5 +1,5 @@
-import {isValidMove, findMatches, processTurn} from '../src/utils/gameLogic';
-import {Tile, TileType} from '../src/types/game';
+import { isValidMove, findMatches, processTurn } from '../src/utils/gameLogic';
+import { Tile, TileType } from '../src/types/game';
 
 // Add Jest types
 declare global {

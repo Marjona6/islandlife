@@ -1,4 +1,4 @@
-import {initializeFirebase} from '../src/services/firebase';
+import { initializeFirebase } from '../src/services/firebase';
 
 describe('Firebase Initialization', () => {
   beforeEach(() => {

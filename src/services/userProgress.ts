@@ -1,6 +1,6 @@
 // Modern Firebase imports
-import {getAuth} from '@react-native-firebase/auth';
-import {getFirestore} from '@react-native-firebase/firestore';
+import { getAuth } from '@react-native-firebase/auth';
+import { getFirestore } from '@react-native-firebase/firestore';
 
 let auth: any = null;
 let firestore: any = null;
@@ -58,7 +58,7 @@ class UserProgressService {
 
     try {
       // Ensure Firebase is initialized first
-      const {initializeFirebase} = require('./firebase');
+      const { initializeFirebase } = require('./firebase');
       initializeFirebase();
 
       // Wait a moment for Firebase to be ready
@@ -106,7 +106,7 @@ class UserProgressService {
       // In PROD mode, always try to sign in anonymously if no user
       // In DEV mode, we don't need authentication
       try {
-        const {gameModeService} = require('./gameMode');
+        const { gameModeService } = require('./gameMode');
         if (gameModeService.isProdMode()) {
           await authInstance.signInAnonymously();
         }

@@ -1,4 +1,4 @@
-import {getValidMoves, isValidMove, findMatches} from '../utils/gameLogic';
+import { getValidMoves, isValidMove, findMatches } from '../utils/gameLogic';
 import {
   checkIfGameImpossible,
   rearrangeBoard,
@@ -83,20 +83,20 @@ describe('Game Impossible Logic', () => {
         );
 
       const sandBlockers = [
-        {row: 1, col: 1},
-        {row: 3, col: 3},
-        {row: 5, col: 5},
+        { row: 1, col: 1 },
+        { row: 3, col: 3 },
+        { row: 5, col: 5 },
       ];
 
       // Set sand blocker positions to null
-      sandBlockers.forEach(({row, col}) => {
+      sandBlockers.forEach(({ row, col }) => {
         mockBoard[row][col] = null as any;
       });
 
       const rearrangedBoard = rearrangeBoard(mockBoard, sandBlockers);
 
       // Check that sand blocker positions are still null
-      sandBlockers.forEach(({row, col}) => {
+      sandBlockers.forEach(({ row, col }) => {
         expect(rearrangedBoard[row][col]).toBeNull();
       });
     });
@@ -115,7 +115,7 @@ describe('Game Impossible Logic', () => {
             })),
         );
 
-      const sandBlockers = [{row: 1, col: 1}];
+      const sandBlockers = [{ row: 1, col: 1 }];
       mockBoard[1][1] = null as any;
 
       // Count non-null tiles before rearrangement
@@ -146,7 +146,7 @@ describe('Game Impossible Logic', () => {
             })),
         );
 
-      const sandBlockers = [{row: 1, col: 1}];
+      const sandBlockers = [{ row: 1, col: 1 }];
       mockBoard[1][1] = null as any;
 
       const rearrangedBoard = rearrangeBoard(mockBoard, sandBlockers);
@@ -172,9 +172,9 @@ describe('Game Impossible Logic', () => {
         .fill(null)
         .map(() => Array(8).fill(null));
       const sandBlockers = [
-        {row: 0, col: 0},
-        {row: 1, col: 1},
-        {row: 2, col: 2},
+        { row: 0, col: 0 },
+        { row: 1, col: 1 },
+        { row: 2, col: 2 },
       ];
 
       const rearrangedBoard = rearrangeBoard(mockBoard, sandBlockers);
@@ -184,7 +184,7 @@ describe('Game Impossible Logic', () => {
       expect(nonNullTiles.length).toBe(0);
 
       // Sand blocker positions should still be null
-      sandBlockers.forEach(({row, col}) => {
+      sandBlockers.forEach(({ row, col }) => {
         expect(rearrangedBoard[row][col]).toBeNull();
       });
     });
@@ -208,7 +208,7 @@ describe('Game Impossible Logic', () => {
             })),
         );
 
-      const sandBlockers = [{row: 1, col: 1}];
+      const sandBlockers = [{ row: 1, col: 1 }];
       mockBoard[1][1] = null as any;
 
       // Check if game is impossible
@@ -248,7 +248,7 @@ describe('Game Impossible Logic', () => {
             })),
         );
 
-      const sandBlockers = [{row: 1, col: 1}];
+      const sandBlockers = [{ row: 1, col: 1 }];
       mockBoard[1][1] = null as any;
 
       // First check

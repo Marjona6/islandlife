@@ -1,4 +1,4 @@
-import {levelManager, getLevelDifficulty} from './levelManager';
+import { levelManager, getLevelDifficulty } from './levelManager';
 
 // Test script to demonstrate level ordering and navigation
 export const testLevelOrdering = () => {

@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,11 @@ import {
   ScrollView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {useGame} from '../contexts/GameContext';
-import {gameModeService} from '../services/gameMode';
-import {userProgressService} from '../services/userProgress';
+import { useGame } from '../contexts/GameContext';
+import { gameModeService } from '../services/gameMode';
+import { userProgressService } from '../services/userProgress';
 
-const {width} = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 interface HomeScreenProps {
   onNavigateToLevels: () => void;
@@ -30,7 +30,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onNavigateToShop,
   onNavigateToDailyRewards,
 }) => {
-  const {currency} = useGame();
+  const { currency } = useGame();
   const [nextLevel, setNextLevel] = useState<string>('level-1');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -86,8 +86,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <LinearGradient
           colors={['#4A90E2', '#7B68EE', '#9370DB']}
           style={styles.backgroundGradient}
-          start={{x: 0, y: 0}}
-          end={{x: 1, y: 1}}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         />
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading...</Text>
@@ -102,8 +102,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <LinearGradient
         colors={['#4A90E2', '#7B68EE', '#9370DB']}
         style={styles.backgroundGradient}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       />
 
       {/* Currency Bar */}
@@ -135,8 +135,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <LinearGradient
             colors={['#FFD700', '#FFA500']}
             style={styles.playButtonGradient}
-            start={{x: 0, y: 0}}
-            end={{x: 1, y: 1}}>
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}>
             <Text style={styles.playButtonText}>{getPlayButtonText()}</Text>
             <Text style={styles.playButtonSubtext}>
               {getPlayButtonSubtext()}
@@ -197,7 +197,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <View style={styles.progressBar}>
             <LinearGradient
               colors={['#4CAF50', '#8BC34A']}
-              style={[styles.progressFill, {width: '65%'}]}
+              style={[styles.progressFill, { width: '65%' }]}
             />
           </View>
           <Text style={styles.progressText}>Level 3 of 5 completed</Text>
@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: {width: 2, height: 2},
+    textShadowOffset: { width: 2, height: 2 },
     textShadowRadius: 4,
   },
   gameSubtitle: {
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     borderRadius: 30,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 8},
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
     elevation: 8,
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: {width: 1, height: 1},
+    textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
   playButtonSubtext: {
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,

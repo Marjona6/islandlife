@@ -136,7 +136,7 @@ To integrate this with your actual game:
 3. **Use the level manager** in your game logic:
 
    ```typescript
-   import {levelManager} from './src/utils/levelManager';
+   import { levelManager } from './src/utils/levelManager';
 
    const currentLevel = levelManager.getLevel('level-1');
    const nextLevel = levelManager.getNextLevel('level-1');

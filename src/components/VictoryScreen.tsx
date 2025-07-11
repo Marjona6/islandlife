@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ interface VictoryScreenProps {
   onRestart: () => void;
 }
 
-const {width, height} = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export const VictoryScreen: React.FC<VictoryScreenProps> = ({
   isVisible,
@@ -98,7 +98,7 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
   };
 
   return (
-    <Animated.View style={[styles.container, {opacity: fadeAnim}]}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       {/* Background overlay */}
       <View style={styles.overlay} />
 
@@ -110,7 +110,7 @@ export const VictoryScreen: React.FC<VictoryScreenProps> = ({
         style={[
           styles.content,
           {
-            transform: [{scale: scaleAnim}],
+            transform: [{ scale: scaleAnim }],
           },
         ]}>
         {/* Victory icon */}

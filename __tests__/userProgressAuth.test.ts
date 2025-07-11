@@ -1,5 +1,5 @@
-import {userProgressService} from '../src/services/userProgress';
-import {gameModeService} from '../src/services/gameMode';
+import { userProgressService } from '../src/services/userProgress';
+import { gameModeService } from '../src/services/gameMode';
 
 // Mock Firebase
 const mockAuth: any = {

@@ -1,5 +1,5 @@
-import {Tile as GameTile} from '../types/game';
-import {dropTiles} from '../utils/gameLogic';
+import { Tile as GameTile } from '../types/game';
+import { dropTiles } from '../utils/gameLogic';
 
 describe('Sand Blockers Mechanic', () => {
   beforeEach(() => {
@@ -23,19 +23,21 @@ describe('Sand Blockers Mechanic', () => {
   };
 
   // Helper function to create sand blockers array
-  const createSandBlockers = (positions: Array<{row: number; col: number}>) => {
+  const createSandBlockers = (
+    positions: Array<{ row: number; col: number }>,
+  ) => {
     return positions;
   };
 
   // Helper function to simulate the sand blocker processing logic
   const processSandBlockers = (
     board: (GameTile | null)[][],
-    matches: Array<Array<{row: number; col: number}>>,
-    sandBlockers: Array<{row: number; col: number}>,
-    umbrellas: Array<{row: number; col: number}>,
+    matches: Array<Array<{ row: number; col: number }>>,
+    sandBlockers: Array<{ row: number; col: number }>,
+    umbrellas: Array<{ row: number; col: number }>,
   ) => {
-    const sandBlockersToClear: Array<{row: number; col: number}> = [];
-    const umbrellasToRemove: Array<{row: number; col: number}> = [];
+    const sandBlockersToClear: Array<{ row: number; col: number }> = [];
+    const umbrellasToRemove: Array<{ row: number; col: number }> = [];
 
     // Track which sand blockers are adjacent to matches in this turn
     const adjacentBlockers = new Set<string>();
@@ -44,10 +46,10 @@ describe('Sand Blockers Mechanic', () => {
       match.forEach(pos => {
         // Check all 4 adjacent positions for sand blockers
         const adjacentPositions = [
-          {row: pos.row - 1, col: pos.col}, // up
-          {row: pos.row + 1, col: pos.col}, // down
-          {row: pos.row, col: pos.col - 1}, // left
-          {row: pos.row, col: pos.col + 1}, // right
+          { row: pos.row - 1, col: pos.col }, // up
+          { row: pos.row + 1, col: pos.col }, // down
+          { row: pos.row, col: pos.col - 1 }, // left
+          { row: pos.row, col: pos.col + 1 }, // right
         ];
 
         adjacentPositions.forEach(adjPos => {
@@ -73,7 +75,7 @@ describe('Sand Blockers Mechanic', () => {
     // Process each adjacent sand blocker
     adjacentBlockers.forEach(blockerKey => {
       const [row, col] = blockerKey.split(',').map(Number);
-      const blocker = {row, col};
+      const blocker = { row, col };
 
       // Check if this sand blocker has an umbrella
       const hasUmbrella = umbrellas.some(
@@ -125,20 +127,20 @@ describe('Sand Blockers Mechanic', () => {
       ]);
 
       const sandBlockers = createSandBlockers([
-        {row: 4, col: 4},
-        {row: 5, col: 5},
+        { row: 4, col: 4 },
+        { row: 5, col: 5 },
       ]);
 
       const umbrellas = createSandBlockers([
-        {row: 4, col: 4},
-        {row: 5, col: 5},
+        { row: 4, col: 4 },
+        { row: 5, col: 5 },
       ]);
 
       const matches = [
         [
-          {row: 0, col: 0},
-          {row: 0, col: 1},
-          {row: 0, col: 2},
+          { row: 0, col: 0 },
+          { row: 0, col: 1 },
+          { row: 0, col: 2 },
         ],
       ];
 
@@ -171,20 +173,20 @@ describe('Sand Blockers Mechanic', () => {
       ]);
 
       const sandBlockers = createSandBlockers([
-        {row: 0, col: 3}, // Adjacent to the match
-        {row: 4, col: 4}, // Not adjacent
+        { row: 0, col: 3 }, // Adjacent to the match
+        { row: 4, col: 4 }, // Not adjacent
       ]);
 
       const umbrellas = createSandBlockers([
-        {row: 0, col: 3}, // Has umbrella
-        {row: 4, col: 4}, // Has umbrella
+        { row: 0, col: 3 }, // Has umbrella
+        { row: 4, col: 4 }, // Has umbrella
       ]);
 
       const matches = [
         [
-          {row: 0, col: 0},
-          {row: 0, col: 1},
-          {row: 0, col: 2},
+          { row: 0, col: 0 },
+          { row: 0, col: 1 },
+          { row: 0, col: 2 },
         ],
       ];
 
@@ -196,12 +198,12 @@ describe('Sand Blockers Mechanic', () => {
       );
 
       // Should remove umbrella from adjacent blocker
-      expect(result.umbrellasToRemove).toEqual([{row: 0, col: 3}]);
+      expect(result.umbrellasToRemove).toEqual([{ row: 0, col: 3 }]);
       expect(result.sandBlockersToClear).toHaveLength(0);
 
       // Sand blocker should remain but without umbrella
       expect(result.updatedSandBlockers).toEqual(sandBlockers);
-      expect(result.updatedUmbrellas).toEqual([{row: 4, col: 4}]);
+      expect(result.updatedUmbrellas).toEqual([{ row: 4, col: 4 }]);
     });
 
     it('should handle multiple adjacent sand blockers on first match', () => {
@@ -217,22 +219,22 @@ describe('Sand Blockers Mechanic', () => {
       ]);
 
       const sandBlockers = createSandBlockers([
-        {row: 0, col: 3}, // Adjacent to match
-        {row: 1, col: 2}, // Adjacent to match
-        {row: 4, col: 4}, // Not adjacent
+        { row: 0, col: 3 }, // Adjacent to match
+        { row: 1, col: 2 }, // Adjacent to match
+        { row: 4, col: 4 }, // Not adjacent
       ]);
 
       const umbrellas = createSandBlockers([
-        {row: 0, col: 3}, // Has umbrella
-        {row: 1, col: 2}, // Has umbrella
-        {row: 4, col: 4}, // Has umbrella
+        { row: 0, col: 3 }, // Has umbrella
+        { row: 1, col: 2 }, // Has umbrella
+        { row: 4, col: 4 }, // Has umbrella
       ]);
 
       const matches = [
         [
-          {row: 0, col: 0},
-          {row: 0, col: 1},
-          {row: 0, col: 2},
+          { row: 0, col: 0 },
+          { row: 0, col: 1 },
+          { row: 0, col: 2 },
         ],
       ];
 
@@ -245,13 +247,13 @@ describe('Sand Blockers Mechanic', () => {
 
       // Should remove umbrellas from both adjacent blockers
       expect(result.umbrellasToRemove).toHaveLength(2);
-      expect(result.umbrellasToRemove).toContainEqual({row: 0, col: 3});
-      expect(result.umbrellasToRemove).toContainEqual({row: 1, col: 2});
+      expect(result.umbrellasToRemove).toContainEqual({ row: 0, col: 3 });
+      expect(result.umbrellasToRemove).toContainEqual({ row: 1, col: 2 });
       expect(result.sandBlockersToClear).toHaveLength(0);
 
       // Sand blockers should remain but without umbrellas
       expect(result.updatedSandBlockers).toEqual(sandBlockers);
-      expect(result.updatedUmbrellas).toEqual([{row: 4, col: 4}]);
+      expect(result.updatedUmbrellas).toEqual([{ row: 4, col: 4 }]);
     });
   });
 
@@ -269,19 +271,19 @@ describe('Sand Blockers Mechanic', () => {
       ]);
 
       const sandBlockers = createSandBlockers([
-        {row: 0, col: 3}, // Adjacent to match, no umbrella (already removed)
-        {row: 4, col: 4}, // Not adjacent
+        { row: 0, col: 3 }, // Adjacent to match, no umbrella (already removed)
+        { row: 4, col: 4 }, // Not adjacent
       ]);
 
       const umbrellas = createSandBlockers([
-        {row: 4, col: 4}, // Only this one still has umbrella
+        { row: 4, col: 4 }, // Only this one still has umbrella
       ]);
 
       const matches = [
         [
-          {row: 0, col: 0},
-          {row: 0, col: 1},
-          {row: 0, col: 2},
+          { row: 0, col: 0 },
+          { row: 0, col: 1 },
+          { row: 0, col: 2 },
         ],
       ];
 
@@ -294,11 +296,11 @@ describe('Sand Blockers Mechanic', () => {
 
       // Should clear the adjacent blocker (no umbrellas to remove)
       expect(result.umbrellasToRemove).toHaveLength(0);
-      expect(result.sandBlockersToClear).toEqual([{row: 0, col: 3}]);
+      expect(result.sandBlockersToClear).toEqual([{ row: 0, col: 3 }]);
 
       // Sand blocker should be removed entirely
-      expect(result.updatedSandBlockers).toEqual([{row: 4, col: 4}]);
-      expect(result.updatedUmbrellas).toEqual([{row: 4, col: 4}]);
+      expect(result.updatedSandBlockers).toEqual([{ row: 4, col: 4 }]);
+      expect(result.updatedUmbrellas).toEqual([{ row: 4, col: 4 }]);
     });
 
     it('should handle mixed states (some with umbrellas, some without)', () => {
@@ -314,21 +316,21 @@ describe('Sand Blockers Mechanic', () => {
       ]);
 
       const sandBlockers = createSandBlockers([
-        {row: 0, col: 3}, // Adjacent, no umbrella (second match)
-        {row: 1, col: 2}, // Adjacent, has umbrella (first match)
-        {row: 4, col: 4}, // Not adjacent
+        { row: 0, col: 3 }, // Adjacent, no umbrella (second match)
+        { row: 1, col: 2 }, // Adjacent, has umbrella (first match)
+        { row: 4, col: 4 }, // Not adjacent
       ]);
 
       const umbrellas = createSandBlockers([
-        {row: 1, col: 2}, // Still has umbrella
-        {row: 4, col: 4}, // Still has umbrella
+        { row: 1, col: 2 }, // Still has umbrella
+        { row: 4, col: 4 }, // Still has umbrella
       ]);
 
       const matches = [
         [
-          {row: 0, col: 0},
-          {row: 0, col: 1},
-          {row: 0, col: 2},
+          { row: 0, col: 0 },
+          { row: 0, col: 1 },
+          { row: 0, col: 2 },
         ],
       ];
 
@@ -340,15 +342,15 @@ describe('Sand Blockers Mechanic', () => {
       );
 
       // Should remove umbrella from one and clear the other
-      expect(result.umbrellasToRemove).toEqual([{row: 1, col: 2}]);
-      expect(result.sandBlockersToClear).toEqual([{row: 0, col: 3}]);
+      expect(result.umbrellasToRemove).toEqual([{ row: 1, col: 2 }]);
+      expect(result.sandBlockersToClear).toEqual([{ row: 0, col: 3 }]);
 
       // Final state: one blocker removed, one without umbrella, one unchanged
       expect(result.updatedSandBlockers).toEqual([
-        {row: 1, col: 2},
-        {row: 4, col: 4},
+        { row: 1, col: 2 },
+        { row: 4, col: 4 },
       ]);
-      expect(result.updatedUmbrellas).toEqual([{row: 4, col: 4}]);
+      expect(result.updatedUmbrellas).toEqual([{ row: 4, col: 4 }]);
     });
   });
 
@@ -366,24 +368,24 @@ describe('Sand Blockers Mechanic', () => {
       ]);
 
       const sandBlockers = createSandBlockers([
-        {row: 0, col: 1}, // Adjacent to top of vertical match
-        {row: 3, col: 0}, // Adjacent to bottom of vertical match
-        {row: 1, col: 1}, // Adjacent to middle of vertical match
-        {row: 4, col: 4}, // Not adjacent
+        { row: 0, col: 1 }, // Adjacent to top of vertical match
+        { row: 3, col: 0 }, // Adjacent to bottom of vertical match
+        { row: 1, col: 1 }, // Adjacent to middle of vertical match
+        { row: 4, col: 4 }, // Not adjacent
       ]);
 
       const umbrellas = createSandBlockers([
-        {row: 0, col: 1},
-        {row: 3, col: 0},
-        {row: 1, col: 1},
-        {row: 4, col: 4},
+        { row: 0, col: 1 },
+        { row: 3, col: 0 },
+        { row: 1, col: 1 },
+        { row: 4, col: 4 },
       ]);
 
       const matches = [
         [
-          {row: 0, col: 0},
-          {row: 1, col: 0},
-          {row: 2, col: 0},
+          { row: 0, col: 0 },
+          { row: 1, col: 0 },
+          { row: 2, col: 0 },
         ],
       ];
 
@@ -396,9 +398,9 @@ describe('Sand Blockers Mechanic', () => {
 
       // Should remove umbrellas from all adjacent blockers
       expect(result.umbrellasToRemove).toHaveLength(3);
-      expect(result.umbrellasToRemove).toContainEqual({row: 0, col: 1});
-      expect(result.umbrellasToRemove).toContainEqual({row: 3, col: 0});
-      expect(result.umbrellasToRemove).toContainEqual({row: 1, col: 1});
+      expect(result.umbrellasToRemove).toContainEqual({ row: 0, col: 1 });
+      expect(result.umbrellasToRemove).toContainEqual({ row: 3, col: 0 });
+      expect(result.umbrellasToRemove).toContainEqual({ row: 1, col: 1 });
       expect(result.sandBlockersToClear).toHaveLength(0);
     });
 
@@ -415,20 +417,20 @@ describe('Sand Blockers Mechanic', () => {
       ]);
 
       const sandBlockers = createSandBlockers([
-        {row: 1, col: 3}, // Diagonal to match (not adjacent)
-        {row: 0, col: 3}, // Adjacent to match
+        { row: 1, col: 3 }, // Diagonal to match (not adjacent)
+        { row: 0, col: 3 }, // Adjacent to match
       ]);
 
       const umbrellas = createSandBlockers([
-        {row: 1, col: 3},
-        {row: 0, col: 3},
+        { row: 1, col: 3 },
+        { row: 0, col: 3 },
       ]);
 
       const matches = [
         [
-          {row: 0, col: 0},
-          {row: 0, col: 1},
-          {row: 0, col: 2},
+          { row: 0, col: 0 },
+          { row: 0, col: 1 },
+          { row: 0, col: 2 },
         ],
       ];
 
@@ -440,9 +442,9 @@ describe('Sand Blockers Mechanic', () => {
       );
 
       // Should only affect the adjacent blocker
-      expect(result.umbrellasToRemove).toEqual([{row: 0, col: 3}]);
+      expect(result.umbrellasToRemove).toEqual([{ row: 0, col: 3 }]);
       expect(result.sandBlockersToClear).toHaveLength(0);
-      expect(result.updatedUmbrellas).toEqual([{row: 1, col: 3}]);
+      expect(result.updatedUmbrellas).toEqual([{ row: 1, col: 3 }]);
     });
   });
 
@@ -460,22 +462,22 @@ describe('Sand Blockers Mechanic', () => {
       ]);
 
       const sandBlockers = createSandBlockers([
-        {row: 0, col: 3}, // Adjacent to match
-        {row: 0, col: 0}, // At edge, adjacent to match (same position as first match tile)
-        {row: 7, col: 7}, // At edge, far from match
+        { row: 0, col: 3 }, // Adjacent to match
+        { row: 0, col: 0 }, // At edge, adjacent to match (same position as first match tile)
+        { row: 7, col: 7 }, // At edge, far from match
       ]);
 
       const umbrellas = createSandBlockers([
-        {row: 0, col: 3},
-        {row: 0, col: 0},
-        {row: 7, col: 7},
+        { row: 0, col: 3 },
+        { row: 0, col: 0 },
+        { row: 7, col: 7 },
       ]);
 
       const matches = [
         [
-          {row: 0, col: 0},
-          {row: 0, col: 1},
-          {row: 0, col: 2},
+          { row: 0, col: 0 },
+          { row: 0, col: 1 },
+          { row: 0, col: 2 },
         ],
       ];
 
@@ -488,10 +490,10 @@ describe('Sand Blockers Mechanic', () => {
 
       // Should affect both adjacent blockers (including the one at the edge)
       expect(result.umbrellasToRemove).toHaveLength(2);
-      expect(result.umbrellasToRemove).toContainEqual({row: 0, col: 3});
-      expect(result.umbrellasToRemove).toContainEqual({row: 0, col: 0});
+      expect(result.umbrellasToRemove).toContainEqual({ row: 0, col: 3 });
+      expect(result.umbrellasToRemove).toContainEqual({ row: 0, col: 0 });
       expect(result.sandBlockersToClear).toHaveLength(0);
-      expect(result.updatedUmbrellas).toEqual([{row: 7, col: 7}]);
+      expect(result.updatedUmbrellas).toEqual([{ row: 7, col: 7 }]);
     });
 
     it('should handle empty matches array', () => {
@@ -507,16 +509,16 @@ describe('Sand Blockers Mechanic', () => {
       ]);
 
       const sandBlockers = createSandBlockers([
-        {row: 0, col: 3},
-        {row: 4, col: 4},
+        { row: 0, col: 3 },
+        { row: 4, col: 4 },
       ]);
 
       const umbrellas = createSandBlockers([
-        {row: 0, col: 3},
-        {row: 4, col: 4},
+        { row: 0, col: 3 },
+        { row: 4, col: 4 },
       ]);
 
-      const matches: Array<Array<{row: number; col: number}>> = [];
+      const matches: Array<Array<{ row: number; col: number }>> = [];
 
       const result = processSandBlockers(
         board,
@@ -550,19 +552,19 @@ describe('Sand Blockers Mechanic', () => {
       // Simulate the state after a sand blocker was cleared in a previous turn
       // The sand blocker at (0,3) was cleared and should not be in the list
       const sandBlockers = createSandBlockers([
-        {row: 4, col: 4}, // Only this one should remain
+        { row: 4, col: 4 }, // Only this one should remain
       ]);
 
       // The umbrella list should also not contain the cleared sand blocker
       const umbrellas = createSandBlockers([
-        {row: 4, col: 4}, // Only this one should have an umbrella
+        { row: 4, col: 4 }, // Only this one should have an umbrella
       ]);
 
       const matches = [
         [
-          {row: 0, col: 0},
-          {row: 0, col: 1},
-          {row: 0, col: 2},
+          { row: 0, col: 0 },
+          { row: 0, col: 1 },
+          { row: 0, col: 2 },
         ],
       ];
 
@@ -595,22 +597,22 @@ describe('Sand Blockers Mechanic', () => {
       ]);
 
       // Initial state: sand blocker with umbrella
-      let sandBlockers = createSandBlockers([{row: 0, col: 3}]);
+      let sandBlockers = createSandBlockers([{ row: 0, col: 3 }]);
 
-      let umbrellas = createSandBlockers([{row: 0, col: 3}]);
+      let umbrellas = createSandBlockers([{ row: 0, col: 3 }]);
 
       const matches = [
         [
-          {row: 0, col: 0},
-          {row: 0, col: 1},
-          {row: 0, col: 2},
+          { row: 0, col: 0 },
+          { row: 0, col: 1 },
+          { row: 0, col: 2 },
         ],
       ];
 
       // First turn: should remove umbrella
       let result = processSandBlockers(board, matches, sandBlockers, umbrellas);
 
-      expect(result.umbrellasToRemove).toEqual([{row: 0, col: 3}]);
+      expect(result.umbrellasToRemove).toEqual([{ row: 0, col: 3 }]);
       expect(result.sandBlockersToClear).toHaveLength(0);
       expect(result.updatedSandBlockers).toEqual(sandBlockers);
       expect(result.updatedUmbrellas).toEqual([]);
@@ -623,7 +625,7 @@ describe('Sand Blockers Mechanic', () => {
       result = processSandBlockers(board, matches, sandBlockers, umbrellas);
 
       expect(result.umbrellasToRemove).toHaveLength(0);
-      expect(result.sandBlockersToClear).toEqual([{row: 0, col: 3}]);
+      expect(result.sandBlockersToClear).toEqual([{ row: 0, col: 3 }]);
       expect(result.updatedSandBlockers).toEqual([]);
       expect(result.updatedUmbrellas).toEqual([]);
 
@@ -657,7 +659,7 @@ describe('Sand Blockers Mechanic', () => {
       ]);
 
       // Sand blocker at position (3, 0)
-      const sandBlockers = [{row: 3, col: 0}];
+      const sandBlockers = [{ row: 3, col: 0 }];
 
       // Drop tiles - the tile at (0, 0) should fall to (2, 0) and stop at the sand blocker
       const result = dropTiles(board as any, 'sand', sandBlockers);
@@ -691,9 +693,9 @@ describe('Sand Blockers Mechanic', () => {
 
       // Sand blockers at various positions
       const sandBlockers = [
-        {row: 2, col: 0},
-        {row: 4, col: 0},
-        {row: 6, col: 0},
+        { row: 2, col: 0 },
+        { row: 4, col: 0 },
+        { row: 6, col: 0 },
       ];
 
       // Drop tiles - should fill around sand blockers

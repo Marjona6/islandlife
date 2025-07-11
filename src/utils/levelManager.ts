@@ -74,7 +74,7 @@ export class LevelManager {
     } catch (error) {
       console.error('Failed to load levels from JSON file:', error);
       // Fallback to types file if JSON loading fails
-      const {LEVEL_CONFIGS} = require('../types/levels');
+      const { LEVEL_CONFIGS } = require('../types/levels');
       LEVEL_CONFIGS.forEach((level: LevelConfig) => {
         if (validateLevelConfig(level)) {
           this.levels.set(level.id, level);
@@ -156,7 +156,7 @@ export class LevelManager {
   }
 
   public getLevelCountByDifficulty(): Record<string, number> {
-    const counts = {easy: 0, medium: 0, hard: 0};
+    const counts = { easy: 0, medium: 0, hard: 0 };
 
     this.getAllLevels().forEach(level => {
       if (level.difficulty) {
@@ -204,7 +204,7 @@ export class LevelManager {
     return {
       totalLevels: this.levels.size,
       levelIds: Array.from(this.levels.keys()),
-      levelNames: allLevels.map(level => ({id: level.id, name: level.name})),
+      levelNames: allLevels.map(level => ({ id: level.id, name: level.name })),
       levelDetails: allLevels.map(level => ({
         id: level.id,
         name: level.name,
@@ -245,7 +245,7 @@ export const saveLevelProgress = async (
     // In a real app, this would save to an API or local storage
     await fetch(`/api/progress/${levelId}`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(progress),
     });
     return true;

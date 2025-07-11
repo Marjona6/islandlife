@@ -1,4 +1,4 @@
-import {userProgressService, UserProgress} from './userProgress';
+import { userProgressService, UserProgress } from './userProgress';
 
 export type GameMode = 'PROD' | 'DEV';
 

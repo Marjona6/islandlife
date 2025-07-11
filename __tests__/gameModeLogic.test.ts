@@ -1,4 +1,4 @@
-import {gameModeService} from '../src/services/gameMode';
+import { gameModeService } from '../src/services/gameMode';
 
 // Mock the services
 jest.mock('../src/services/gameMode', () => ({

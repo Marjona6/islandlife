@@ -1,8 +1,13 @@
-import React, {useRef, useState, forwardRef, useImperativeHandle} from 'react';
-import {render, act} from '@testing-library/react-native';
-import {View, Text} from 'react-native';
-import {GameBoard} from '../components/GameBoard';
-import {GameProvider} from '../contexts/GameContext';
+import React, {
+  useRef,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
+import { render, act } from '@testing-library/react-native';
+import { View, Text } from 'react-native';
+import { GameBoard } from '../components/GameBoard/GameBoard';
+import { GameProvider } from '../contexts/GameContext';
 
 // Mock console.log to reduce noise in tests
 const originalLog = console.log;
@@ -72,7 +77,7 @@ describe('Coconut Drop Integration', () => {
 
 describe('Coconut Drop Integration (Custom Harness)', () => {
   // Custom test harness with proper lifecycle management
-  type HarnessProps = {initialBoard: any[][]};
+  type HarnessProps = { initialBoard: any[][] };
   const Harness = forwardRef((props: HarnessProps, ref) => {
     const [dropped, setDropped] = useState(0);
     const boardRef = useRef<any>(null);
@@ -80,13 +85,13 @@ describe('Coconut Drop Integration (Custom Harness)', () => {
     useImperativeHandle(ref, () => ({
       triggerDrop: (newBoard: any[][]) => {
         // Check for coconuts at the bottom row (row 7) directly
-        const coconutsToExit: Array<{row: number; col: number; id: string}> =
+        const coconutsToExit: Array<{ row: number; col: number; id: string }> =
           [];
         if (newBoard[7] && Array.isArray(newBoard[7])) {
           for (let col = 0; col < 8; col++) {
             const tile = newBoard[7][col];
             if (tile && tile.isSpecial) {
-              coconutsToExit.push({row: 7, col, id: tile.id});
+              coconutsToExit.push({ row: 7, col, id: tile.id });
             }
           }
         }
@@ -119,9 +124,9 @@ describe('Coconut Drop Integration (Custom Harness)', () => {
   function makeBoardWithCoconuts(numCoconuts: number) {
     const board = Array(8)
       .fill(null)
-      .map(() => Array(8).fill({type: '🦀', id: Math.random().toString()}));
+      .map(() => Array(8).fill({ type: '🦀', id: Math.random().toString() }));
     for (let i = 0; i < numCoconuts; i++) {
-      board[7][i] = {type: '🥥', id: `coconut-${i}`, isSpecial: true};
+      board[7][i] = { type: '🥥', id: `coconut-${i}`, isSpecial: true };
     }
     return board;
   }
@@ -130,7 +135,7 @@ describe('Coconut Drop Integration (Custom Harness)', () => {
     const initialBoard = makeBoardWithCoconuts(1);
     const harnessRef = React.createRef<any>();
 
-    const {findByTestId} = render(
+    const { findByTestId } = render(
       <Harness ref={harnessRef} initialBoard={initialBoard} />,
     );
 
@@ -146,7 +151,7 @@ describe('Coconut Drop Integration (Custom Harness)', () => {
     const initialBoard = makeBoardWithCoconuts(4);
     const harnessRef = React.createRef<any>();
 
-    const {findByTestId} = render(
+    const { findByTestId } = render(
       <Harness ref={harnessRef} initialBoard={initialBoard} />,
     );
 
@@ -162,7 +167,7 @@ describe('Coconut Drop Integration (Custom Harness)', () => {
     const initialBoard = makeBoardWithCoconuts(0);
     const harnessRef = React.createRef<any>();
 
-    const {findByTestId} = render(
+    const { findByTestId } = render(
       <Harness ref={harnessRef} initialBoard={initialBoard} />,
     );
 
@@ -179,7 +184,7 @@ describe('Coconut Drop Integration (Custom Harness)', () => {
     const board1 = makeBoardWithCoconuts(2);
     const board2 = makeBoardWithCoconuts(3);
 
-    const {findByTestId} = render(
+    const { findByTestId } = render(
       <Harness ref={harnessRef} initialBoard={board1} />,
     );
 

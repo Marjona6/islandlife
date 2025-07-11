@@ -81,7 +81,7 @@ jest.mock('@react-native-firebase/app', () => ({
 // Mock react-native-animatable
 jest.mock('react-native-animatable', () => {
   const React = require('react');
-  const {View} = require('react-native');
+  const { View } = require('react-native');
 
   const mockComponent = name => {
     const Component = React.forwardRef((props, ref) => {
@@ -202,7 +202,7 @@ jest.mock('react-native', () => {
 // Mock react-native-linear-gradient
 jest.mock('react-native-linear-gradient', () => {
   const React = require('react');
-  const {View} = require('react-native');
+  const { View } = require('react-native');
 
   const LinearGradient = React.forwardRef((props, ref) => {
     return React.createElement(View, {
@@ -219,7 +219,7 @@ jest.mock('react-native-linear-gradient', () => {
 // Mock react-native-svg
 jest.mock('react-native-svg', () => {
   const React = require('react');
-  const {View} = require('react-native');
+  const { View } = require('react-native');
 
   const createSvgMock = name => {
     const Component = React.forwardRef((props, ref) => {

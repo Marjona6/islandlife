@@ -1,11 +1,11 @@
 import React from 'react';
-import {render, waitFor} from '@testing-library/react-native';
-import {LevelGameScreen} from '../screens/LevelGameScreen';
-import {GameProvider} from '../contexts/GameContext';
+import { render, waitFor } from '@testing-library/react-native';
+import { LevelGameScreen } from '../screens/LevelGameScreen';
+import { GameProvider } from '../contexts/GameContext';
 
 describe('Game Board Rendering', () => {
   it('should render the game board and not show immediate victory', async () => {
-    const {getByTestId, queryByText, debug} = render(
+    const { getByTestId, queryByText, debug } = render(
       <GameProvider>
         <LevelGameScreen
           initialLevelId="level-1"
@@ -37,7 +37,7 @@ describe('Game Board Rendering', () => {
   });
 
   it('should initialize with level intro modal visible', async () => {
-    const {getByTestId, queryByText} = render(
+    const { getByTestId, queryByText } = render(
       <GameProvider>
         <LevelGameScreen
           initialLevelId="level-1"

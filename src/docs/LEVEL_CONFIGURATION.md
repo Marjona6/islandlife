@@ -140,10 +140,10 @@ Special tiles have unique properties:
   "tileTypes": ["🦀", "🌴", "⭐", "🌺", "🐚"],
   "mechanics": ["sand"],
   "blockers": [
-    {"type": "sand", "row": 3, "col": 3},
-    {"type": "sand", "row": 3, "col": 4},
-    {"type": "sand", "row": 4, "col": 3},
-    {"type": "sand", "row": 4, "col": 4}
+    { "type": "sand", "row": 3, "col": 3 },
+    { "type": "sand", "row": 3, "col": 4 },
+    { "type": "sand", "row": 4, "col": 3 },
+    { "type": "sand", "row": 4, "col": 4 }
   ],
   "description": "Score 5000 points while clearing sand!",
   "difficulty": "easy"
@@ -172,20 +172,40 @@ Special tiles have unique properties:
   "tileTypes": ["🦑", "🦐", "🐡", "🪝"],
   "mechanics": ["ice", "coral", "rainbow"],
   "blockers": [
-    {"type": "coral", "row": 1, "col": 1},
-    {"type": "coral", "row": 1, "col": 6},
-    {"type": "coral", "row": 6, "col": 1},
-    {"type": "coral", "row": 6, "col": 6},
-    {"type": "ice", "row": 3, "col": 3},
-    {"type": "ice", "row": 3, "col": 4},
-    {"type": "ice", "row": 4, "col": 3},
-    {"type": "ice", "row": 4, "col": 4}
+    { "type": "coral", "row": 1, "col": 1 },
+    { "type": "coral", "row": 1, "col": 6 },
+    { "type": "coral", "row": 6, "col": 1 },
+    { "type": "coral", "row": 6, "col": 6 },
+    { "type": "ice", "row": 3, "col": 3 },
+    { "type": "ice", "row": 3, "col": 4 },
+    { "type": "ice", "row": 4, "col": 3 },
+    { "type": "ice", "row": 4, "col": 4 }
   ],
   "specialTiles": [
-    {"type": "rainbow", "row": 0, "col": 0, "properties": {"color": "random"}},
-    {"type": "rainbow", "row": 0, "col": 7, "properties": {"color": "random"}},
-    {"type": "rainbow", "row": 7, "col": 0, "properties": {"color": "random"}},
-    {"type": "rainbow", "row": 7, "col": 7, "properties": {"color": "random"}}
+    {
+      "type": "rainbow",
+      "row": 0,
+      "col": 0,
+      "properties": { "color": "random" }
+    },
+    {
+      "type": "rainbow",
+      "row": 0,
+      "col": 7,
+      "properties": { "color": "random" }
+    },
+    {
+      "type": "rainbow",
+      "row": 7,
+      "col": 0,
+      "properties": { "color": "random" }
+    },
+    {
+      "type": "rainbow",
+      "row": 7,
+      "col": 7,
+      "properties": { "color": "random" }
+    }
   ],
   "description": "Score 10000 points using rainbow tiles to break coral and ice!",
   "difficulty": "hard"
@@ -197,7 +217,7 @@ Special tiles have unique properties:
 The `LevelManager` class provides utilities for managing levels:
 
 ```typescript
-import {levelManager} from '../utils/levelManager';
+import { levelManager } from '../utils/levelManager';
 
 // Get a specific level
 const level = levelManager.getLevel('level-1');

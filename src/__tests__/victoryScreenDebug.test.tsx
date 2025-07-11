@@ -42,20 +42,20 @@ describe('Victory Screen Debug Tests', () => {
       objective: 'sand-clear',
       target: 14,
       blockers: [
-        {type: 'sand', row: 1, col: 1},
-        {type: 'sand', row: 1, col: 2},
-        {type: 'sand', row: 1, col: 5},
-        {type: 'sand', row: 1, col: 6},
-        {type: 'sand', row: 2, col: 1},
-        {type: 'sand', row: 2, col: 6},
-        {type: 'sand', row: 3, col: 3},
-        {type: 'sand', row: 3, col: 4},
-        {type: 'sand', row: 4, col: 3},
-        {type: 'sand', row: 4, col: 4},
-        {type: 'sand', row: 5, col: 1},
-        {type: 'sand', row: 5, col: 6},
-        {type: 'sand', row: 6, col: 1},
-        {type: 'sand', row: 6, col: 6},
+        { type: 'sand', row: 1, col: 1 },
+        { type: 'sand', row: 1, col: 2 },
+        { type: 'sand', row: 1, col: 5 },
+        { type: 'sand', row: 1, col: 6 },
+        { type: 'sand', row: 2, col: 1 },
+        { type: 'sand', row: 2, col: 6 },
+        { type: 'sand', row: 3, col: 3 },
+        { type: 'sand', row: 3, col: 4 },
+        { type: 'sand', row: 4, col: 3 },
+        { type: 'sand', row: 4, col: 4 },
+        { type: 'sand', row: 5, col: 1 },
+        { type: 'sand', row: 5, col: 6 },
+        { type: 'sand', row: 6, col: 1 },
+        { type: 'sand', row: 6, col: 6 },
       ],
     };
 
@@ -118,8 +118,8 @@ describe('Victory Screen Debug Tests', () => {
 
       // Only 2 sand blockers remaining
       const sandBlockers = [
-        {row: 1, col: 1, hasUmbrella: true},
-        {row: 2, col: 2, hasUmbrella: true},
+        { row: 1, col: 1, hasUmbrella: true },
+        { row: 2, col: 2, hasUmbrella: true },
       ];
 
       const isComplete = simulateLevelCompletion(
@@ -195,8 +195,8 @@ describe('Victory Screen Debug Tests', () => {
       let showVictory = false;
       let isTransitioning = false;
       let sandBlockers = [
-        {row: 1, col: 1, hasUmbrella: true},
-        {row: 2, col: 2, hasUmbrella: true},
+        { row: 1, col: 1, hasUmbrella: true },
+        { row: 2, col: 2, hasUmbrella: true },
       ];
 
       // Initial state
@@ -226,7 +226,7 @@ describe('Victory Screen Debug Tests', () => {
     it('should provide debug information for troubleshooting', () => {
       // Test the exact condition that should trigger victory
       const testCondition = {
-        currentLevel: {objective: 'sand-clear', target: 14},
+        currentLevel: { objective: 'sand-clear', target: 14 },
         currentProgress: {
           score: 0,
           collected: 0,
@@ -234,7 +234,7 @@ describe('Victory Screen Debug Tests', () => {
           combos: 0,
           dropped: 0,
         },
-        gameState: {sandBlockers: []},
+        gameState: { sandBlockers: [] },
         showVictory: false,
         isTransitioning: false,
       };

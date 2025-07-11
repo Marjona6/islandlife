@@ -40,20 +40,20 @@
       "tileTypes": ["🦀", "🌴", "⭐", "🌺", "🐚"],
       "mechanics": ["sand"],
       "blockers": [
-        {"type": "sand", "row": 1, "col": 1},
-        {"type": "sand", "row": 1, "col": 2},
-        {"type": "sand", "row": 1, "col": 5},
-        {"type": "sand", "row": 1, "col": 6},
-        {"type": "sand", "row": 2, "col": 1},
-        {"type": "sand", "row": 2, "col": 6},
-        {"type": "sand", "row": 3, "col": 3},
-        {"type": "sand", "row": 3, "col": 4},
-        {"type": "sand", "row": 4, "col": 3},
-        {"type": "sand", "row": 4, "col": 4},
-        {"type": "sand", "row": 5, "col": 1},
-        {"type": "sand", "row": 5, "col": 6},
-        {"type": "sand", "row": 6, "col": 1},
-        {"type": "sand", "row": 6, "col": 6}
+        { "type": "sand", "row": 1, "col": 1 },
+        { "type": "sand", "row": 1, "col": 2 },
+        { "type": "sand", "row": 1, "col": 5 },
+        { "type": "sand", "row": 1, "col": 6 },
+        { "type": "sand", "row": 2, "col": 1 },
+        { "type": "sand", "row": 2, "col": 6 },
+        { "type": "sand", "row": 3, "col": 3 },
+        { "type": "sand", "row": 3, "col": 4 },
+        { "type": "sand", "row": 4, "col": 3 },
+        { "type": "sand", "row": 4, "col": 4 },
+        { "type": "sand", "row": 5, "col": 1 },
+        { "type": "sand", "row": 5, "col": 6 },
+        { "type": "sand", "row": 6, "col": 1 },
+        { "type": "sand", "row": 6, "col": 6 }
       ],
       "description": "Clear all sand blockers to complete the level!",
       "difficulty": "easy"
@@ -77,35 +77,35 @@
       "tileTypes": ["🐚", "⭐", "🌺", "🦀"],
       "mechanics": ["sand"],
       "blockers": [
-        {"type": "sand", "row": 7, "col": 2},
-        {"type": "sand", "row": 7, "col": 3},
-        {"type": "sand", "row": 7, "col": 4},
-        {"type": "sand", "row": 7, "col": 5}
+        { "type": "sand", "row": 7, "col": 2 },
+        { "type": "sand", "row": 7, "col": 3 },
+        { "type": "sand", "row": 7, "col": 4 },
+        { "type": "sand", "row": 7, "col": 5 }
       ],
       "specialTiles": [
         {
           "type": "coconut",
           "row": 0,
           "col": 2,
-          "properties": {"movable": true, "matchable": false}
+          "properties": { "movable": true, "matchable": false }
         },
         {
           "type": "coconut",
           "row": 0,
           "col": 3,
-          "properties": {"movable": true, "matchable": false}
+          "properties": { "movable": true, "matchable": false }
         },
         {
           "type": "coconut",
           "row": 0,
           "col": 4,
-          "properties": {"movable": true, "matchable": false}
+          "properties": { "movable": true, "matchable": false }
         },
         {
           "type": "coconut",
           "row": 0,
           "col": 5,
-          "properties": {"movable": true, "matchable": false}
+          "properties": { "movable": true, "matchable": false }
         }
       ],
       "description": "Drop 4 coconuts (🥥) to the bottom of the board! Coconuts can be moved but not matched. Use matches to clear paths!",
@@ -272,39 +272,39 @@
       "tileTypes": ["🦑", "🦐", "🐡", "🪝"],
       "mechanics": ["ice", "coral", "rainbow"],
       "blockers": [
-        {"type": "coral", "row": 1, "col": 1},
-        {"type": "coral", "row": 1, "col": 6},
-        {"type": "coral", "row": 6, "col": 1},
-        {"type": "coral", "row": 6, "col": 6},
-        {"type": "ice", "row": 3, "col": 3},
-        {"type": "ice", "row": 3, "col": 4},
-        {"type": "ice", "row": 4, "col": 3},
-        {"type": "ice", "row": 4, "col": 4}
+        { "type": "coral", "row": 1, "col": 1 },
+        { "type": "coral", "row": 1, "col": 6 },
+        { "type": "coral", "row": 6, "col": 1 },
+        { "type": "coral", "row": 6, "col": 6 },
+        { "type": "ice", "row": 3, "col": 3 },
+        { "type": "ice", "row": 3, "col": 4 },
+        { "type": "ice", "row": 4, "col": 3 },
+        { "type": "ice", "row": 4, "col": 4 }
       ],
       "specialTiles": [
         {
           "type": "rainbow",
           "row": 0,
           "col": 0,
-          "properties": {"color": "random"}
+          "properties": { "color": "random" }
         },
         {
           "type": "rainbow",
           "row": 0,
           "col": 7,
-          "properties": {"color": "random"}
+          "properties": { "color": "random" }
         },
         {
           "type": "rainbow",
           "row": 7,
           "col": 0,
-          "properties": {"color": "random"}
+          "properties": { "color": "random" }
         },
         {
           "type": "rainbow",
           "row": 7,
           "col": 7,
-          "properties": {"color": "random"}
+          "properties": { "color": "random" }
         }
       ],
       "description": "Score 10000 points using rainbow tiles to break coral and ice!",
@@ -333,25 +333,25 @@
           "type": "power-tile",
           "row": 2,
           "col": 2,
-          "properties": {"power": "crab-repellent"}
+          "properties": { "power": "crab-repellent" }
         },
         {
           "type": "power-tile",
           "row": 2,
           "col": 5,
-          "properties": {"power": "crab-repellent"}
+          "properties": { "power": "crab-repellent" }
         },
         {
           "type": "power-tile",
           "row": 5,
           "col": 2,
-          "properties": {"power": "crab-repellent"}
+          "properties": { "power": "crab-repellent" }
         },
         {
           "type": "power-tile",
           "row": 5,
           "col": 5,
-          "properties": {"power": "crab-repellent"}
+          "properties": { "power": "crab-repellent" }
         }
       ],
       "description": "Clear 50 tiles while avoiding the crab invasion!",
@@ -376,18 +376,18 @@
       "tileTypes": ["🦑", "🦐", "🐡", "🪝"],
       "mechanics": ["net"],
       "blockers": [
-        {"type": "net", "row": 2, "col": 2},
-        {"type": "net", "row": 2, "col": 3},
-        {"type": "net", "row": 2, "col": 4},
-        {"type": "net", "row": 2, "col": 5},
-        {"type": "net", "row": 3, "col": 2},
-        {"type": "net", "row": 3, "col": 5},
-        {"type": "net", "row": 4, "col": 2},
-        {"type": "net", "row": 4, "col": 5},
-        {"type": "net", "row": 5, "col": 2},
-        {"type": "net", "row": 5, "col": 3},
-        {"type": "net", "row": 5, "col": 4},
-        {"type": "net", "row": 5, "col": 5}
+        { "type": "net", "row": 2, "col": 2 },
+        { "type": "net", "row": 2, "col": 3 },
+        { "type": "net", "row": 2, "col": 4 },
+        { "type": "net", "row": 2, "col": 5 },
+        { "type": "net", "row": 3, "col": 2 },
+        { "type": "net", "row": 3, "col": 5 },
+        { "type": "net", "row": 4, "col": 2 },
+        { "type": "net", "row": 4, "col": 5 },
+        { "type": "net", "row": 5, "col": 2 },
+        { "type": "net", "row": 5, "col": 3 },
+        { "type": "net", "row": 5, "col": 4 },
+        { "type": "net", "row": 5, "col": 5 }
       ],
       "description": "Collect 20 sea creatures by breaking through the fishing nets!",
       "difficulty": "medium"

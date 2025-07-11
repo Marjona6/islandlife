@@ -1,4 +1,4 @@
-import {Tile, TileType, getTileEmojis} from '../types/game';
+import { Tile, TileType, getTileEmojis } from '../types/game';
 
 const BOARD_SIZE = 8;
 
@@ -22,8 +22,8 @@ export const areAdjacent = (
 // Find all matches in the board
 export const findMatches = (
   board: Tile[][],
-): Array<Array<{row: number; col: number}>> => {
-  const matches: Array<Array<{row: number; col: number}>> = [];
+): Array<Array<{ row: number; col: number }>> => {
+  const matches: Array<Array<{ row: number; col: number }>> = [];
 
   // console.log(
   //   'Finding matches in board:',
@@ -48,10 +48,10 @@ export const findMatches = (
         tile2.type === tile3.type
       ) {
         // Start a new match
-        const match: Array<{row: number; col: number}> = [
-          {row, col},
-          {row, col: col + 1},
-          {row, col: col + 2},
+        const match: Array<{ row: number; col: number }> = [
+          { row, col },
+          { row, col: col + 1 },
+          { row, col: col + 2 },
         ];
         let i = col + 3;
         while (
@@ -60,7 +60,7 @@ export const findMatches = (
           !board[row][i].isSpecial && // Don't match special tiles
           board[row][i].type === tile1.type
         ) {
-          match.push({row, col: i});
+          match.push({ row, col: i });
           i++;
         }
         matches.push(match);
@@ -89,10 +89,10 @@ export const findMatches = (
         tile2.type === tile3.type
       ) {
         // Start a new match
-        const match: Array<{row: number; col: number}> = [
-          {row, col},
-          {row: row + 1, col},
-          {row: row + 2, col},
+        const match: Array<{ row: number; col: number }> = [
+          { row, col },
+          { row: row + 1, col },
+          { row: row + 2, col },
         ];
         let i = row + 3;
         while (
@@ -101,7 +101,7 @@ export const findMatches = (
           !board[i][col].isSpecial && // Don't match special tiles
           board[i][col].type === tile1.type
         ) {
-          match.push({row: i, col});
+          match.push({ row: i, col });
           i++;
         }
         matches.push(match);
@@ -119,7 +119,7 @@ export const findMatches = (
 // Remove matched tiles and return their positions
 export const removeMatches = (
   board: Tile[][],
-  matches: Array<Array<{row: number; col: number}>>,
+  matches: Array<Array<{ row: number; col: number }>>,
 ): Tile[][] => {
   const newBoard = board.map(row => [...row]);
 
@@ -143,7 +143,7 @@ export const removeMatches = (
 export const dropTiles = (
   board: Tile[][],
   variant: 'sand' | 'sea' = 'sand',
-  sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}> = [],
+  sandBlockers: Array<{ row: number; col: number; hasUmbrella?: boolean }> = [],
 ): Tile[][] => {
   const newBoard = board.map(row => [...row]);
   const tileTypes = getTileTypes(variant);
@@ -156,19 +156,19 @@ export const dropTiles = (
       .sort((a, b) => a - b); // Sort from top to bottom
 
     // Create sections separated by sand blockers
-    const sections: Array<{start: number; end: number}> = [];
+    const sections: Array<{ start: number; end: number }> = [];
     let currentStart = 0;
 
     for (const blockerRow of sandBlockerRows) {
       if (blockerRow > currentStart) {
-        sections.push({start: currentStart, end: blockerRow - 1});
+        sections.push({ start: currentStart, end: blockerRow - 1 });
       }
       currentStart = blockerRow + 1;
     }
 
     // Add the final section if there's space after the last sand blocker
     if (currentStart < BOARD_SIZE) {
-      sections.push({start: currentStart, end: BOARD_SIZE - 1});
+      sections.push({ start: currentStart, end: BOARD_SIZE - 1 });
     }
 
     // Process each section independently
@@ -177,7 +177,7 @@ export const dropTiles = (
       const tiles: Tile[] = [];
       for (let row = section.start; row <= section.end; row++) {
         if (newBoard[row][col] !== null) {
-          tiles.push({...newBoard[row][col]}); // Clone the tile to preserve all properties
+          tiles.push({ ...newBoard[row][col] }); // Clone the tile to preserve all properties
           newBoard[row][col] = null as any;
         }
       }
@@ -279,7 +279,7 @@ export const isValidMove = (
 // Get all valid moves on the current board
 export const getValidMoves = (
   board: Tile[][],
-): Array<{row1: number; col1: number; row2: number; col2: number}> => {
+): Array<{ row1: number; col1: number; row2: number; col2: number }> => {
   const validMoves: Array<{
     row1: number;
     col1: number;
@@ -292,14 +292,14 @@ export const getValidMoves = (
       // Check right neighbor
       if (col < BOARD_SIZE - 1) {
         if (isValidMove(board, row, col, row, col + 1)) {
-          validMoves.push({row1: row, col1: col, row2: row, col2: col + 1});
+          validMoves.push({ row1: row, col1: col, row2: row, col2: col + 1 });
         }
       }
 
       // Check bottom neighbor
       if (row < BOARD_SIZE - 1) {
         if (isValidMove(board, row, col, row + 1, col)) {
-          validMoves.push({row1: row, col1: col, row2: row + 1, col2: col});
+          validMoves.push({ row1: row, col1: col, row2: row + 1, col2: col });
         }
       }
     }
@@ -312,21 +312,21 @@ export const getValidMoves = (
 export const processTurn = (
   board: Tile[][],
   variant: 'sand' | 'sea' = 'sand',
-  sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}> = [],
-  userSwap?: {row1: number; col1: number; row2: number; col2: number},
+  sandBlockers: Array<{ row: number; col: number; hasUmbrella?: boolean }> = [],
+  userSwap?: { row1: number; col1: number; row2: number; col2: number },
 ): {
   newBoard: Tile[][];
-  matches: Array<Array<{row: number; col: number}>>;
+  matches: Array<Array<{ row: number; col: number }>>;
   totalMatches: number;
 } => {
   let currentBoard = board.map(row => [...row]);
-  let allMatches: Array<Array<{row: number; col: number}>> = [];
+  let allMatches: Array<Array<{ row: number; col: number }>> = [];
   let totalMatches = 0;
 
   // If userSwap is provided, check for bomb/rocket mechanics
   if (userSwap) {
     // Swap the tiles
-    const {row1, col1, row2, col2} = userSwap;
+    const { row1, col1, row2, col2 } = userSwap;
     const temp = currentBoard[row1][col1];
     currentBoard[row1][col1] = currentBoard[row2][col2];
     currentBoard[row2][col2] = temp;
@@ -413,7 +413,7 @@ export const processTurn = (
 // Create a board with no initial matches
 export const createValidBoard = (
   variant: 'sand' | 'sea' = 'sand',
-  sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}> = [],
+  sandBlockers: Array<{ row: number; col: number; hasUmbrella?: boolean }> = [],
 ): Tile[][] => {
   const board: Tile[][] = [];
   const tileTypes = getTileTypes(variant);
@@ -517,7 +517,7 @@ export const createValidBoard = (
 export const createBoardFromLevel = (
   levelBoard: (TileType | string | null)[][],
   variant: 'sand' | 'sea' = 'sand',
-  sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}> = [],
+  sandBlockers: Array<{ row: number; col: number; hasUmbrella?: boolean }> = [],
   specialTiles?: Array<{
     type: string;
     row: number;
@@ -548,7 +548,7 @@ export const createBoardFromLevel = (
   // Second pass: Process special tiles from level configuration
   if (specialTiles) {
     specialTiles.forEach(specialTile => {
-      const {row, col, properties} = specialTile;
+      const { row, col, properties } = specialTile;
       if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE) {
         // If there's already a tile at this position, update its properties
         if (board[row][col]) {
@@ -583,7 +583,7 @@ export const createBoardFromLevel = (
     } else {
       // Replace matched regular tiles with random tiles
       matches.forEach(match => {
-        match.forEach(({row, col}) => {
+        match.forEach(({ row, col }) => {
           const tile = board[row][col];
           if (tile && !tile.isSpecial) {
             // Only replace non-special tiles
@@ -602,7 +602,7 @@ export const createBoardFromLevel = (
   }
 
   // Third pass: Ensure sand blocker positions are null
-  sandBlockers.forEach(({row, col}) => {
+  sandBlockers.forEach(({ row, col }) => {
     board[row][col] = null as any;
   });
 
@@ -639,8 +639,8 @@ export const detectBombTrigger = (
   );
 
   // Check for both horizontal and vertical matches at the axis
-  let horizontalMatch: Array<{row: number; col: number}> | null = null;
-  let verticalMatch: Array<{row: number; col: number}> | null = null;
+  let horizontalMatch: Array<{ row: number; col: number }> | null = null;
+  let verticalMatch: Array<{ row: number; col: number }> | null = null;
 
   for (const match of matchesAtAxis) {
     if (match.every(pos => pos.row === axisRow)) {
@@ -667,8 +667,8 @@ export const detectBombTrigger = (
 export const getBombExplosionTiles = (
   axisRow: number,
   axisCol: number,
-): Array<{row: number; col: number}> => {
-  const explosionArea: Array<{row: number; col: number}> = [];
+): Array<{ row: number; col: number }> => {
+  const explosionArea: Array<{ row: number; col: number }> = [];
 
   // 5x5 grid centered on axis (±2 rows/cols)
   for (let dr = -2; dr <= 2; dr++) {
@@ -676,7 +676,7 @@ export const getBombExplosionTiles = (
       const r = axisRow + dr;
       const c = axisCol + dc;
       if (r >= 0 && r < BOARD_SIZE && c >= 0 && c < BOARD_SIZE) {
-        explosionArea.push({row: r, col: c});
+        explosionArea.push({ row: r, col: c });
       }
     }
   }
@@ -691,7 +691,7 @@ export const detectRocketTrigger = (
   fromCol: number,
   toRow: number,
   toCol: number,
-): {triggered: boolean; isHorizontal: boolean} => {
+): { triggered: boolean; isHorizontal: boolean } => {
   // Create a copy of the board with the swap
   const testBoard = board.map(row => [...row]);
   const temp = testBoard[fromRow][fromCol];
@@ -703,7 +703,7 @@ export const detectRocketTrigger = (
   const axisCol = toCol;
   const axisTile = testBoard[axisRow][axisCol];
   if (!axisTile || axisTile.isSpecial)
-    return {triggered: false, isHorizontal: false};
+    return { triggered: false, isHorizontal: false };
 
   // Helper to check for a window of 4 matching tiles including the axis
   function checkWindow(deltaRow: number, deltaCol: number): boolean {
@@ -746,13 +746,13 @@ export const detectRocketTrigger = (
 
   // Check horizontal
   if (checkWindow(0, 1)) {
-    return {triggered: true, isHorizontal: true};
+    return { triggered: true, isHorizontal: true };
   }
   // Check vertical
   if (checkWindow(1, 0)) {
-    return {triggered: true, isHorizontal: false};
+    return { triggered: true, isHorizontal: false };
   }
-  return {triggered: false, isHorizontal: false};
+  return { triggered: false, isHorizontal: false };
 };
 
 // Get the explosion area for a rocket (perpendicular row or column)
@@ -760,18 +760,18 @@ export const getRocketExplosionTiles = (
   axisRow: number,
   axisCol: number,
   isHorizontal: boolean,
-): Array<{row: number; col: number}> => {
-  const explosionArea: Array<{row: number; col: number}> = [];
+): Array<{ row: number; col: number }> => {
+  const explosionArea: Array<{ row: number; col: number }> = [];
 
   if (isHorizontal) {
     // Horizontal match: explode the entire column of the axis
     for (let row = 0; row < BOARD_SIZE; row++) {
-      explosionArea.push({row, col: axisCol});
+      explosionArea.push({ row, col: axisCol });
     }
   } else {
     // Vertical match: explode the entire row of the axis
     for (let col = 0; col < BOARD_SIZE; col++) {
-      explosionArea.push({row: axisRow, col});
+      explosionArea.push({ row: axisRow, col });
     }
   }
 

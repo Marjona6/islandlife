@@ -1,5 +1,5 @@
-import {Tile as GameTile} from '../types/game';
-import {isValidMove} from './gameLogic';
+import { Tile as GameTile } from '../types/game';
+import { isValidMove } from './gameLogic';
 
 /**
  * Check if the game is impossible (no valid moves available)
@@ -9,7 +9,7 @@ import {isValidMove} from './gameLogic';
  */
 export const checkIfGameImpossible = (
   board: GameTile[][],
-  sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}> = [],
+  sandBlockers: Array<{ row: number; col: number; hasUmbrella?: boolean }> = [],
 ): boolean => {
   const validMoves = getValidMovesWithBlockers(board, sandBlockers);
   console.log('=== VALID MOVES CHECK ===');
@@ -29,8 +29,8 @@ export const checkIfGameImpossible = (
  */
 const getValidMovesWithBlockers = (
   board: GameTile[][],
-  sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}>,
-): Array<{row1: number; col1: number; row2: number; col2: number}> => {
+  sandBlockers: Array<{ row: number; col: number; hasUmbrella?: boolean }>,
+): Array<{ row1: number; col1: number; row2: number; col2: number }> => {
   const validMoves: Array<{
     row1: number;
     col1: number;
@@ -56,7 +56,7 @@ const getValidMovesWithBlockers = (
         );
 
         if (!isRightSandBlocker && isValidMove(board, row, col, row, col + 1)) {
-          validMoves.push({row1: row, col1: col, row2: row, col2: col + 1});
+          validMoves.push({ row1: row, col1: col, row2: row, col2: col + 1 });
         }
       }
 
@@ -70,7 +70,7 @@ const getValidMovesWithBlockers = (
           !isBottomSandBlocker &&
           isValidMove(board, row, col, row + 1, col)
         ) {
-          validMoves.push({row1: row, col1: col, row2: row + 1, col2: col});
+          validMoves.push({ row1: row, col1: col, row2: row + 1, col2: col });
         }
       }
     }
@@ -87,12 +87,12 @@ const getValidMovesWithBlockers = (
  */
 export const rearrangeBoard = (
   board: GameTile[][],
-  sandBlockers: Array<{row: number; col: number; hasUmbrella?: boolean}>,
+  sandBlockers: Array<{ row: number; col: number; hasUmbrella?: boolean }>,
 ): GameTile[][] => {
   console.log('Game is impossible - rearranging board...');
 
   // Import findMatches here to avoid circular dependency
-  const {findMatches} = require('./gameLogic');
+  const { findMatches } = require('./gameLogic');
 
   let attempts = 0;
   const maxAttempts = 50; // Prevent infinite loops

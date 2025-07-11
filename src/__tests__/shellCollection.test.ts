@@ -1,4 +1,4 @@
-import {levelManager} from '../utils/levelManager';
+import { levelManager } from '../utils/levelManager';
 
 describe('Shell Collection Tests', () => {
   it('should have correct level 1 configuration for shell collection', () => {

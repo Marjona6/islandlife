@@ -7,8 +7,8 @@ import React, {
   useState,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Tile, TileType, GameState, Currency, BeachItem} from '../types/game';
-import {createValidBoard, createBoardFromLevel} from '../utils/gameLogic';
+import { Tile, TileType, GameState, Currency, BeachItem } from '../types/game';
+import { createValidBoard, createBoardFromLevel } from '../utils/gameLogic';
 import {
   checkIfGameImpossible,
   rearrangeBoard,
@@ -73,7 +73,7 @@ type GameAction =
       type: 'INIT_BOARD';
       payload?: {
         variant: 'sand' | 'sea';
-        sandBlockers?: Array<{row: number; col: number}>;
+        sandBlockers?: Array<{ row: number; col: number }>;
       };
     }
   | {
@@ -81,7 +81,7 @@ type GameAction =
       payload: {
         levelBoard: (TileType | string | null)[][];
         variant: 'sand' | 'sea';
-        sandBlockers?: Array<{row: number; col: number}>;
+        sandBlockers?: Array<{ row: number; col: number }>;
         totalTreasure?: number;
         specialTiles?: Array<{
           type: string;
@@ -93,43 +93,43 @@ type GameAction =
     }
   | {
       type: 'SWAP_TILES';
-      payload: {row1: number; col1: number; row2: number; col2: number};
+      payload: { row1: number; col1: number; row2: number; col2: number };
     }
-  | {type: 'UPDATE_BOARD'; payload: Tile[][]}
-  | {type: 'INCREMENT_COMBOS'}
-  | {type: 'ADD_SCORE'; payload: number}
-  | {type: 'RESET_GAME'}
-  | {type: 'SET_GAME_WON'}
+  | { type: 'UPDATE_BOARD'; payload: Tile[][] }
+  | { type: 'INCREMENT_COMBOS' }
+  | { type: 'ADD_SCORE'; payload: number }
+  | { type: 'RESET_GAME' }
+  | { type: 'SET_GAME_WON' }
   | {
       type: 'SET_SAND_BLOCKERS';
-      payload: Array<{row: number; col: number; hasUmbrella: boolean}>;
+      payload: Array<{ row: number; col: number; hasUmbrella: boolean }>;
     }
-  | {type: 'CLEAR_SAND_BLOCKER'; payload: {row: number; col: number}}
-  | {type: 'REMOVE_UMBRELLA'; payload: {row: number; col: number}}
+  | { type: 'CLEAR_SAND_BLOCKER'; payload: { row: number; col: number } }
+  | { type: 'REMOVE_UMBRELLA'; payload: { row: number; col: number } }
   | {
       type: 'UPDATE_SAND_BLOCKER_STATE';
       payload: {
-        sandBlockers: Array<{row: number; col: number}>;
-        umbrellas: Array<{row: number; col: number}>;
+        sandBlockers: Array<{ row: number; col: number }>;
+        umbrellas: Array<{ row: number; col: number }>;
       };
     }
-  | {type: 'COLLECT_TREASURE'; payload: number}
-  | {type: 'SET_TOTAL_TREASURE'; payload: number}
-  | {type: 'ADD_COLLECTED_TILES'; payload: number}
+  | { type: 'COLLECT_TREASURE'; payload: number }
+  | { type: 'SET_TOTAL_TREASURE'; payload: number }
+  | { type: 'ADD_COLLECTED_TILES'; payload: number }
   | {
       type: 'REVEAL_TREASURE';
-      payload: {row: number; col: number; treasureType: TileType};
+      payload: { row: number; col: number; treasureType: TileType };
     };
 
 type CurrencyAction =
-  | {type: 'ADD_SHELLS'; payload: number}
-  | {type: 'ADD_KEYS'; payload: number}
-  | {type: 'SPEND_KEYS'; payload: number}
-  | {type: 'LOAD_CURRENCY'; payload: Currency};
+  | { type: 'ADD_SHELLS'; payload: number }
+  | { type: 'ADD_KEYS'; payload: number }
+  | { type: 'SPEND_KEYS'; payload: number }
+  | { type: 'LOAD_CURRENCY'; payload: Currency };
 
 type BeachAction =
-  | {type: 'PURCHASE_ITEM'; payload: string}
-  | {type: 'LOAD_BEACH_ITEMS'; payload: BeachItem[]};
+  | { type: 'PURCHASE_ITEM'; payload: string }
+  | { type: 'LOAD_BEACH_ITEMS'; payload: BeachItem[] };
 
 // Reducers
 const gameReducer = (state: GameState, action: GameAction): GameState => {
@@ -214,7 +214,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
       };
 
     case 'SWAP_TILES':
-      const {row1, col1, row2, col2} = action.payload;
+      const { row1, col1, row2, col2 } = action.payload;
       const updatedBoard = state.board.map(row => [...row]);
       const temp = updatedBoard[row1][col1];
       updatedBoard[row1][col1] = updatedBoard[row2][col2];
@@ -281,7 +281,7 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
         sandBlockers: state.sandBlockers.map(blocker =>
           blocker.row === action.payload.row &&
           blocker.col === action.payload.col
-            ? {...blocker, hasUmbrella: false}
+            ? { ...blocker, hasUmbrella: false }
             : blocker,
         ),
       };
@@ -344,11 +344,11 @@ const gameReducer = (state: GameState, action: GameAction): GameState => {
 const currencyReducer = (state: Currency, action: CurrencyAction): Currency => {
   switch (action.type) {
     case 'ADD_SHELLS':
-      return {...state, shells: state.shells + action.payload};
+      return { ...state, shells: state.shells + action.payload };
     case 'ADD_KEYS':
-      return {...state, keys: state.keys + action.payload};
+      return { ...state, keys: state.keys + action.payload };
     case 'SPEND_KEYS':
-      return {...state, keys: Math.max(0, state.keys - action.payload)};
+      return { ...state, keys: Math.max(0, state.keys - action.payload) };
     case 'LOAD_CURRENCY':
       return action.payload;
     default:
@@ -360,7 +360,7 @@ const beachReducer = (state: BeachItem[], action: BeachAction): BeachItem[] => {
   switch (action.type) {
     case 'PURCHASE_ITEM':
       return state.map(item =>
-        item.id === action.payload ? {...item, isPurchased: true} : item,
+        item.id === action.payload ? { ...item, isPurchased: true } : item,
       );
     case 'LOAD_BEACH_ITEMS':
       return action.payload;
@@ -381,7 +381,7 @@ interface GameContextType {
   swapTiles: (row1: number, col1: number, row2: number, col2: number) => void;
   purchaseBeachItem: (itemId: string) => void;
   setSandBlockers: (
-    blockers: Array<{row: number; col: number; hasUmbrella: boolean}>,
+    blockers: Array<{ row: number; col: number; hasUmbrella: boolean }>,
   ) => void;
   clearSandBlocker: (row: number, col: number) => void;
   isInitialized: boolean;
@@ -390,7 +390,7 @@ interface GameContextType {
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 // Provider
-export const GameProvider: React.FC<{children: React.ReactNode}> = ({
+export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [gameState, dispatchGame] = useReducer(gameReducer, initialGameState);
@@ -470,14 +470,14 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({
 
   const initGame = useCallback(
     (variant: 'sand' | 'sea' = 'sand') => {
-      dispatchGame({type: 'INIT_BOARD', payload: {variant}});
+      dispatchGame({ type: 'INIT_BOARD', payload: { variant } });
     },
     [dispatchGame],
   );
 
   const swapTiles = useCallback(
     (row1: number, col1: number, row2: number, col2: number) => {
-      dispatchGame({type: 'SWAP_TILES', payload: {row1, col1, row2, col2}});
+      dispatchGame({ type: 'SWAP_TILES', payload: { row1, col1, row2, col2 } });
     },
     [dispatchGame],
   );
@@ -486,23 +486,23 @@ export const GameProvider: React.FC<{children: React.ReactNode}> = ({
     (itemId: string) => {
       const item = beachItems.find(i => i.id === itemId);
       if (item && !item.isPurchased && currency.keys >= item.cost) {
-        dispatchCurrency({type: 'SPEND_KEYS', payload: item.cost});
-        dispatchBeach({type: 'PURCHASE_ITEM', payload: itemId});
+        dispatchCurrency({ type: 'SPEND_KEYS', payload: item.cost });
+        dispatchBeach({ type: 'PURCHASE_ITEM', payload: itemId });
       }
     },
     [beachItems, currency.keys, dispatchCurrency, dispatchBeach],
   );
 
   const setSandBlockers = useCallback(
-    (blockers: Array<{row: number; col: number; hasUmbrella: boolean}>) => {
-      dispatchGame({type: 'SET_SAND_BLOCKERS', payload: blockers});
+    (blockers: Array<{ row: number; col: number; hasUmbrella: boolean }>) => {
+      dispatchGame({ type: 'SET_SAND_BLOCKERS', payload: blockers });
     },
     [dispatchGame],
   );
 
   const clearSandBlocker = useCallback(
     (row: number, col: number) => {
-      dispatchGame({type: 'CLEAR_SAND_BLOCKER', payload: {row, col}});
+      dispatchGame({ type: 'CLEAR_SAND_BLOCKER', payload: { row, col } });
     },
     [dispatchGame],
   );

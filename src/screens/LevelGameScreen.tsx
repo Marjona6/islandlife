@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useMemo, useCallback} from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,11 @@ import {
   Modal,
   Pressable,
 } from 'react-native';
-import {GameBoard} from '../components/GameBoard';
-import {VictoryScreen} from '../components/VictoryScreen';
-import {useGame} from '../contexts/GameContext';
-import {levelManager} from '../utils/levelManager';
-import {testLevelManager} from '../utils/testLevelManager';
+import { GameBoard } from '../components/GameBoard/GameBoard';
+import { VictoryScreen } from '../components/VictoryScreen';
+import { useGame } from '../contexts/GameContext';
+import { levelManager } from '../utils/levelManager';
+import { testLevelManager } from '../utils/testLevelManager';
 
 interface LevelGameScreenProps {
   // onNavigateToBeach: () => void; // Beach decorating temporarily disabled
@@ -26,7 +26,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
   onNavigateToTester,
   initialLevelId = 'level-1',
 }) => {
-  const {gameState, currency, dispatchGame, dispatchCurrency} = useGame();
+  const { gameState, currency, dispatchGame, dispatchCurrency } = useGame();
   const [currentLevelId, setCurrentLevelId] = useState(initialLevelId);
   const [movesMade, setMovesMade] = useState(0);
   const [showVictory, setShowVictory] = useState(false);
@@ -68,7 +68,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
       payload: {
         levelBoard: currentLevel.board,
         variant: isSeaLevel ? 'sea' : 'sand',
-        sandBlockers: sandBlockers.map(sb => ({row: sb.row, col: sb.col})),
+        sandBlockers: sandBlockers.map(sb => ({ row: sb.row, col: sb.col })),
         totalTreasure:
           currentLevel.objective === 'buried-treasure'
             ? currentLevel.target
@@ -78,12 +78,15 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
     });
 
     if (sandBlockers.length > 0) {
-      dispatchGame({type: 'SET_SAND_BLOCKERS', payload: sandBlockers});
+      dispatchGame({ type: 'SET_SAND_BLOCKERS', payload: sandBlockers });
     }
 
     // Set total treasure count for buried treasure levels
     if (currentLevel.objective === 'buried-treasure') {
-      dispatchGame({type: 'SET_TOTAL_TREASURE', payload: currentLevel.target});
+      dispatchGame({
+        type: 'SET_TOTAL_TREASURE',
+        payload: currentLevel.target,
+      });
     }
   }, [currentLevelId, currentLevel, dispatchGame]);
 
@@ -289,7 +292,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
     }
 
     Alert.alert('How to Play', instructions, [
-      {text: 'Got it!', style: 'default'},
+      { text: 'Got it!', style: 'default' },
     ]);
   };
 
@@ -352,7 +355,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
 
   const handleRestartLevel = () => {
     Alert.alert('Restart Level', 'Start this level over?', [
-      {text: 'Cancel', style: 'cancel'},
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Restart',
         onPress: () => {
@@ -390,7 +393,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
       const sandBlockers =
         currentLevel.blockers
           ?.filter(b => b.type === 'sand')
-          .map(b => ({row: b.row, col: b.col, hasUmbrella: true})) || [];
+          .map(b => ({ row: b.row, col: b.col, hasUmbrella: true })) || [];
 
       // Re-initialize board from level configuration
       dispatchGame({
@@ -398,14 +401,14 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
         payload: {
           levelBoard: currentLevel.board,
           variant: isSeaLevel ? 'sea' : 'sand',
-          sandBlockers: sandBlockers.map(sb => ({row: sb.row, col: sb.col})),
+          sandBlockers: sandBlockers.map(sb => ({ row: sb.row, col: sb.col })),
         },
       });
 
       // Reset currency to start fresh for this level
       dispatchCurrency({
         type: 'LOAD_CURRENCY',
-        payload: {shells: 0, keys: currency.keys},
+        payload: { shells: 0, keys: currency.keys },
       });
 
       if (sandBlockers.length > 0) {
@@ -414,7 +417,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
           sandBlockers,
         );
         // Reset sand blockers to initial state with umbrellas
-        dispatchGame({type: 'SET_SAND_BLOCKERS', payload: sandBlockers});
+        dispatchGame({ type: 'SET_SAND_BLOCKERS', payload: sandBlockers });
       }
     }
   };
@@ -553,7 +556,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
           sandBlockers={
             currentLevel.blockers
               ?.filter(b => b.type === 'sand')
-              .map(b => ({row: b.row, col: b.col})) || []
+              .map(b => ({ row: b.row, col: b.col })) || []
           }
           onMove={handleGameMove}
           onCoconutDrop={handleItemDrop}
@@ -605,7 +608,7 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
           </TouchableOpacity>
           {__DEV__ && (
             <TouchableOpacity
-              style={[styles.button, {backgroundColor: '#FF5722'}]}
+              style={[styles.button, { backgroundColor: '#FF5722' }]}
               onPress={() => {
                 console.log('🔧 Manual victory check triggered');
                 checkLevelCompletion();
@@ -634,23 +637,23 @@ export const LevelGameScreen: React.FC<LevelGameScreenProps> = ({
             padding: 10,
             borderRadius: 5,
           }}>
-          <Text style={{color: 'white', fontSize: 12}}>
+          <Text style={{ color: 'white', fontSize: 12 }}>
             Victory: {showVictory ? 'YES' : 'NO'}
           </Text>
-          <Text style={{color: 'white', fontSize: 12}}>
+          <Text style={{ color: 'white', fontSize: 12 }}>
             Transition: {isTransitioning ? 'YES' : 'NO'}
           </Text>
-          <Text style={{color: 'white', fontSize: 12}}>
+          <Text style={{ color: 'white', fontSize: 12 }}>
             Sand Blockers: {gameState.sandBlockers.length}
           </Text>
-          <Text style={{color: 'white', fontSize: 12}}>
+          <Text style={{ color: 'white', fontSize: 12 }}>
             Should Win:{' '}
             {currentLevel?.objective === 'sand-clear' &&
             gameState.sandBlockers.length === 0
               ? 'YES'
               : 'NO'}
           </Text>
-          <Text style={{color: 'white', fontSize: 12}}>
+          <Text style={{ color: 'white', fontSize: 12 }}>
             Objective: {currentLevel?.objective}
           </Text>
         </View>

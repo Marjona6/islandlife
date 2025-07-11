@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,8 @@ import {
   ScrollView,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import {levelManager} from '../utils/levelManager';
-import {gameModeService} from '../services/gameMode';
+import { levelManager } from '../utils/levelManager';
+import { gameModeService } from '../services/gameMode';
 
 // const {width} = Dimensions.get('window'); // Not currently used
 
@@ -72,7 +72,10 @@ export const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({
         {[1, 2, 3].map(star => (
           <Text
             key={star}
-            style={[styles.star, {color: star <= rating ? '#FFD700' : '#ccc'}]}>
+            style={[
+              styles.star,
+              { color: star <= rating ? '#FFD700' : '#ccc' },
+            ]}>
             ⭐
           </Text>
         ))}
@@ -184,8 +187,8 @@ export const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({
         <LinearGradient
           colors={worldColor}
           style={styles.worldHeader}
-          start={{x: 0, y: 0}}
-          end={{x: 1, y: 0}}>
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}>
           <Text style={styles.worldTitle}>{worldName}</Text>
           <Text style={styles.worldSubtitle}>
             {worldLevels.length} levels to explore
@@ -215,8 +218,8 @@ export const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({
         <LinearGradient
           colors={['#4A90E2', '#7B68EE', '#9370DB']}
           style={styles.backgroundGradient}
-          start={{x: 0, y: 0}}
-          end={{x: 1, y: 1}}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         />
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading levels...</Text>
@@ -231,8 +234,8 @@ export const LevelSelectScreen: React.FC<LevelSelectScreenProps> = ({
       <LinearGradient
         colors={['#4A90E2', '#7B68EE', '#9370DB']}
         style={styles.backgroundGradient}
-        start={{x: 0, y: 0}}
-        end={{x: 1, y: 1}}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       />
 
       {/* Header */}
@@ -323,7 +326,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
@@ -378,7 +381,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
@@ -389,7 +392,7 @@ const styles = StyleSheet.create({
     color: 'white',
     textAlign: 'center',
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
-    textShadowOffset: {width: 1, height: 1},
+    textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
   },
   worldSubtitle: {
@@ -412,7 +415,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,

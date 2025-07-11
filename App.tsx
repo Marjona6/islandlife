@@ -3,19 +3,19 @@
  * A React Native prototype for a match-3 mobile puzzle game with renovation/story meta layer
  */
 
-import React, {useState, useEffect} from 'react';
-import {SafeAreaView, StyleSheet} from 'react-native';
-import {GameProvider} from './src/contexts/GameContext';
-import {GameScreen} from './src/screens/GameScreen';
-import {LevelGameScreen} from './src/screens/LevelGameScreen';
-import {HomeScreen} from './src/screens/HomeScreen';
-import {LevelSelectScreen} from './src/screens/LevelSelectScreen';
-import {SettingsScreen} from './src/screens/SettingsScreen';
-import {BeachScreen} from './src/screens/BeachScreen';
+import React, { useState, useEffect } from 'react';
+import { SafeAreaView, StyleSheet } from 'react-native';
+import { GameProvider } from './src/contexts/GameContext';
+import { GameScreen } from './src/screens/GameScreen';
+import { LevelGameScreen } from './src/screens/LevelGameScreen';
+import { HomeScreen } from './src/screens/HomeScreen';
+import { LevelSelectScreen } from './src/screens/LevelSelectScreen';
+import { SettingsScreen } from './src/screens/SettingsScreen';
+import { BeachScreen } from './src/screens/BeachScreen';
 import LevelTester from './src/components/LevelTester';
-import {initializeFirebase} from './src/services/firebase';
-import {gameModeService} from './src/services/gameMode';
-import {userProgressService} from './src/services/userProgress';
+import { initializeFirebase } from './src/services/firebase';
+import { gameModeService } from './src/services/gameMode';
+import { userProgressService } from './src/services/userProgress';
 
 type Screen =
   | 'home'

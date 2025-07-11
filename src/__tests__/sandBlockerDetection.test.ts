@@ -1,7 +1,7 @@
 describe('Sand Blocker Detection Issues', () => {
   // Helper function to create sand blockers array
   const createSandBlockers = (
-    positions: Array<{row: number; col: number; hasUmbrella?: boolean}>,
+    positions: Array<{ row: number; col: number; hasUmbrella?: boolean }>,
   ) => {
     return positions.map(pos => ({
       row: pos.row,
@@ -14,7 +14,7 @@ describe('Sand Blocker Detection Issues', () => {
     it('should allow swapping tiles that are adjacent to sand blockers but not on sand blockers', () => {
       // Sand blocker at position (0, 3) - adjacent to tiles at (0, 2) and (1, 3)
       const sandBlockers = createSandBlockers([
-        {row: 0, col: 3, hasUmbrella: true},
+        { row: 0, col: 3, hasUmbrella: true },
       ]);
 
       // Test that we can swap tiles that are adjacent to the sand blocker
@@ -48,7 +48,7 @@ describe('Sand Blocker Detection Issues', () => {
     it('should prevent swapping tiles that are on sand blocker positions', () => {
       // Sand blocker at position (0, 3)
       const sandBlockers = createSandBlockers([
-        {row: 0, col: 3, hasUmbrella: true},
+        { row: 0, col: 3, hasUmbrella: true },
       ]);
 
       // Test that we cannot swap tiles that are on sand blocker positions
@@ -63,8 +63,8 @@ describe('Sand Blocker Detection Issues', () => {
     it('should not complete level when sand blockers remain', () => {
       // Simulate level with 2 sand blockers remaining
       const remainingSandBlockers = createSandBlockers([
-        {row: 3, col: 3, hasUmbrella: true},
-        {row: 4, col: 4, hasUmbrella: true},
+        { row: 3, col: 3, hasUmbrella: true },
+        { row: 4, col: 4, hasUmbrella: true },
       ]);
 
       // Level should not be complete if sand blockers remain
@@ -90,8 +90,8 @@ describe('Sand Blocker Detection Issues', () => {
     it('should properly track sand blocker state after clearing', () => {
       // Start with sand blockers
       let sandBlockers = createSandBlockers([
-        {row: 1, col: 1, hasUmbrella: true},
-        {row: 2, col: 2, hasUmbrella: true},
+        { row: 1, col: 1, hasUmbrella: true },
+        { row: 2, col: 2, hasUmbrella: true },
       ]);
 
       expect(sandBlockers.length).toBe(2);
@@ -121,9 +121,9 @@ describe('Sand Blocker Detection Issues', () => {
   describe('Sand blocker position accuracy', () => {
     it('should accurately track sand blocker positions', () => {
       const sandBlockers = createSandBlockers([
-        {row: 0, col: 0, hasUmbrella: true},
-        {row: 1, col: 1, hasUmbrella: true},
-        {row: 2, col: 2, hasUmbrella: false},
+        { row: 0, col: 0, hasUmbrella: true },
+        { row: 1, col: 1, hasUmbrella: true },
+        { row: 2, col: 2, hasUmbrella: false },
       ]);
 
       // Check that all positions are correctly tracked
@@ -141,10 +141,10 @@ describe('Sand Blocker Detection Issues', () => {
 
     it('should handle edge cases at board boundaries', () => {
       const sandBlockers = createSandBlockers([
-        {row: 0, col: 0, hasUmbrella: true}, // Top-left corner
-        {row: 0, col: 7, hasUmbrella: true}, // Top-right corner
-        {row: 7, col: 0, hasUmbrella: true}, // Bottom-left corner
-        {row: 7, col: 7, hasUmbrella: true}, // Bottom-right corner
+        { row: 0, col: 0, hasUmbrella: true }, // Top-left corner
+        { row: 0, col: 7, hasUmbrella: true }, // Top-right corner
+        { row: 7, col: 0, hasUmbrella: true }, // Bottom-left corner
+        { row: 7, col: 7, hasUmbrella: true }, // Bottom-right corner
       ]);
 
       expect(sandBlockers).toHaveLength(4);
@@ -165,12 +165,12 @@ describe('Sand Blocker Detection Issues', () => {
     it('should not detect sand blocker at position that was already cleared', () => {
       // Simulate the scenario from the user's log
       // User is swiping from (4, 2) to (4, 3) - right direction
-      const swipeTo = {row: 4, col: 3};
+      const swipeTo = { row: 4, col: 3 };
 
       // Initial sand blockers (from level-2 config)
       const initialSandBlockers = createSandBlockers([
-        {row: 4, col: 3, hasUmbrella: true}, // This should be cleared
-        {row: 4, col: 4, hasUmbrella: true}, // This should remain
+        { row: 4, col: 3, hasUmbrella: true }, // This should be cleared
+        { row: 4, col: 4, hasUmbrella: true }, // This should remain
       ]);
 
       // Simulate that the sand blocker at (4, 3) was already cleared
@@ -204,11 +204,11 @@ describe('Sand Blocker Detection Issues', () => {
 
       // Current sand blockers (after some were cleared)
       const currentSandBlockers = createSandBlockers([
-        {row: 4, col: 4, hasUmbrella: true}, // Only this one remains
+        { row: 4, col: 4, hasUmbrella: true }, // Only this one remains
       ]);
 
       // Test swipe from (4, 2) to (4, 3)
-      const swipeTo = {row: 4, col: 3};
+      const swipeTo = { row: 4, col: 3 };
 
       // Check if target position has a sand blocker
       const hasSandBlocker = currentSandBlockers.some(
@@ -227,10 +227,10 @@ describe('Sand Blocker Detection Issues', () => {
     it('should only count coconuts that reach the bottom row', () => {
       // Simulate coconuts at different positions
       const coconutsAtBottom = [
-        {row: 7, col: 0, id: 'coconut-1'}, // At bottom row - should count
-        {row: 7, col: 1, id: 'coconut-2'}, // At bottom row - should count
-        {row: 6, col: 2, id: 'coconut-3'}, // Not at bottom row - should not count
-        {row: 5, col: 3, id: 'coconut-4'}, // Not at bottom row - should not count
+        { row: 7, col: 0, id: 'coconut-1' }, // At bottom row - should count
+        { row: 7, col: 1, id: 'coconut-2' }, // At bottom row - should count
+        { row: 6, col: 2, id: 'coconut-3' }, // Not at bottom row - should not count
+        { row: 5, col: 3, id: 'coconut-4' }, // Not at bottom row - should not count
       ];
 
       // Filter to only count coconuts at bottom row (row 7)
@@ -252,9 +252,9 @@ describe('Sand Blocker Detection Issues', () => {
 
       // Simulate multiple board updates (like during cascades)
       const boardUpdates = [
-        {row: 7, col: 0, id: coconutId}, // First board update - coconut reaches bottom
-        {row: 7, col: 0, id: coconutId}, // Second board update - same coconut still at bottom
-        {row: 7, col: 0, id: coconutId}, // Third board update - same coconut still at bottom
+        { row: 7, col: 0, id: coconutId }, // First board update - coconut reaches bottom
+        { row: 7, col: 0, id: coconutId }, // Second board update - same coconut still at bottom
+        { row: 7, col: 0, id: coconutId }, // Third board update - same coconut still at bottom
       ];
 
       // Simulate the actual logic: only count if not already counted
@@ -279,11 +279,11 @@ describe('Sand Blocker Detection Issues', () => {
 
       // Simulate multiple coconuts reaching bottom at different times
       const coconutEvents = [
-        {row: 7, col: 0, id: 'coconut-1'}, // First coconut reaches bottom
-        {row: 7, col: 1, id: 'coconut-2'}, // Second coconut reaches bottom
-        {row: 7, col: 0, id: 'coconut-1'}, // First coconut still at bottom (should not count again)
-        {row: 7, col: 2, id: 'coconut-3'}, // Third coconut reaches bottom
-        {row: 7, col: 1, id: 'coconut-2'}, // Second coconut still at bottom (should not count again)
+        { row: 7, col: 0, id: 'coconut-1' }, // First coconut reaches bottom
+        { row: 7, col: 1, id: 'coconut-2' }, // Second coconut reaches bottom
+        { row: 7, col: 0, id: 'coconut-1' }, // First coconut still at bottom (should not count again)
+        { row: 7, col: 2, id: 'coconut-3' }, // Third coconut reaches bottom
+        { row: 7, col: 1, id: 'coconut-2' }, // Second coconut still at bottom (should not count again)
       ];
 
       coconutEvents.forEach(event => {
@@ -386,8 +386,8 @@ describe('Sand Blocker Detection Issues', () => {
     it('should remove coconuts from bottom row and apply gravity', () => {
       // Simulate coconuts reaching the bottom row
       const coconutsToExit = [
-        {row: 7, col: 0, id: 'coconut-1'},
-        {row: 7, col: 3, id: 'coconut-2'},
+        { row: 7, col: 0, id: 'coconut-1' },
+        { row: 7, col: 3, id: 'coconut-2' },
       ];
 
       // Verify coconuts are at bottom row
@@ -430,8 +430,11 @@ describe('Sand Blocker Detection Issues', () => {
   describe('Issue 7: State transition warnings', () => {
     it('should defer coconut drop notifications until after processing is complete', () => {
       // Simulate the deferred notification mechanism
-      const pendingCoconutDrops: Array<{row: number; col: number; id: string}> =
-        [];
+      const pendingCoconutDrops: Array<{
+        row: number;
+        col: number;
+        id: string;
+      }> = [];
       let dropCallCount = 0;
 
       const mockOnCoconutDrop = jest.fn(() => {
@@ -440,14 +443,14 @@ describe('Sand Blocker Detection Issues', () => {
 
       // Simulate coconuts reaching bottom during processing
       const coconutsToExit = [
-        {row: 7, col: 0, id: 'coconut-1'},
-        {row: 7, col: 1, id: 'coconut-2'},
-        {row: 7, col: 2, id: 'coconut-3'},
-        {row: 7, col: 3, id: 'coconut-4'},
-        {row: 7, col: 4, id: 'coconut-5'},
-        {row: 7, col: 5, id: 'coconut-6'},
-        {row: 7, col: 6, id: 'coconut-7'},
-        {row: 7, col: 7, id: 'coconut-8'},
+        { row: 7, col: 0, id: 'coconut-1' },
+        { row: 7, col: 1, id: 'coconut-2' },
+        { row: 7, col: 2, id: 'coconut-3' },
+        { row: 7, col: 3, id: 'coconut-4' },
+        { row: 7, col: 4, id: 'coconut-5' },
+        { row: 7, col: 5, id: 'coconut-6' },
+        { row: 7, col: 6, id: 'coconut-7' },
+        { row: 7, col: 7, id: 'coconut-8' },
       ];
 
       // During processing, collect drops instead of calling immediately
@@ -499,10 +502,10 @@ describe('Sand Blocker Detection Issues', () => {
 
       // Sand blockers in columns 2-5 at row 7
       const sandBlockers = [
-        {row: 7, col: 2, hasUmbrella: true},
-        {row: 7, col: 3, hasUmbrella: true},
-        {row: 7, col: 4, hasUmbrella: true},
-        {row: 7, col: 5, hasUmbrella: true},
+        { row: 7, col: 2, hasUmbrella: true },
+        { row: 7, col: 3, hasUmbrella: true },
+        { row: 7, col: 4, hasUmbrella: true },
+        { row: 7, col: 5, hasUmbrella: true },
       ];
 
       console.log('Initial board state:');

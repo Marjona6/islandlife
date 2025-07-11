@@ -102,8 +102,8 @@ interface GameState {
   "moves": 35,
   "mechanics": ["sand", "treasure"],
   "blockers": [
-    {"type": "sand", "row": 1, "col": 1, "sandLevel": 1, "hasTreasure": true},
-    {"type": "sand", "row": 1, "col": 2, "sandLevel": 1, "hasTreasure": false}
+    { "type": "sand", "row": 1, "col": 1, "sandLevel": 1, "hasTreasure": true },
+    { "type": "sand", "row": 1, "col": 2, "sandLevel": 1, "hasTreasure": false }
     // ... 12 more sand blockers
   ]
 }

@@ -7,7 +7,7 @@ import {
   removeMatches,
   dropTiles,
 } from '../src/utils/gameLogic';
-import {Tile, TileType} from '../src/types/game';
+import { Tile, TileType } from '../src/types/game';
 
 // Add Jest types
 declare global {
@@ -127,9 +127,9 @@ describe('Game Logic Tests', () => {
       const matches = findMatches(board);
       expect(matches).toHaveLength(1);
       expect(matches[0]).toEqual([
-        {row: 0, col: 0},
-        {row: 0, col: 1},
-        {row: 0, col: 2},
+        { row: 0, col: 0 },
+        { row: 0, col: 1 },
+        { row: 0, col: 2 },
       ]);
     });
 
@@ -145,10 +145,10 @@ describe('Game Logic Tests', () => {
       const matches = findMatches(board);
       expect(matches).toHaveLength(1);
       expect(matches[0]).toEqual([
-        {row: 0, col: 0},
-        {row: 0, col: 1},
-        {row: 0, col: 2},
-        {row: 0, col: 3},
+        { row: 0, col: 0 },
+        { row: 0, col: 1 },
+        { row: 0, col: 2 },
+        { row: 0, col: 3 },
       ]);
     });
 
@@ -164,9 +164,9 @@ describe('Game Logic Tests', () => {
       const matches = findMatches(board);
       expect(matches).toHaveLength(1);
       expect(matches[0]).toEqual([
-        {row: 0, col: 0},
-        {row: 1, col: 0},
-        {row: 2, col: 0},
+        { row: 0, col: 0 },
+        { row: 1, col: 0 },
+        { row: 2, col: 0 },
       ]);
     });
 
@@ -221,10 +221,10 @@ describe('Game Logic Tests', () => {
 
       // Create a board with a potential match
       const testBoard = board.map(row => [...row]);
-      testBoard[0][0] = {...testBoard[0][0], type: '🌴'};
-      testBoard[0][1] = {...testBoard[0][1], type: '🌴'};
-      testBoard[0][2] = {...testBoard[0][2], type: '🐚'}; // This will be swapped
-      testBoard[0][3] = {...testBoard[0][3], type: '🌴'}; // Make sure this is 🌴
+      testBoard[0][0] = { ...testBoard[0][0], type: '🌴' };
+      testBoard[0][1] = { ...testBoard[0][1], type: '🌴' };
+      testBoard[0][2] = { ...testBoard[0][2], type: '🐚' }; // This will be swapped
+      testBoard[0][3] = { ...testBoard[0][3], type: '🌴' }; // Make sure this is 🌴
 
       // Swap to create a match
       const temp = testBoard[0][2];
@@ -282,10 +282,10 @@ describe('Game Logic Tests', () => {
 
       // Create a board with a potential match
       const testBoard = board.map(row => [...row]);
-      testBoard[0][0] = {...testBoard[0][0], type: '🌴'};
-      testBoard[0][1] = {...testBoard[0][1], type: '🌴'};
-      testBoard[0][2] = {...testBoard[0][2], type: '🐚'};
-      testBoard[0][3] = {...testBoard[0][3], type: '🌴'};
+      testBoard[0][0] = { ...testBoard[0][0], type: '🌴' };
+      testBoard[0][1] = { ...testBoard[0][1], type: '🌴' };
+      testBoard[0][2] = { ...testBoard[0][2], type: '🐚' };
+      testBoard[0][3] = { ...testBoard[0][3], type: '🌴' };
 
       // This swap should create a match
       expect(isValidMove(testBoard, 0, 2, 0, 3)).toBe(true);
@@ -309,9 +309,9 @@ describe('Game Logic Tests', () => {
 
       const matches = [
         [
-          {row: 0, col: 0},
-          {row: 0, col: 1},
-          {row: 0, col: 2},
+          { row: 0, col: 0 },
+          { row: 0, col: 1 },
+          { row: 0, col: 2 },
         ],
       ];
       const result = removeMatches(board, matches);
@@ -381,9 +381,9 @@ describe('Game Logic Tests', () => {
 
       // Create a board with a match
       const testBoard = board.map(row => [...row]);
-      testBoard[0][0] = {...testBoard[0][0], type: '🌴'};
-      testBoard[0][1] = {...testBoard[0][1], type: '🌴'};
-      testBoard[0][2] = {...testBoard[0][2], type: '🌴'};
+      testBoard[0][0] = { ...testBoard[0][0], type: '🌴' };
+      testBoard[0][1] = { ...testBoard[0][1], type: '🌴' };
+      testBoard[0][2] = { ...testBoard[0][2], type: '🌴' };
 
       const result = processTurn(testBoard);
       expect(result.totalMatches).toBeGreaterThan(0);
@@ -425,10 +425,10 @@ describe('Game Logic Tests', () => {
 
       // Create a board with a potential match
       const testBoard = board.map(row => [...row]);
-      testBoard[0][0] = {...testBoard[0][0], type: '🌴'};
-      testBoard[0][1] = {...testBoard[0][1], type: '🌴'};
-      testBoard[0][2] = {...testBoard[0][2], type: '🐚'};
-      testBoard[0][3] = {...testBoard[0][3], type: '🌴'};
+      testBoard[0][0] = { ...testBoard[0][0], type: '🌴' };
+      testBoard[0][1] = { ...testBoard[0][1], type: '🌴' };
+      testBoard[0][2] = { ...testBoard[0][2], type: '🐚' };
+      testBoard[0][3] = { ...testBoard[0][3], type: '🌴' };
 
       // Check if the move is valid
       const isValid = isValidMove(testBoard, 0, 2, 0, 3);

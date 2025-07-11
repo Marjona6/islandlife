@@ -1,11 +1,11 @@
-import React, {useRef, useEffect, useCallback} from 'react';
-import {Text, StyleSheet, PanResponder, View} from 'react-native';
+import React, { useRef, useEffect, useCallback } from 'react';
+import { Text, StyleSheet, PanResponder, View } from 'react-native';
 import * as Animatable from 'react-native-animatable';
-import {Tile as TileType} from '../types/game';
+import { Tile as TileType } from '../../types/game';
 
 interface TileProps {
   tile: TileType;
-  onPress: () => void;
+  onPress?: () => void;
   onSwipe: (direction: 'up' | 'down' | 'left' | 'right') => void;
   isMatched?: boolean;
   isFalling?: boolean;
@@ -46,16 +46,16 @@ export const Tile: React.FC<TileProps> = ({
         // Enhanced match animation with bounce and glow
         currentRef.animate(
           {
-            0: {scaleX: 1, scaleY: 1, opacity: 1},
-            0.1: {scaleX: 1.3, scaleY: 1.3, opacity: 1},
-            0.2: {scaleX: 1.1, scaleY: 1.1, opacity: 1},
-            0.3: {scaleX: 1.4, scaleY: 1.4, opacity: 0.9},
-            0.4: {scaleX: 1.2, scaleY: 1.2, opacity: 0.8},
-            0.5: {scaleX: 1.5, scaleY: 1.5, opacity: 0.7},
-            0.6: {scaleX: 0.8, scaleY: 0.8, opacity: 0.5},
-            0.7: {scaleX: 0.6, scaleY: 0.6, opacity: 0.3},
-            0.8: {scaleX: 0.4, scaleY: 0.4, opacity: 0.2},
-            1: {scaleX: 0.1, scaleY: 0.1, opacity: 0},
+            0: { scaleX: 1, scaleY: 1, opacity: 1 },
+            0.1: { scaleX: 1.3, scaleY: 1.3, opacity: 1 },
+            0.2: { scaleX: 1.1, scaleY: 1.1, opacity: 1 },
+            0.3: { scaleX: 1.4, scaleY: 1.4, opacity: 0.9 },
+            0.4: { scaleX: 1.2, scaleY: 1.2, opacity: 0.8 },
+            0.5: { scaleX: 1.5, scaleY: 1.5, opacity: 0.7 },
+            0.6: { scaleX: 0.8, scaleY: 0.8, opacity: 0.5 },
+            0.7: { scaleX: 0.6, scaleY: 0.6, opacity: 0.3 },
+            0.8: { scaleX: 0.4, scaleY: 0.4, opacity: 0.2 },
+            1: { scaleX: 0.1, scaleY: 0.1, opacity: 0 },
           },
           400, // Faster animation
         );
@@ -65,10 +65,10 @@ export const Tile: React.FC<TileProps> = ({
           hasAnimatedParticles.current = true;
           particleRef.current.animate(
             {
-              0: {scaleX: 0, scaleY: 0, opacity: 1},
-              0.3: {scaleX: 1.2, scaleY: 1.2, opacity: 1},
-              0.6: {scaleX: 1.5, scaleY: 1.5, opacity: 0.7},
-              1: {scaleX: 2, scaleY: 2, opacity: 0},
+              0: { scaleX: 0, scaleY: 0, opacity: 1 },
+              0.3: { scaleX: 1.2, scaleY: 1.2, opacity: 1 },
+              0.6: { scaleX: 1.5, scaleY: 1.5, opacity: 0.7 },
+              1: { scaleX: 2, scaleY: 2, opacity: 0 },
             },
             500,
           );
@@ -99,10 +99,10 @@ export const Tile: React.FC<TileProps> = ({
           // Enhanced falling with bounce effect
           currentRef.animate(
             {
-              0: {translateY: startY, scaleX: 1, scaleY: 1},
-              0.7: {translateY: 5, scaleX: 1.05, scaleY: 1.05}, // Slight overshoot
-              0.85: {translateY: -2, scaleX: 0.98, scaleY: 0.98}, // Bounce back
-              1: {translateY: 0, scaleX: 1, scaleY: 1}, // Settle
+              0: { translateY: startY, scaleX: 1, scaleY: 1 },
+              0.7: { translateY: 5, scaleX: 1.05, scaleY: 1.05 }, // Slight overshoot
+              0.85: { translateY: -2, scaleX: 0.98, scaleY: 0.98 }, // Bounce back
+              1: { translateY: 0, scaleX: 1, scaleY: 1 }, // Settle
             },
             600, // Slightly longer for bounce effect
           );
@@ -126,8 +126,8 @@ export const Tile: React.FC<TileProps> = ({
         currentRef
           .animate(
             {
-              0: {translateY: 0, translateX: 0, opacity: 1},
-              0.2: {translateY: 15, translateX: 8, opacity: 1},
+              0: { translateY: 0, translateX: 0, opacity: 1 },
+              0.2: { translateY: 15, translateX: 8, opacity: 1 },
               0.4: {
                 translateY: 30,
                 translateX: 25,
@@ -143,7 +143,7 @@ export const Tile: React.FC<TileProps> = ({
                 translateX: 80,
                 opacity: 0.3,
               },
-              1: {translateY: 80, translateX: 120, opacity: 0},
+              1: { translateY: 80, translateX: 120, opacity: 0 },
             },
             800,
           )
@@ -169,17 +169,17 @@ export const Tile: React.FC<TileProps> = ({
           currentRef
             .animate(
               {
-                0: {translateX: 0, translateY: 0},
-                0.1: {translateX: -3, translateY: -2},
-                0.2: {translateX: 3, translateY: 2},
-                0.3: {translateX: -3, translateY: -2},
-                0.4: {translateX: 3, translateY: 2},
-                0.5: {translateX: -2, translateY: -1},
-                0.6: {translateX: 2, translateY: 1},
-                0.7: {translateX: -2, translateY: -1},
-                0.8: {translateX: 2, translateY: 1},
-                0.9: {translateX: -1, translateY: 0},
-                1: {translateX: 0, translateY: 0},
+                0: { translateX: 0, translateY: 0 },
+                0.1: { translateX: -3, translateY: -2 },
+                0.2: { translateX: 3, translateY: 2 },
+                0.3: { translateX: -3, translateY: -2 },
+                0.4: { translateX: 3, translateY: 2 },
+                0.5: { translateX: -2, translateY: -1 },
+                0.6: { translateX: 2, translateY: 1 },
+                0.7: { translateX: -2, translateY: -1 },
+                0.8: { translateX: 2, translateY: 1 },
+                0.9: { translateX: -1, translateY: 0 },
+                1: { translateX: 0, translateY: 0 },
               },
               150, // Faster shaking
             )
@@ -273,7 +273,7 @@ export const Tile: React.FC<TileProps> = ({
             // Handle press
           },
           onPanResponderRelease: (evt, gestureState) => {
-            const {dx, dy} = gestureState;
+            const { dx, dy } = gestureState;
             const threshold = 30;
 
             if (Math.abs(dx) > Math.abs(dy)) {

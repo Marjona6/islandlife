@@ -8,14 +8,16 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import {useGame} from '../contexts/GameContext';
+import { useGame } from '../contexts/GameContext';
 
 interface BeachScreenProps {
   onNavigateToGame: () => void;
 }
 
-export const BeachScreen: React.FC<BeachScreenProps> = ({onNavigateToGame}) => {
-  const {currency, beachItems, purchaseBeachItem} = useGame();
+export const BeachScreen: React.FC<BeachScreenProps> = ({
+  onNavigateToGame,
+}) => {
+  const { currency, beachItems, purchaseBeachItem } = useGame();
 
   const handlePurchase = (itemId: string) => {
     const item = beachItems.find(i => i.id === itemId);
@@ -35,8 +37,8 @@ export const BeachScreen: React.FC<BeachScreenProps> = ({onNavigateToGame}) => {
     }
 
     Alert.alert('Purchase Item', `Buy ${item.name} for ${item.cost} key(s)?`, [
-      {text: 'Cancel', style: 'cancel'},
-      {text: 'Buy', onPress: () => purchaseBeachItem(itemId)},
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Buy', onPress: () => purchaseBeachItem(itemId) },
     ]);
   };
 
