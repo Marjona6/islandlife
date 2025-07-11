@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { VictoryScreen } from '../components/VictoryScreen';
+import { VictoryScreen } from '../components/VictoryScreen/VictoryScreen';
 
 // Mock Animated module
 jest.mock('react-native', () => {

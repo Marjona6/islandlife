@@ -10,7 +10,7 @@ import {
   Pressable,
 } from 'react-native';
 import { GameBoard } from '../components/GameBoard/GameBoard';
-import { VictoryScreen } from '../components/VictoryScreen';
+import { VictoryScreen } from '../components/VictoryScreen/VictoryScreen';
 import { useGame } from '../contexts/GameContext';
 import { levelManager } from '../utils/levelManager';
 import { testLevelManager } from '../utils/testLevelManager';
